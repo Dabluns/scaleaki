@@ -1,0 +1,426 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserPlan {
+  mensal
+  trimestral
+  anual
+}
+
+// Enum para Linguagem
+enum Linguagem {
+  pt_BR
+  en_US
+  es_ES
+  fr_FR
+}
+
+model User {
+  id                       String        @id @default(uuid())
+  email                    String        @unique
+  password                 String
+  name                     String
+  role                     UserRole      @default(user)
+  plan                     UserPlan      @default(mensal)
+  isActive                 Boolean       @default(true)
+  lastLoginAt              DateTime?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  emailConfirmed           Boolean       @default(false)
+  emailConfirmationToken   String?
+  emailConfirmationExpires DateTime?
+  firstLoginIp             String?
+  apiKeys                  ApiKey[]
+  favoritos                Favorito[]
+  ofertaViews              OfertaView[]
+  payments                 Payment[]
+  subscription             Subscription?
+  profile                  UserProfile?
+  settings                 UserSettings?
+  webhooks                 Webhook[]
+}
+
+model AdminAuditLog {
+  id              String   @id @default(uuid())
+  adminId         String
+  adminEmail      String
+  action          String
+  targetUserId    String
+  targetUserEmail String
+  details         String?
+  createdAt       DateTime @default(now())
+
+  @@index([adminId, action, createdAt])
+  @@index([targetUserId, createdAt])
+}
+
+model Nicho {
+  id        String   @id @default(uuid())
+  nome      String
+  slug      String   @unique
+  icone     String
+  descricao String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ofertas   Oferta[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Oferta {
+  id            String            @id @default(uuid())
+  titulo        String
+  imagem        String?
+  texto         String
+  nichoId       String
+  plataforma    PlataformaAnuncio @default(facebook_ads)
+  tipoOferta    TipoOferta        @default(ecommerce)
+  status        StatusOferta      @default(ativa)
+  tags          String?
+  linguagem     Linguagem         @default(pt_BR)
+  links         String
+  metricas      String?
+  vsl           String?
+  receita       Float?
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  vslDescricao  String?
+  // Bot import tracking fields
+  driveFileId   String?           @unique
+  importSource  String?           // 'bot_v1', 'manual', 'api'
+  importStatus  String?           // 'complete', 'partial', 'failed'
+  importDetails String?           // JSON with import details
+  importedAt    DateTime?
+  favoritos     Favorito[]
+  nicho         Nicho             @relation(fields: [nichoId], references: [id], onDelete: Cascade)
+  views         OfertaView[]
+
+  @@index([nichoId])
+  @@index([plataforma])
+  @@index([tipoOferta])
+  @@index([status])
+  @@index([linguagem])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([isActive, status])
+  @@index([isActive, plataforma])
+  @@index([isActive, tipoOferta])
+  @@index([isActive, nichoId])
+  @@index([isActive, linguagem])
+  @@index([isActive, createdAt(sort: Desc)])
+  @@index([isActive, plataforma, tipoOferta, status])
+  @@index([isActive, nichoId, status])
+  @@index([driveFileId])
+  @@index([importSource])
+}
+
+model Favorito {
+  id        String   @id @default(uuid())
+  userId    String
+  ofertaId  String
+  createdAt DateTime @default(now())
+  oferta    Oferta   @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ofertaId])
+  @@index([userId])
+  @@index([ofertaId])
+}
+
+model OfertaView {
+  id       String   @id @default(uuid())
+  userId   String
+  ofertaId String
+  viewedAt DateTime @default(now())
+  oferta   Oferta   @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ofertaId])
+  @@index([userId])
+  @@index([ofertaId])
+  @@index([viewedAt])
+}
+
+model UserSettings {
+  id                   String    @id @default(uuid())
+  userId               String    @unique
+  theme                String    @default("auto")
+  accentColor          String    @default("#10b981")
+  density              String    @default("comfortable")
+  fontSize             String    @default("medium")
+  language             Linguagem @default(pt_BR)
+  defaultLayout        String    @default("grid")
+  itemsPerPage         Int       @default(25)
+  defaultSort          String    @default("createdAt")
+  showMetricsOnCard    Boolean   @default(true)
+  autoRefresh          Boolean   @default(false)
+  refreshInterval      Int?      @default(300)
+  emailNewOffers       Boolean   @default(true)
+  emailNewOffersFreq   String    @default("immediate")
+  emailRecommendations Boolean   @default(true)
+  emailRecoFrequency   String    @default("weekly")
+  emailRecoTime        String?   @default("09:00")
+  emailRecoDayOfWeek   Int?      @default(1)
+  emailPerformance     Boolean   @default(true)
+  emailPerfMinRoi      Float?    @default(100.0)
+  emailPerfMinCtr      Float?    @default(2.0)
+  emailWeeklySummary   Boolean   @default(false)
+  emailUpdates         Boolean   @default(true)
+  emailNewsletter      Boolean   @default(false)
+  inAppNewOffers       Boolean   @default(true)
+  inAppSimilar         Boolean   @default(true)
+  inAppPerformance     Boolean   @default(false)
+  inAppFrequency       String    @default("realtime")
+  pushEnabled          Boolean   @default(false)
+  pushSubscription     String?
+  pushHighPerformance  Boolean   @default(false)
+  pushMinRoi           Float?    @default(150.0)
+  pushMinCtr           Float?    @default(3.0)
+  pushReminders        Boolean   @default(false)
+  pushReminderDays     Int?      @default(7)
+  profilePublic        Boolean   @default(false)
+  showActivities       Boolean   @default(false)
+  shareStats           Boolean   @default(false)
+  favoriteNichos       String?
+  preferredPlataformas String?
+  defaultStatus        String?   @default("[\"ativa\",\"pausada\",\"teste\"]")
+  preferredTipoOferta  String?
+  minRoi               Float?
+  minCtr               Float?
+  preferredLanguages   String?   @default("[\"pt_BR\"]")
+  recoAlgorithm        String    @default("hybrid")
+  recoFrequency        String    @default("medium")
+  recoDiversity        String    @default("balanced")
+  excludedNichos       String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  animationsEnabled    Boolean   @default(true)
+  cards3DEnabled       Boolean   @default(true)
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserProfile {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  avatar               String?
+  avatarType           String?  @default("initials")
+  phone                String?
+  company              String?
+  position             String?
+  bio                  String?
+  twoFactorEnabled     Boolean  @default(false)
+  twoFactorSecret      String?
+  twoFactorBackupCodes String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  key       String   @unique
+  keyPrefix String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyPrefix])
+}
+
+model Webhook {
+  id        String       @id @default(uuid())
+  userId    String
+  name      String
+  url       String
+  secret    String?
+  events    String
+  headers   String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs      WebhookLog[]
+
+  @@index([userId])
+}
+
+model WebhookLog {
+  id           String   @id @default(uuid())
+  webhookId    String
+  event        String
+  payload      String?
+  response     String?
+  statusCode   Int?
+  success      Boolean
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  webhook      Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, createdAt])
+}
+
+model Subscription {
+  id                  String             @id @default(uuid())
+  userId              String             @unique
+  caktoSubscriptionId String?            @unique
+  caktoCustomerId     String?
+  plan                UserPlan           @default(mensal)
+  status              SubscriptionStatus @default(trial)
+  startDate           DateTime           @default(now())
+  endDate             DateTime?
+  trialEndDate        DateTime?
+  cancelledAt         DateTime?
+  amount              Float
+  currency            String             @default("BRL")
+  isRecurring         Boolean            @default(true)
+  autoRenew           Boolean            @default(true)
+  metadata            String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  payments            Payment[]
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([caktoSubscriptionId])
+  @@index([caktoCustomerId])
+}
+
+model Payment {
+  id                 String         @id @default(uuid())
+  userId             String
+  subscriptionId     String?
+  caktoPaymentId     String?        @unique
+  caktoTransactionId String?
+  amount             Float
+  currency           String         @default("BRL")
+  status             PaymentStatus  @default(pending)
+  paymentMethod      PaymentMethod?
+  description        String?
+  metadata           String?
+  paidAt             DateTime?
+  expiresAt          DateTime?
+  webhookData        String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  subscription       Subscription?  @relation(fields: [subscriptionId], references: [id])
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([caktoPaymentId])
+  @@index([caktoTransactionId])
+  @@index([createdAt])
+}
+
+enum PlataformaAnuncio {
+  facebook_ads
+  google_ads
+  tiktok_ads
+  instagram_ads
+  linkedin_ads
+  twitter_ads
+  pinterest_ads
+  snapchat_ads
+}
+
+enum TipoOferta {
+  ecommerce
+  lead_generation
+  app_install
+  brand_awareness
+  video_views
+  conversions
+  traffic
+}
+
+enum StatusOferta {
+  ativa
+  pausada
+  arquivada
+  teste
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+
+
+
+
+enum PaymentStatus {
+  pending
+  processing
+  paid
+  failed
+  cancelled
+  refunded
+}
+
+enum SubscriptionStatus {
+  active
+  cancelled
+  expired
+  suspended
+  trial
+}
+
+enum PaymentMethod {
+  credit_card
+  debit_card
+  pix
+  boleto
+  bank_transfer
+}
+
+// ========== BOT STATE & LOGS ==========
+
+model BotState {
+  id            String    @id @default("singleton")
+  isRunning     Boolean   @default(false)
+  lastCycleAt   DateTime?
+  lastSuccessAt DateTime?
+  lastErrorAt   DateTime?
+  lastError     String?
+  totalCycles   Int       @default(0)
+  totalOffers   Int       @default(0)
+  totalErrors   Int       @default(0)
+  startedAt     DateTime?
+  stoppedAt     DateTime?
+  currentCycleId String?
+  config        String?   // JSON com configurações dinâmicas
+  updatedAt     DateTime  @updatedAt
+}
+
+model BotLog {
+  id        String   @id @default(uuid())
+  level     String   // 'info', 'success', 'warning', 'error'
+  message   String
+  details   String?  // JSON com metadados
+  offerName String?  // Nome da oferta sendo processada
+  cycleId   String?  // UUID do ciclo atual
+  createdAt DateTime @default(now())
+
+  @@index([level, createdAt])
+  @@index([cycleId])
+  @@index([createdAt(sort: Desc)])
+}

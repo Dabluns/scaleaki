@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  # PostgreSQL local (opcional - o projeto usa Supabase por padrão)
+  # Descomente se quiser usar PostgreSQL local em vez do Supabase
+  # postgres:
+  #   image: postgres:15
+  #   container_name: skaleaki_postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: skaleaki_user
+  #     POSTGRES_PASSWORD: skaleaki_pass
+  #     POSTGRES_DB: skaleaki_db
+  #   ports:
+  #     - '5432:5432'
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+  # Redis local (opcional - para desenvolvimento local)
+  # Descomente se quiser usar Redis via Docker
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: skaleaki_redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - '6379:6379'
+  #   volumes:
+  #     - redis_data:/data
+  #   command: redis-server --appendonly yes
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
+
+# volumes:
+#   postgres_data:
+#   redis_data: 

@@ -1,0 +1,63 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install backend deps
+        run: npm install
+
+      - name: Install frontend deps
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build backend
+        run: npm run build
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-artifacts
+          retention-days: 7
+          path: |
+            dist/**
+            frontend/.next/**
+            package.json
+            package-lock.json
+            frontend/package.json
+            frontend/package-lock.json
+
+      - name: Rsync to staging (optional)
+        if: ${{ secrets.STAGING_SSH_HOST != '' }}
+        uses: burnett01/rsync-deployments@7.0.0
+        with:
+          switches: -avzr --delete
+          remote_host: ${{ secrets.STAGING_SSH_HOST }}
+          remote_port: ${{ secrets.STAGING_SSH_PORT || '22' }}
+          remote_path: ${{ secrets.STAGING_DEPLOY_PATH }}
+          remote_user: ${{ secrets.STAGING_SSH_USER }}
+          remote_key: ${{ secrets.STAGING_SSH_KEY }}
+          path: |
+            dist
+            frontend/.next
+            package.json
+            package-lock.json
+            frontend/package.json
+            frontend/package-lock.json
+

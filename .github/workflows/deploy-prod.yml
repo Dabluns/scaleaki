@@ -1,0 +1,100 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: deploy ou rollback
+        default: deploy
+        required: true
+        type: choice
+        options:
+          - deploy
+          - rollback
+      artifact:
+        description: Nome do artefato para rollback (ex.: staging-artifacts)
+        required: false
+        type: string
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install backend deps
+        if: ${{ inputs.mode == 'deploy' }}
+        run: npm install
+
+      - name: Install frontend deps
+        if: ${{ inputs.mode == 'deploy' }}
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build backend
+        if: ${{ inputs.mode == 'deploy' }}
+        run: npm run build
+
+      - name: Build frontend
+        if: ${{ inputs.mode == 'deploy' }}
+        run: npm run build:frontend
+
+      - name: Upload production artifact
+        if: ${{ inputs.mode == 'deploy' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-${{ github.run_id }}
+          path: |
+            dist/**
+            frontend/.next/**
+            package.json
+            package-lock.json
+            frontend/package.json
+            frontend/package-lock.json
+
+      - name: Download artifact for rollback
+        if: ${{ inputs.mode == 'rollback' && inputs.artifact != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact }}
+          path: ./rollback-artifact
+
+      - name: Deploy via rsync (deploy)
+        if: ${{ inputs.mode == 'deploy' && secrets.PROD_SSH_HOST != '' }}
+        uses: burnett01/rsync-deployments@7.0.0
+        with:
+          switches: -avzr --delete
+          remote_host: ${{ secrets.PROD_SSH_HOST }}
+          remote_port: ${{ secrets.PROD_SSH_PORT || '22' }}
+          remote_user: ${{ secrets.PROD_SSH_USER }}
+          remote_path: ${{ secrets.PROD_DEPLOY_PATH }}
+          remote_key: ${{ secrets.PROD_SSH_KEY }}
+          path: |
+            dist
+            frontend/.next
+            package.json
+            package-lock.json
+            frontend/package.json
+            frontend/package-lock.json
+
+      - name: Deploy rollback artifact
+        if: ${{ inputs.mode == 'rollback' && inputs.artifact != '' && secrets.PROD_SSH_HOST != '' }}
+        uses: burnett01/rsync-deployments@7.0.0
+        with:
+          switches: -avzr --delete
+          remote_host: ${{ secrets.PROD_SSH_HOST }}
+          remote_port: ${{ secrets.PROD_SSH_PORT || '22' }}
+          remote_user: ${{ secrets.PROD_SSH_USER }}
+          remote_path: ${{ secrets.PROD_DEPLOY_PATH }}
+          remote_key: ${{ secrets.PROD_SSH_KEY }}
+          path: |
+            rollback-artifact/dist
+            rollback-artifact/frontend/.next
+
