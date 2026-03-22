@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: ['main', 'develop']
+  pull_request:
+    branches: ['main', 'develop']
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install backend deps
+        run: npm install
+
+      - name: Install frontend deps
+        run: |
+          cd frontend
+          npm install
+
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install --with-deps
+
+      - name: Lint backend
+        run: npm run lint
+
+      - name: Lint frontend
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Unit tests backend
+        run: npm run test:backend -- --runInBand
+
+      - name: Frontend tests
+        run: npm run test:frontend
+
+      - name: List E2E scenarios
+        run: npm run test:e2e -- --list
+
+      - name: Build backend
+        run: npm run build
+
+      - name: Build frontend
+        run: npm run build:frontend
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: skaleaki_user
+          POSTGRES_PASSWORD: skaleaki_pass
+          POSTGRES_DB: skaleaki_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://skaleaki_user:skaleaki_pass@localhost:5432/skaleaki_db
+      JWT_SECRET: test-secret-key-with-minimum-32-characters-for-security
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Prisma migrations
+        run: npx prisma migrate deploy --schema=./prisma/schema.prisma
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npx dotenv -e .env.test -- npx jest --runInBand
+      - name: Build
+        run: npm run build 

@@ -1,0 +1,1 @@
+// Arquivo de índice para componentes de autenticação (LoginForm, RegisterForm, etc.) 

@@ -1,0 +1,660 @@
+@import "../styles/animations.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global: Neutralizar todos os textos itálicos para estilo normal */
+@layer utilities {
+  .italic {
+    font-style: normal !important;
+  }
+}
+
+:root {
+  /* Tema Cyberpunk (Escuro) como padrão */
+  color-scheme: dark;
+  /* === CORES DO SISTEMA (manter para casos especiais) === */
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+  --green-900: #14532d;
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --red-500: #ef4444;
+  --yellow-500: #eab308;
+  --purple-500: #a855f7;
+  --purple-600: #7c3aed;
+  --cyan-500: #06b6d4;
+  --cyan-600: #0891b2;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+  --pink-500: #ec4899;
+  --pink-600: #db2777;
+  --yellow-500: #eab308;
+  --yellow-600: #ca8a04;
+
+  /* === GRADIENTES DOPAMINÉRGICOS === */
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  --gradient-premium: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --gradient-energy: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+  --gradient-holographic: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%);
+  --gradient-neon: linear-gradient(135deg, #10b981 0%, #06b6d4 100%, #8b5cf6 100%);
+
+  /* === GLOW EFFECTS === */
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.4);
+  --glow-purple: 0 0 20px rgba(139, 92, 246, 0.4);
+  --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.4);
+  --glow-orange: 0 0 20px rgba(249, 115, 22, 0.4);
+  --glow-pink: 0 0 20px rgba(236, 72, 153, 0.4);
+
+  /* === TIPOGRAFIA === */
+  /* @dev (Fix-HP-002): Fontes premium carregadas via next/font em layout.tsx */
+  --font-primary: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'Fira Code', monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  /* Tokens de espaçamento de texto (adicionados pelo @architect) */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.05em;
+
+  /* === ESPAÇAMENTO === */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+
+  /* === TOKENS SEMÂNTICOS - CYBERPUNK THEME (Tema Principal) === */
+  /* Backgrounds */
+  --background: #1a1a1a;
+  --surface: #2a2a2a;
+  --surface-hover: #353535;
+  --surface-secondary: #252525;
+
+  /* Borders - Verde Esverdeado */
+  --border: rgba(34, 197, 94, 0.2);
+  /* #22c55e com 20% opacidade */
+  --border-hover: rgba(34, 197, 94, 0.4);
+  /* #22c55e com 40% opacidade */
+  --border-accent: rgba(34, 197, 94, 0.5);
+  /* Verde mais visível */
+
+  /* Text - Verde claro legível */
+  --text-primary: #86efac;
+  /* green-300 - verde claro legível */
+  --text-secondary: #6ee7b7;
+  /* green-300 mais escuro - para textos secundários */
+  --text-tertiary: #4ade80;
+  /* green-400 - para textos terciários */
+  --text-inverse: #1a1a1a;
+  --foreground: #86efac;
+  /* verde claro para foreground */
+
+  /* Accent — @dev (Fix-HP-003): Unificado para identidade verde/ciano do Skaleaki */
+  /* Magenta (#ff00ff) removido do :root — conflitava com identidade verde principal */
+  /* Mantém ciano como cor de destaque secundária (cyberpunk sem perder coerência) */
+  --accent: #22c55e;
+  --accent-hover: #16a34a;
+  --accent-light: rgba(34, 197, 94, 0.15);
+  --accent-color: #22c55e;
+  --accent-secondary: #06b6d4;
+  --glow-primary: 0 0 30px rgba(34, 197, 94, 0.6);
+  --gradient-premium: linear-gradient(135deg, #22c55e 0%, #06b6d4 100%);
+
+  /* Status */
+  --success: #22c55e;
+  --warning: #eab308;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* === GLASSMORPHISM TOKENS — @architect (Aria) === */
+  --glass-bg: rgba(26, 26, 26, 0.4);
+  --glass-border: rgba(34, 197, 94, 0.1);
+  --glass-blur: 12px;
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   @dev (Fix-HP-001): Classes utilitárias movidas para FORA do :root
+   Motivo: seletores de classe dentro de :root são CSS inválido.
+   Browsers toleravam, mas o comportamento era imprevisível.
+   @qa validou: comportamento agora é idêntico em Chrome/Firefox/Safari.
+   ───────────────────────────────────────────────────────────────── */
+.gradient-text {
+  background: var(--gradient-holographic);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-border {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--background), var(--background)) padding-box,
+    var(--gradient-holographic) border-box;
+}
+
+.glow-hover {
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-hover:hover {
+  box-shadow: var(--glow-green);
+}
+
+
+
+/* === REDUÇÃO DE MOVIMENTO (Acessibilidade) === */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.dark {
+  /* === TOKENS SEMÂNTICOS - DARK MODE === */
+  /* Força controles nativos (select, date, etc.) a usarem tema escuro */
+  color-scheme: dark;
+  /* Backgrounds */
+  --background: #0a0a0a;
+  --surface: #171717;
+  --surface-hover: #262626;
+  --surface-secondary: #1f1f1f;
+
+  /* Borders - Verde Esverdeado (Dark Mode) */
+  --border: rgba(34, 197, 94, 0.25);
+  /* #22c55e com 25% opacidade */
+  --border-hover: rgba(34, 197, 94, 0.45);
+  /* #22c55e com 45% opacidade */
+  --border-accent: rgba(34, 197, 94, 0.6);
+  /* Verde mais visível */
+
+  /* Text - Verde claro legível (Dark Mode) */
+  --text-primary: #86efac;
+  /* green-300 - verde claro legível */
+  --text-secondary: #6ee7b7;
+  /* green-300 mais escuro - para textos secundários */
+  --text-tertiary: #4ade80;
+  /* green-400 - para textos terciários */
+  --text-inverse: #0a0a0a;
+  --foreground: #86efac;
+  /* verde claro para foreground */
+
+  /* Accent (Verde da marca - Dark Mode) */
+  --accent: #22c55e;
+  --accent-hover: #4ade80;
+  --accent-light: #14532d;
+  --accent-color: #22c55e;
+
+  /* Status */
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --info: #60a5fa;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+
+  /* === GLOW EFFECTS (Dark Mode Enhanced) === */
+  --glow-green: 0 0 25px rgba(16, 185, 129, 0.6);
+  --glow-purple: 0 0 25px rgba(139, 92, 246, 0.6);
+  --glow-cyan: 0 0 25px rgba(6, 182, 212, 0.6);
+  --glow-orange: 0 0 25px rgba(249, 115, 22, 0.6);
+  --glow-pink: 0 0 25px rgba(236, 72, 153, 0.6);
+  /* === GLASSMORPHISM TOKENS (Dark Mode) === */
+  --glass-bg: rgba(10, 10, 10, 0.6);
+  --glass-border: rgba(34, 197, 94, 0.15);
+  --glass-blur: 16px;
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   @ux-design-expert (Uma): Glassmorphism Utility Library
+   Premium aesthetic for 2025 dashboads
+   ───────────────────────────────────────────────────────────────── */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--glass-reflection);
+  pointer-events: none;
+}
+
+.glass-header {
+  background: rgba(10, 10, 10, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.glass-sidebar {
+  background: rgba(10, 10, 10, 0.75) !important;
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 10px 0 50px -10px rgba(0, 0, 0, 0.5);
+}
+
+.glass-dropdown {
+  background: rgba(23, 23, 23, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  /* @dev (Fix-HP-002): Substituição de Arial genérica por Inter premium */
+  font-family: var(--font-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  /* Padrão de linhas decorativas verdes no background */
+  background-image:
+    linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  position: relative;
+}
+
+/* Overlay sutil para suavizar o grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   @architect (Aria): Intelligent Reveal on Scroll
+   Performance & Visual Polishing
+   ───────────────────────────────────────────────────────────────── */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-100 { transition-delay: 100ms; }
+.reveal-delay-200 { transition-delay: 200ms; }
+.reveal-delay-300 { transition-delay: 300ms; }
+.reveal-delay-400 { transition-delay: 400ms; }
+.reveal-delay-500 { transition-delay: 500ms; }
+
+/* Modal styles */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Custom scrollbar (global e modal) - Verde Esverdeado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-secondary);
+  border-left: 1px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-accent);
+  border-radius: 4px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.7);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Badge animations */
+.badge-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Neon Green Modern - Suavizado */
+.neon-green {
+  color: #00FF88 !important;
+  text-shadow: 0 0 4px #00FF88, 0 0 8px #00FF88;
+}
+
+.neon-green-bg {
+  background-color: #00FF88 !important;
+  box-shadow: 0 0 4px #00FF88, 0 0 8px #00FF88;
+}
+
+/* Efeito Neon Glow para itens ativos (sidebar) */
+@keyframes neon-pulse {
+
+  0%,
+  100% {
+    box-shadow:
+      0 0 20px rgba(34, 197, 94, 0.3),
+      0 0 10px rgba(34, 197, 94, 0.2);
+  }
+
+  50% {
+    box-shadow:
+      0 0 25px rgba(34, 197, 94, 0.4),
+      0 0 15px rgba(34, 197, 94, 0.3);
+  }
+}
+
+.dark .neon-active {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* === LINHAS VERDES DECORATIVAS === */
+/* Linhas de separação verdes */
+.divider-green {
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+}
+
+.divider-green-vertical {
+  border-left: 1px solid var(--border);
+  border-right: none;
+}
+
+/* Linhas de separação mais visíveis */
+.divider-green-accent {
+  border-top: 1px solid var(--border-accent);
+  border-bottom: none;
+}
+
+.divider-green-accent-vertical {
+  border-left: 1px solid var(--border-accent);
+  border-right: none;
+}
+
+/* Padrão de grid verde para containers */
+.grid-pattern-green {
+  background-image:
+    linear-gradient(rgba(34, 197, 94, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Linhas decorativas horizontais */
+.lines-horizontal-green {
+  background-image: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(34, 197, 94, 0.05) 1px,
+      rgba(34, 197, 94, 0.05) calc(100% - 1px),
+      transparent 100%);
+  background-size: 100% 20px;
+}
+
+/* Linhas decorativas verticais */
+.lines-vertical-green {
+  background-image: linear-gradient(to right,
+      transparent 0%,
+      rgba(34, 197, 94, 0.05) 1px,
+      rgba(34, 197, 94, 0.05) calc(100% - 1px),
+      transparent 100%);
+  background-size: 20px 100%;
+}
+
+/* Desabilitar animações quando a classe no-animations estiver presente */
+html.no-animations *,
+html.no-animations *::before,
+html.no-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+html.no-animations [class*="animate-"],
+html.no-animations [class*="transition"],
+html.no-animations [style*="animation"],
+html.no-animations [style*="transition"] {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Esconder scrollbar para navegadores WebKit */
+.hide-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   @architect (Aria): Top Navigation Progress Bar
+   ───────────────────────────────────────────────────────────────── */
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: linear-gradient(90deg, #22c55e, #06b6d4);
+  position: fixed;
+  z-index: 1031;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5), 0 0 5px rgba(6, 182, 212, 0.5);
+}
+
+#nprogress .peg {
+  display: block;
+  position: absolute;
+  right: 0px;
+  width: 100px;
+  height: 100%;
+  box-shadow: 0 0 10px #06b6d4, 0 0 5px #06b6d4;
+  opacity: 1;
+  transform: rotate(3deg) translate(0px, -4px);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   @ux-design-expert (Uma): Custom Banner Animations
+   ───────────────────────────────────────────────────────────────── */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-scanline {
+  animation: scanline 8s linear infinite;
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.4)); }
+  50% { filter: drop-shadow(0 0 25px rgba(34, 197, 94, 0.7)); }
+}
+
+.animate-glow {
+  animation: glow 4s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animation-delay-500 { animation-delay: 500ms; }
+.animation-delay-1000 { animation-delay: 1000ms; }
+
+/* ─────────────────────────────────────────────────────────────────
+   Overflow Prevention & Premium Scrollbar
+   Prevent content from breaking out of its containers
+   ───────────────────────────────────────────────────────────────── */
+
+/* Ensure long URLs don't overflow containers (gentle approach) */
+body {
+  overflow-wrap: break-word;
+}
+
+/* Premium scrollbar for main content areas */
+.scrollbar-premium::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-premium::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+/* Ensure all flex children respect min-width: 0 to prevent overflow */
+.min-w-0-children > * {
+  min-width: 0;
+}
+
+/* Prevent large headings from overflowing on narrow settings pages */
+@media (max-width: 1280px) {
+  .settings-responsive-heading {
+    font-size: clamp(2rem, 5vw, 4rem) !important;
+  }
+}
