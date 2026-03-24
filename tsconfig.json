@@ -17,6 +17,8 @@
     "dist",
     "src/tests",
     "**/*.test.ts",
-    "src/scripts"
+    "src/scripts",
+    "src/app",
+    "src/components"
   ]
 }
