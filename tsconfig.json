@@ -19,6 +19,7 @@
     "**/*.test.ts",
     "src/scripts",
     "src/app",
-    "src/components"
+    "src/components",
+    "src/config/__mocks__"
   ]
 }
