@@ -388,11 +388,17 @@ export async function exportQueries(req: AuthRequest, res: Response) {
 
 export async function createAdmin(req: AuthRequest, res: Response) {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     // Validações básicas
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Nome, e-mail e senha são obrigatórios' });
+    }
+
+    // Validar role se fornecida
+    const validRoles = ['admin', 'moderator', 'user'];
+    if (role && !validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Role inválida. Use: admin, moderator ou user' });
     }
 
     // Validar formato do e-mail
@@ -413,8 +419,8 @@ export async function createAdmin(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'E-mail já cadastrado' });
     }
 
-    // Criar o administrador
-    const admin = await adminService.createAdmin({ name, email, password });
+    // Criar o usuário
+    const admin = await adminService.createAdmin({ name, email, password, role: role || 'user' });
     
     logger.info('Admin created new admin user', { 
       adminId: req.user?.userId, 
