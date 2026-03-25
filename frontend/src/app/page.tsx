@@ -288,7 +288,7 @@ function AuthPageContent() {
                   <Button
                     type="submit"
                     disabled={loginLoading}
-                    className="w-full py-8 rounded-2xl bg-green-500 text-black font-black text-[11px] uppercase tracking-[0.4em] hover:bg-white transition-all shadow-[0_0_30px_rgba(34,197,94,0.3)] group/btn relative overflow-hidden"
+                    className="w-full py-8 rounded-2xl bg-green-500 hover:bg-green-400 text-black font-black text-[11px] uppercase tracking-[0.4em] transition-all shadow-[0_0_30px_rgba(34,197,94,0.3)] group/btn relative overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                     <span className="relative z-10 flex items-center justify-center gap-3">
@@ -388,7 +388,7 @@ function AuthPageContent() {
                   <Button
                     type="submit"
                     disabled={registerLoading}
-                    className="w-full py-8 rounded-2xl bg-green-500 text-black font-black text-[11px] uppercase tracking-[0.4em] hover:bg-white transition-all shadow-[0_0_30px_rgba(34,197,94,0.3)] group/btn relative overflow-hidden"
+                    className="w-full py-8 rounded-2xl bg-green-500 hover:bg-green-400 text-black font-black text-[11px] uppercase tracking-[0.4em] transition-all shadow-[0_0_30px_rgba(34,197,94,0.3)] group/btn relative overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                     <span className="relative z-10 flex items-center justify-center gap-3">
