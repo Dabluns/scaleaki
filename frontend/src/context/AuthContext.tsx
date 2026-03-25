@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from 'react';
+import nookies from 'nookies';
 
 interface User {
   id: string;
@@ -34,9 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const cookies = nookies.get(null);
+      const localToken = cookies['auth_token'] || '';
       
       const response = await fetch(`${API_URL}/auth/me`, {
         credentials: 'include',
+        headers: localToken ? { 'Authorization': `Bearer ${localToken}` } : {},
         signal: controller.signal,
       });
       
@@ -100,6 +104,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeoutId);
 
       if (response.ok) {
+        const data = await response.json();
+        const token = data?.data?.token;
+        
+        // Salvar o token como cookie no domínio do frontend (Vercel)
+        // para que o middleware consiga enxergá-lo
+        if (token) {
+          nookies.set(null, 'auth_token', token, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 7, // 7 dias
+            secure: true,
+            sameSite: 'lax',
+          });
+        }
+        
         await checkAuth();
         return { success: true };
       } else {
@@ -144,6 +162,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Limpar estado local
       setUser(null);
       setAdmin(false);
+      
+      // Limpar cookie do domínio do frontend
+      nookies.destroy(null, 'auth_token', { path: '/' });
       
       // Limpar storage (caso tenha algum token antigo)
       try {
