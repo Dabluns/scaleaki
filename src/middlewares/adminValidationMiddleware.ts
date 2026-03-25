@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 // Schema para atualização de usuário pelo admin
 const updateUserSchema = Joi.object({
   name: Joi.string().min(2).max(100).trim(),
-  role: Joi.string().valid('admin', 'user'),
+  role: Joi.string().valid('admin', 'moderator', 'user'),
   plan: Joi.string().valid('mensal', 'trimestral', 'anual'),
   isActive: Joi.boolean()
 }).min(1); // Pelo menos um campo deve ser fornecido
@@ -16,7 +16,7 @@ const paginationSchema = Joi.object({
   sortBy: Joi.string().valid('createdAt', 'updatedAt', 'email', 'name', 'role', 'plan').default('createdAt'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
   search: Joi.string().max(100).trim().allow(''),
-  role: Joi.string().valid('admin', 'user'),
+  role: Joi.string().valid('admin', 'moderator', 'user'),
   isActive: Joi.boolean(),
   plan: Joi.string().valid('mensal', 'trimestral', 'anual'),
   createdAtFrom: Joi.date().iso(),

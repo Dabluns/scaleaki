@@ -8,7 +8,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'moderator' | 'user';
 };
 
 export async function login(email: string, password: string): Promise<User> {

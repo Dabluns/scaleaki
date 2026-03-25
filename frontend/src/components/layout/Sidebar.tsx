@@ -176,7 +176,7 @@ export const SidebarUserProfile: React.FC<{ collapsed?: boolean }> = ({ collapse
             {user.name || 'Membro Elite'}
           </span>
           <span className="text-[10px] text-white/30 uppercase tracking-widest truncate">
-            {user.role === 'admin' ? 'Administrator' : 'Premium Plan'}
+            {user.role === 'admin' ? 'Administrator' : user.role === 'moderator' ? 'Moderator' : 'Premium Plan'}
           </span>
         </motion.div>
       )}

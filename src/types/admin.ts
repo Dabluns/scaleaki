@@ -4,7 +4,7 @@ export interface AdminUserList {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'moderator' | 'user';
   plan: UserPlan;
   isActive: boolean;
   createdAt: Date;
@@ -18,7 +18,7 @@ export interface AdminUserList {
 
 export interface UserUpdateData {
   name?: string;
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'moderator' | 'user';
   plan?: 'mensal' | 'trimestral' | 'anual';
   isActive?: boolean;
   firstLoginIp?: string | null; // Permite redefinir o IP autorizado (null para limpar)
@@ -124,7 +124,7 @@ export interface PaginationParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'moderator' | 'user';
   isActive?: boolean;
   plan?: UserPlan;
   createdAtFrom?: string;

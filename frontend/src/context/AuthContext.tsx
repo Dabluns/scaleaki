@@ -7,7 +7,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'moderator' | 'user';
   plan: 'free' | 'basic' | 'premium' | 'enterprise';
   isActive: boolean;
 }
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         const userData = data.data || data;
         setUser(userData);
-        setAdmin(userData?.role === 'admin');
+        setAdmin(userData?.role === 'admin' || userData?.role === 'moderator');
       } else {
         // Não autenticado - comportamento normal
         setUser(null);
