@@ -12,12 +12,11 @@ export async function register(req: Request, res: Response) {
     const payload = await authService.register(req.body, autoConfirm);
     logger.info('User registered successfully', { userId: payload.user.id, email: payload.user.email, autoConfirm });
 
-    // Se for auto-confirmado, setar cookie de autenticação
     if (autoConfirm) {
       res.cookie('auth_token', payload.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none',
         path: '/',
         maxAge: 1000 * 60 * 60 * 24 * 7 // 7 dias
       });
@@ -62,8 +61,8 @@ export async function login(req: Request, res: Response) {
     // Setar o cookie auth_token
     res.cookie('auth_token', payload.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 dias
     });
@@ -101,8 +100,8 @@ export async function logout(req: AuthRequest, res: Response) {
   res.clearCookie('auth_token', {
     path: '/',
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+    secure: true,
+    sameSite: 'none'
   });
 
   return res.status(200).json({
