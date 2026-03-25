@@ -23,8 +23,8 @@ export const corsConfig: CorsOptions = {
       return callback(null, true);
     }
     
-    // Verificar se a origem está na lista permitida
-    if (origin && allowedOrigins.includes(origin)) {
+    // Verificar se a origem está na lista permitida ou se é da Vercel
+    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app'))) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido pelo CORS'), false);
