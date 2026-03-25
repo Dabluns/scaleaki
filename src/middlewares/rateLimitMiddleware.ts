@@ -30,11 +30,11 @@ export const createRateLimiter = (options: {
 
 // Rate limiters específicos por endpoint
 export const authRateLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // 5 tentativas de login por 15 minutos
+  windowMs: 5 * 60 * 1000, // 5 minutos
+  max: 20, // 20 tentativas de login por 5 minutos
   message: {
-    error: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
-    retryAfter: '15 minutes'
+    error: 'Muitas tentativas de login. Tente novamente em 5 minutos.',
+    retryAfter: '5 minutes'
   }
 });
 
