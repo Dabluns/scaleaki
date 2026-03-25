@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import path from "path";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     ],
   },
   transpilePackages: ['@splinetool/react-spline', '@splinetool/runtime'],
-  webpack: (config, { isServer }) => {
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
