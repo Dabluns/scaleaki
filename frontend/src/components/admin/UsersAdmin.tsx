@@ -42,13 +42,19 @@ interface UserData {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'moderator' | 'user';
   plan: 'free' | 'basic' | 'premium' | 'enterprise';
   isActive: boolean;
   createdAt: string;
   subscriptionEndDate?: string | null;
   subscriptionStatus?: 'active' | 'cancelled' | 'expired' | 'suspended' | 'trial' | null;
 }
+
+const ROLE_DISPLAY: Record<string, { label: string; color: string; bg: string }> = {
+  admin: { label: 'ADMIN', color: 'text-green-500', bg: 'bg-green-500/10' },
+  moderator: { label: 'MODERATOR', color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+  user: { label: 'USER', color: 'text-white/40', bg: 'bg-white/5' },
+};
 
 const PLAN_DISPLAY: Record<UserData['plan'], { label: string; color: string; bg: string }> = {
   free: { label: 'FREE_ACCESS', color: 'text-gray-400', bg: 'bg-gray-400/10' },
@@ -61,7 +67,17 @@ export const UsersAdmin: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [editRole, setEditRole] = useState<'admin' | 'user'>('user');
+  const [editRole, setEditRole] = useState<'admin' | 'moderator' | 'user'>('user');
+  const [editRoleId, setEditRoleId] = useState<string | null>(null);
+  const [editRoleValue, setEditRoleValue] = useState<'admin' | 'moderator' | 'user'>('user');
+
+  // Create user modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'admin' | 'moderator' | 'user'>('user');
+  const [createLoading, setCreateLoading] = useState(false);
   const [editPlanId, setEditPlanId] = useState<string | null>(null);
   const [editPlan, setEditPlan] = useState<'free' | 'basic' | 'premium' | 'enterprise'>('free');
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -92,8 +108,12 @@ export const UsersAdmin: React.FC = () => {
         ...(plan && { plan }),
         ...(isActive && { isActive }),
       });
+      const nookies = (await import('nookies')).default;
+      const cookies = nookies.get(null);
+      const localToken = cookies['auth_token'] || '';
       const res = await fetch(`${API_URL}/admin/users?${params.toString()}`, {
         credentials: 'include',
+        headers: localToken ? { 'Authorization': `Bearer ${localToken}` } : {},
       });
       const data = await res.json();
       setUsers(data.data || []);
@@ -113,9 +133,12 @@ export const UsersAdmin: React.FC = () => {
   const handleAction = async (user: UserData, action: any) => {
     setActionLoading(true);
     try {
+      const nookies = (await import('nookies')).default;
+      const cookies = nookies.get(null);
+      const localToken = cookies['auth_token'] || '';
       const res = await fetch(`${API_URL}/admin/users/${user.id}`, {
         method: action.method || 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(localToken ? { 'Authorization': `Bearer ${localToken}` } : {}) },
         credentials: 'include',
         body: action.body ? JSON.stringify(action.body) : undefined,
       });
@@ -124,10 +147,47 @@ export const UsersAdmin: React.FC = () => {
         setConfirmId(null);
         setEditId(null);
         setEditPlanId(null);
+        setEditRoleId(null);
         fetchUsers();
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+        toast.showToast(err.error || 'Erro na operação', 'error');
       }
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUserName || !newUserEmail || !newUserPassword) {
+      toast.showToast('Preencha todos os campos', 'error');
+      return;
+    }
+    setCreateLoading(true);
+    try {
+      const nookies = (await import('nookies')).default;
+      const cookies = nookies.get(null);
+      const localToken = cookies['auth_token'] || '';
+      const res = await fetch(`${API_URL}/admin/admins`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(localToken ? { 'Authorization': `Bearer ${localToken}` } : {}) },
+        credentials: 'include',
+        body: JSON.stringify({ name: newUserName, email: newUserEmail, password: newUserPassword, role: newUserRole }),
+      });
+      if (res.ok) {
+        toast.showToast('Usuário criado com sucesso!');
+        setShowCreateModal(false);
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserPassword('');
+        setNewUserRole('user');
+        fetchUsers();
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+        toast.showToast(err.error || 'Erro ao criar usuário', 'error');
+      }
+    } finally {
+      setCreateLoading(false);
     }
   };
 
@@ -161,6 +221,7 @@ export const UsersAdmin: React.FC = () => {
           >
             <option value="" className="bg-black">ALL_ROLES</option>
             <option value="user" className="bg-black">USER</option>
+            <option value="moderator" className="bg-black">MODERATOR</option>
             <option value="admin" className="bg-black">ADMIN</option>
           </select>
           <select
@@ -179,6 +240,13 @@ export const UsersAdmin: React.FC = () => {
             className="px-6 py-4 text-[10px] font-black text-white/20 hover:text-white transition-colors uppercase tracking-widest"
           >
             LIMP_SCAN
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-6 py-4 bg-green-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-400 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+          >
+            <Plus size={14} />
+            ADD_USER
           </button>
         </div>
       </div>
@@ -226,7 +294,8 @@ export const UsersAdmin: React.FC = () => {
 
                   {/* Plan & Role Protocol */}
                   <td className="px-12 py-8">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
+                      {/* Plan Editor */}
                       {editPlanId === user.id ? (
                         <div className="flex items-center gap-2">
                           <select
@@ -255,9 +324,37 @@ export const UsersAdmin: React.FC = () => {
                           </button>
                         </div>
                       )}
-                      <span className={clsx("text-[9px] font-bold uppercase tracking-widest", user.role === 'admin' ? 'text-green-500' : 'text-white/20')}>
-                        Protocol: {user.role.toUpperCase()}
-                      </span>
+
+                      {/* Role Editor */}
+                      {editRoleId === user.id ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={editRoleValue}
+                            onChange={e => setEditRoleValue(e.target.value as any)}
+                            className="bg-black border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white outline-none"
+                          >
+                            <option value="user">USER</option>
+                            <option value="moderator">MODERATOR</option>
+                            <option value="admin">ADMIN</option>
+                          </select>
+                          <button onClick={() => handleAction(user, { body: { role: editRoleValue }, label: 'ROLE_UPDATE' })}><Check size={14} className="text-green-500" /></button>
+                          <button onClick={() => setEditRoleId(null)}><X size={14} className="text-red-500" /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className={clsx("px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest", ROLE_DISPLAY[user.role]?.bg, ROLE_DISPLAY[user.role]?.color)}>
+                            Protocol: {user.role.toUpperCase()}
+                          </div>
+                          {!isOwner && (
+                            <button
+                              onClick={() => { setEditRoleId(user.id); setEditRoleValue(user.role); }}
+                              className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ShieldCheck size={10} className="text-white/20 hover:text-white" />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </td>
 
@@ -380,6 +477,103 @@ export const UsersAdmin: React.FC = () => {
                 </button>
               </div>
             </Card3D>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Create User Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center p-8 backdrop-blur-2xl bg-black/80"
+            onClick={() => !createLoading && setShowCreateModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg p-12 bg-[#0d0d0d] border border-green-500/20 rounded-[3rem] shadow-[0_30px_80px_rgba(0,0,0,0.8),0_0_40px_rgba(34,197,94,0.1)] space-y-8"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                  <Plus size={24} className="text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight italic">NOVO AGENTE</h3>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Cadastrar identidade no sistema</p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-2">DESIGNAÇÃO (NOME)</label>
+                  <input
+                    type="text"
+                    value={newUserName}
+                    onChange={e => setNewUserName(e.target.value)}
+                    placeholder="Nome do agente"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-green-500/30 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-2">E-MAIL OPERACIONAL</label>
+                  <input
+                    type="email"
+                    value={newUserEmail}
+                    onChange={e => setNewUserEmail(e.target.value)}
+                    placeholder="email@dominio.com"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-green-500/30 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-2">SENHA TÁTICA</label>
+                  <input
+                    type="password"
+                    value={newUserPassword}
+                    onChange={e => setNewUserPassword(e.target.value)}
+                    placeholder="Min. 8 chars, A-Z, 0-9, !@#"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-green-500/30 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-2">ROLE / PROTOCOLO</label>
+                  <select
+                    value={newUserRole}
+                    onChange={e => setNewUserRole(e.target.value as any)}
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-green-500/30 transition-all"
+                  >
+                    <option value="user" className="bg-black">USER — Assinante padrão</option>
+                    <option value="moderator" className="bg-black">MODERATOR — Admin restrito</option>
+                    <option value="admin" className="bg-black">ADMIN — Acesso total</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={createLoading}
+                  className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-white/50 font-black text-[11px] uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-50"
+                >
+                  CANCELAR
+                </button>
+                <button
+                  onClick={handleCreateUser}
+                  disabled={createLoading}
+                  className="flex-1 py-4 rounded-xl bg-green-500 text-black font-black text-[11px] uppercase tracking-widest hover:bg-green-400 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {createLoading ? (
+                    <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> CRIANDO...</>
+                  ) : (
+                    <><Plus size={14} /> REGISTRAR AGENTE</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -487,7 +487,7 @@ export async function getSystemAlerts(): Promise<AdminAlert[]> {
   return alerts;
 }
 
-export async function createAdmin(data: { name: string; email: string; password: string }) {
+export async function createAdmin(data: { name: string; email: string; password: string; role?: 'admin' | 'moderator' | 'user' }) {
   try {
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -497,8 +497,8 @@ export async function createAdmin(data: { name: string; email: string; password:
         name: data.name,
         email: data.email,
         password: hashedPassword,
-        role: 'admin',
-        plan: 'anual',
+        role: data.role || 'user',
+        plan: data.role === 'admin' ? 'anual' : 'mensal',
         isActive: true,
         emailConfirmed: true
       },
@@ -507,6 +507,6 @@ export async function createAdmin(data: { name: string; email: string; password:
     const { password, ...adminWithoutPassword } = admin;
     return adminWithoutPassword;
   } catch (error) {
-    throw new Error('Erro ao criar administrador');
+    throw new Error('Erro ao criar usuário');
   }
 } 
