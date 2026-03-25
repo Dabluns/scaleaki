@@ -27,21 +27,22 @@ const adminRateLimiter = rateLimit({
 });
 
 // Middleware de autenticação e autorização para todas as rotas admin
+// admin + moderator podem acessar o painel admin
 router.use(authenticateJWT);
 router.use(validateAdminAccess);
-router.use(authorizeRoles(['admin']));
+router.use(authorizeRoles(['admin', 'moderator']));
 router.use(adminRateLimiter);
 router.use(sanitizeInput);
 router.use(securityLogger('admin_action'));
 
-// Usuários (admin gerencia usuários)
-router.get('/users', logAdminAction('list_users'), adminController.getUsers);
-router.put('/users/:id', validateUUID('id'), validateUpdateUser, logAdminAction('update_user'), adminController.updateUser);
-router.delete('/users/:id', validateUUID('id'), logAdminAction('delete_user'), adminController.deleteUser);
+// ===== ROTAS EXCLUSIVAS DO ADMIN SUPREMO (gerenciamento de usuários) =====
+// Moderadores NÃO têm acesso a estas rotas
+router.get('/users', authorizeRoles(['admin']), logAdminAction('list_users'), adminController.getUsers);
+router.put('/users/:id', authorizeRoles(['admin']), validateUUID('id'), validateUpdateUser, logAdminAction('update_user'), adminController.updateUser);
+router.delete('/users/:id', authorizeRoles(['admin']), validateUUID('id'), logAdminAction('delete_user'), adminController.deleteUser);
+router.post('/admins', authorizeRoles(['admin']), logAdminAction('create_admin'), adminController.createAdmin);
 
-// Admins
-router.post('/admins', logAdminAction('create_admin'), adminController.createAdmin);
-
+// ===== ROTAS COMPARTILHADAS (admin + moderator) =====
 // Storage Cleanup
 import * as cleanupController from '../controllers/cleanupController';
 router.post('/cleanup', logAdminAction('cleanup_storage'), cleanupController.runCleanup);

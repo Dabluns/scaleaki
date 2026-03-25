@@ -19,11 +19,11 @@ export const adminActionRateLimiter = {
  */
 export async function validateAdminAccess(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    if (!req.user || req.user.role !== 'admin') {
+    if (!req.user || !['admin', 'moderator'].includes(req.user.role)) {
       return res.status(403).json({ success: false, error: 'Acesso negado: requer permissões de administrador' });
     }
 
-    // Verificar se o admin ainda está ativo no banco
+    // Verificar se o admin/moderator ainda está ativo no banco
     const admin = await prisma.user.findUnique({
       where: { id: req.user.userId },
       select: { isActive: true, role: true, emailConfirmed: true }
@@ -45,7 +45,7 @@ export async function validateAdminAccess(req: AuthRequest, res: Response, next:
       return res.status(403).json({ success: false, error: 'Conta inativa' });
     }
 
-    if (admin.role !== 'admin') {
+    if (!['admin', 'moderator'].includes(admin.role)) {
       logger.warn('Tentativa de acesso admin sem permissão', {
         userId: req.user.userId,
         role: admin.role,

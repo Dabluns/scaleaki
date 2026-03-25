@@ -360,6 +360,7 @@ enum StatusOferta {
 
 enum UserRole {
   admin
+  moderator
   user
 }
 
