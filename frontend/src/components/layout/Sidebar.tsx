@@ -6,7 +6,8 @@ import {
   BookOpen, Shield, Lock, TrendingUp, Settings, Wrench,
   BarChart3, ShieldCheck, LockKeyhole, Home, Package,
   ChevronDown, Image as ImageIcon, Clock, Sparkles, Trophy, Video,
-  Menu, ChevronLeft, ChevronRight, LogOut
+  Menu, ChevronLeft, ChevronRight, LogOut,
+  User, Bell, FileText, CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import clsx from 'clsx';
@@ -16,6 +17,16 @@ import { useAuth } from '@/context/AuthContext';
 import { useSearchContext } from '@/context/SearchContext';
 import { useReelsStats } from '@/hooks/useReelsStats';
 import { getLucideIconByName } from '@/lib/icons';
+
+// Sub-items de Configurações (espelhando o SettingsLayout)
+const configSubItems = [
+  { href: '/configuracoes/perfil', label: 'Perfil', icon: User },
+  { href: '/configuracoes/preferencias', label: 'Interface', icon: Settings },
+  { href: '/configuracoes/notificacoes', label: 'Notificações', icon: Bell },
+  { href: '/configuracoes/privacidade', label: 'Privacidade', icon: Lock },
+  { href: '/configuracoes/conteudo', label: 'Conteúdo', icon: FileText },
+  { href: '/configuracoes/plano', label: 'Plano', icon: CreditCard },
+];
 
 // ─────────────────────────────────────────────────────────────────
 // @ux-design-expert (Uma) · Sidebar Premium v3.0
@@ -202,6 +213,7 @@ const SectionLabel: React.FC<{ label: string, collapsed: boolean }> = ({ label, 
 export const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [ofertasMenuOpen, setOfertasMenuOpen] = useState(false);
+  const [configMenuOpen, setConfigMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { nichos } = useNichos();
@@ -211,10 +223,15 @@ export const Sidebar: React.FC = () => {
 
   const nichosExibidos = nichosSearchTerm.trim() ? filteredNichos : nichos;
   const isAnyNichoActive = nichosExibidos.some(nicho => pathname === `/oferta/${nicho.slug}`);
+  const isAnyConfigActive = pathname?.startsWith('/configuracoes');
 
   useEffect(() => {
     if (isAnyNichoActive) setOfertasMenuOpen(true);
   }, [isAnyNichoActive]);
+
+  useEffect(() => {
+    if (isAnyConfigActive) setConfigMenuOpen(true);
+  }, [isAnyConfigActive]);
 
   useEffect(() => {
     try {
@@ -438,13 +455,52 @@ export const Sidebar: React.FC = () => {
 
         {/* BOTTOM SECTION */}
         <div className="p-4 border-t border-white/5 bg-white/[0.02]">
+          {/* Menu Expansível de Preferências */}
           <NavItem
-            href="/configuracoes"
+            href="#"
             icon={Settings}
             label="Preferências"
             collapsed={collapsed}
-            isActive={pathname === '/configuracoes'}
-          />
+            isActive={!!isAnyConfigActive}
+            onClick={() => {
+              if (!collapsed) {
+                setConfigMenuOpen(!configMenuOpen);
+              } else {
+                router.push('/configuracoes/perfil');
+              }
+            }}
+          >
+            {!collapsed && (
+              <ChevronDown className={clsx("w-4 h-4 ml-auto transition-transform", configMenuOpen && "rotate-180")} />
+            )}
+          </NavItem>
+
+          {/* Submenu Configurações */}
+          <AnimatePresence>
+            {configMenuOpen && !collapsed && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden ml-4 mt-1 mb-1 space-y-0.5 border-l border-white/5 pl-2"
+              >
+                {configSubItems.map((item) => {
+                  const active = pathname?.startsWith(item.href);
+                  const Icon = item.icon;
+                  return (
+                    <NavItem
+                      key={item.href}
+                      href={item.href}
+                      icon={Icon}
+                      label={item.label}
+                      collapsed={collapsed}
+                      isActive={!!active}
+                    />
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <button
             onClick={logout}
