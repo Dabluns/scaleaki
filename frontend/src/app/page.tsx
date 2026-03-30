@@ -7,7 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import { FullPageLoader } from '@/components/ui/FullPageLoader';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/Button';
-import { Card3D } from '@/components/ui/Card3D';
 import {
   Lock,
   User,
@@ -213,10 +212,8 @@ function AuthPageContent() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <Card3D
-            variant="glass"
-            has3DRotation
-            className="relative p-10 md:p-14 bg-[#0d0d0d] border-white/5 rounded-[3rem] overflow-hidden shadow-2xl"
+          <div
+            className="relative p-10 md:p-14 bg-[#0d0d0d]/90 backdrop-blur-xl border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl"
           >
             {/* Logo Mobile */}
             <div className="mb-10 lg:hidden text-center">
@@ -408,7 +405,7 @@ function AuthPageContent() {
                 {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Iniciar Sessão'}
               </button>
             </div>
-          </Card3D>
+          </div>
         </motion.div>
       </div>
 
