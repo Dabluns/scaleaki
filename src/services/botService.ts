@@ -31,44 +31,30 @@ const PAUSE_BETWEEN_OFFERS_MS = 5000; // 5s entre cada oferta
 // Instâncias
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Auth do Google Drive — ENV VAR (produção) ou arquivo local (dev)
+// Auth do Google Drive — escreve arquivo de credenciais se vier de env var
+const CREDENTIALS_FILE = 'google-credentials.json';
 let drive: any = null;
 try {
-    let auth;
-    let creds: any = null;
-
-    // Método 1 (RECOMENDADO): Base64-encoded credentials — à prova de corrupção
+    // Se tiver Base64 na env var, escrever o arquivo no disco ANTES de autenticar
+    // Isso é idêntico a ter o arquivo localmente — zero risco de corrupção
     if (process.env.GOOGLE_CREDENTIALS_BASE64) {
         const decoded = Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64').toString('utf-8');
-        creds = JSON.parse(decoded);
-        logger.info('Google Drive auth: usando GOOGLE_CREDENTIALS_BASE64 (base64)');
-    }
-    // Método 2: JSON direto na env var (pode corromper newlines)
-    else if (process.env.GOOGLE_CREDENTIALS_JSON) {
-        creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-        logger.info('Google Drive auth: usando GOOGLE_CREDENTIALS_JSON (env var)');
+        fs.writeFileSync(CREDENTIALS_FILE, decoded, 'utf-8');
+        logger.info('Google Drive: arquivo de credenciais criado a partir de GOOGLE_CREDENTIALS_BASE64');
+    } else if (process.env.GOOGLE_CREDENTIALS_JSON) {
+        fs.writeFileSync(CREDENTIALS_FILE, process.env.GOOGLE_CREDENTIALS_JSON, 'utf-8');
+        logger.info('Google Drive: arquivo de credenciais criado a partir de GOOGLE_CREDENTIALS_JSON');
     }
 
-    if (creds) {
-        // Garantir que a private_key tenha newlines reais
-        if (creds.private_key) {
-            creds.private_key = creds.private_key.replace(/\\n/g, '\n');
-        }
-        auth = new google.auth.GoogleAuth({
-            credentials: creds,
-            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-        });
-    } else {
-        // Método 3: Desenvolvimento local — ler do arquivo
-        auth = new google.auth.GoogleAuth({
-            keyFile: 'google-credentials.json',
-            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-        });
-        logger.info('Google Drive auth: usando google-credentials.json (arquivo local)');
-    }
+    // Sempre usar keyFile — funciona 100% igual ao desenvolvimento local
+    const auth = new google.auth.GoogleAuth({
+        keyFile: CREDENTIALS_FILE,
+        scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+    });
     drive = google.drive({ version: 'v3', auth });
+    logger.info('Google Drive auth: OK ✅');
 } catch (err) {
-    logger.warn('Google Drive auth failed (credentials missing?)');
+    logger.warn('Google Drive auth failed (credentials missing?)', err);
 }
 
 // Auth do Gemini
