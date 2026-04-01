@@ -2,14 +2,17 @@ import { google } from 'googleapis';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Readable } from 'stream';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import mammoth from 'mammoth';
 import prisma from '../config/database';
 import logger from '../config/logger';
 import { randomUUID } from 'crypto';
 
 // ─────────────────────────────────────────────────────────────────
-// Bot Service v2.0 — Production-Ready
-// Phase 1: Persistent state, retry, validation, DB logs, dedup
+// Bot Service v3.0 — Render Free Tier Optimized (512MB RAM)
+// Disk-based downloads, env credentials, slow & steady processing
 // ─────────────────────────────────────────────────────────────────
 
 // --- CONFIGURAÇÕES ---
@@ -17,21 +20,37 @@ const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID || '';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const GOOGLE_CREDENTIALS_PATH = 'google-credentials.json';
 
 const BUCKET_IMAGES = 'images';
 const BUCKET_VIDEOS = 'videos';
 
+// Pausas para economizar RAM (Render Free = 512MB)
+const PAUSE_BETWEEN_FILES_MS = 2000;  // 2s entre cada arquivo
+const PAUSE_BETWEEN_OFFERS_MS = 5000; // 5s entre cada oferta
+
 // Instâncias
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Auth do Google Drive
+// Auth do Google Drive — ENV VAR (produção) ou arquivo local (dev)
 let drive: any = null;
 try {
-    const auth = new google.auth.GoogleAuth({
-        keyFile: GOOGLE_CREDENTIALS_PATH,
-        scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-    });
+    let auth;
+    if (process.env.GOOGLE_CREDENTIALS_JSON) {
+        // Produção (Render): ler credenciais da variável de ambiente
+        const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+        auth = new google.auth.GoogleAuth({
+            credentials: creds,
+            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+        });
+        logger.info('Google Drive auth: usando GOOGLE_CREDENTIALS_JSON (env var)');
+    } else {
+        // Desenvolvimento local: ler do arquivo
+        auth = new google.auth.GoogleAuth({
+            keyFile: 'google-credentials.json',
+            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+        });
+        logger.info('Google Drive auth: usando google-credentials.json (arquivo local)');
+    }
     drive = google.drive({ version: 'v3', auth });
 } catch (err) {
     logger.warn('Google Drive auth failed (credentials missing?)');
@@ -209,41 +228,52 @@ async function withTimeout<T>(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// FUNÇÕES ORIGINAIS — Upload, Download, Helpers
+// uploadToSupabase v3.0 — Aceita Buffer OU caminho de arquivo
+// Quando recebe caminho, lê do disco e limpa após upload
 // ─────────────────────────────────────────────────────────────────
 
-async function uploadToSupabase(buffer: Buffer, fileName: string, mimeType: string, bucket: string): Promise<string | null> {
+async function uploadToSupabase(source: Buffer | string, fileName: string, mimeType: string, bucket: string): Promise<string | null> {
     return withRetry(async () => {
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const timestamp = Date.now();
         const cleanName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const path = `${year}/${month}/${timestamp}-${cleanName}`;
+        const uploadPath = `${year}/${month}/${timestamp}-${cleanName}`;
 
         await yieldEventLoop();
 
+        // Ler do disco se for um caminho de arquivo
+        let buffer: Buffer;
+        if (typeof source === 'string') {
+            buffer = fs.readFileSync(source);
+        } else {
+            buffer = source;
+        }
+
         const { error } = await supabase.storage
             .from(bucket)
-            .upload(path, buffer, { contentType: mimeType, upsert: false });
+            .upload(uploadPath, buffer, { contentType: mimeType, upsert: false });
 
         if (error) {
             throw new Error(`Supabase upload error(${fileName}): ${error.message}`);
         }
 
-        const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+        const { data } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
         return data.publicUrl;
+
+        // Se a source era arquivo temporário, limpar do disco
     }, `Upload "${fileName}"`, 3, 2000);
 }
 
 async function deleteFileFromUrl(url: string) {
     try {
-        const path = url.split(`${BUCKET_IMAGES}/`).pop() || url.split(`${BUCKET_VIDEOS}/`).pop();
-        if (!path) return;
+        const filePath = url.split(`${BUCKET_IMAGES}/`).pop() || url.split(`${BUCKET_VIDEOS}/`).pop();
+        if (!filePath) return;
 
         const bucket = url.includes(BUCKET_IMAGES) ? BUCKET_IMAGES : BUCKET_VIDEOS;
-        await supabase.storage.from(bucket).remove([path]);
-        logger.info(`Rollback: Deleted file ${path}`);
+        await supabase.storage.from(bucket).remove([filePath]);
+        logger.info(`Rollback: Deleted file ${filePath}`);
     } catch (err) {
         logger.error(`Rollback failed for ${url}`, err);
     }
@@ -517,9 +547,42 @@ function yieldEventLoop(): Promise<void> {
     return new Promise(resolve => setImmediate(resolve));
 }
 
-// Limite suave — logar warning mas não bloquear (Supabase Pro suporta até 5GB)
-const WARN_FILE_SIZE = 50 * 1024 * 1024; // 50MB — warning
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB — limite absoluto (proteger memória)
+// Forçar GC e limpar memória (se disponível)
+function forceGC() {
+    try {
+        if (global.gc) {
+            global.gc();
+            logger.info('Bot: 🧹 Garbage Collection forçado');
+        }
+    } catch { }
+}
+
+// Pausa configurável entre operações (economiza RAM no Render)
+async function slowDown(ms: number = PAUSE_BETWEEN_FILES_MS): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, ms));
+    await yieldEventLoop();
+}
+
+// Limites CONSERVADORES para Render Free (512MB RAM)
+const WARN_FILE_SIZE = 15 * 1024 * 1024; // 15MB — warning
+const MAX_FILE_SIZE = 50 * 1024 * 1024;  // 50MB — limite absoluto
+
+// Diretório temporário para downloads (disco, não RAM)
+const TMP_DIR = path.join(os.tmpdir(), 'scaleaki-bot');
+function ensureTmpDir() {
+    if (!fs.existsSync(TMP_DIR)) {
+        fs.mkdirSync(TMP_DIR, { recursive: true });
+    }
+}
+
+// Limpar arquivo temporário com segurança
+function cleanupTmpFile(filePath: string) {
+    try {
+        if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+    } catch { }
+}
 
 async function getFileSize(fileId: string): Promise<number> {
     if (!drive) return 0;
@@ -531,53 +594,72 @@ async function getFileSize(fileId: string): Promise<number> {
     }
 }
 
-// Baixar arquivo do Drive (com retry e streaming)
-async function downloadFile(fileId: string, fileName: string): Promise<Buffer | null> {
+// ─────────────────────────────────────────────────────────────
+// downloadFile v3.0 — Salva em DISCO (/tmp), não na RAM
+// Retorna o caminho do arquivo temporário (ou null se falhar)
+// ─────────────────────────────────────────────────────────────
+async function downloadFile(fileId: string, fileName: string): Promise<string | null> {
     if (!drive) return null;
 
     return withRetry(async () => {
         const fileSize = await getFileSize(fileId);
         const sizeMB = (fileSize / 1024 / 1024).toFixed(1);
 
-        // Bloquear apenas arquivos absurdamente grandes (>500MB) para proteger memória
+        // Bloquear arquivos grandes para proteger o Render
         if (fileSize > MAX_FILE_SIZE) {
-            await logBot('warning', `⚠️ Arquivo "${fileName}" é muito grande (${sizeMB}MB > 500MB). Pulando para proteger memória.`, fileName);
+            await logBot('warning', `⚠️ Arquivo "${fileName}" muito grande (${sizeMB}MB > 50MB). Pulando.`, fileName);
             return null;
         }
 
-        // Avisar sobre arquivos grandes mas prosseguir
         if (fileSize > WARN_FILE_SIZE) {
-            await logBot('info', `📦 Arquivo grande detectado: "${fileName}" (${sizeMB}MB). Baixando...`, fileName);
+            await logBot('info', `📦 Arquivo grande: "${fileName}" (${sizeMB}MB). Baixando para disco...`, fileName);
         }
 
         await yieldEventLoop();
+        ensureTmpDir();
+
+        // Gerar caminho temporário único
+        const tmpFileName = `${Date.now()}-${randomUUID().substring(0, 8)}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const tmpFilePath = path.join(TMP_DIR, tmpFileName);
 
         const response = await drive.files.get(
             { fileId, alt: 'media' },
             { responseType: 'stream' }
         );
 
-        const chunks: Buffer[] = [];
         const stream = response.data as unknown as Readable;
+        const writeStream = fs.createWriteStream(tmpFilePath);
         let downloadedBytes = 0;
 
-        return new Promise<Buffer>((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
             stream.on('data', (chunk: Buffer) => {
-                chunks.push(chunk);
                 downloadedBytes += chunk.length;
             });
-            stream.on('end', () => {
+
+            stream.pipe(writeStream);
+
+            writeStream.on('finish', () => {
                 const totalMB = (downloadedBytes / 1024 / 1024).toFixed(1);
-                if (downloadedBytes > WARN_FILE_SIZE) {
-                    logger.info(`Bot: ✅ Download completo: "${fileName}" (${totalMB}MB)`);
-                }
-                resolve(Buffer.concat(chunks));
+                logger.info(`Bot: ✅ Download para disco: "${fileName}" (${totalMB}MB) → ${tmpFilePath}`);
+                resolve(tmpFilePath);
             });
+
+            writeStream.on('error', (err: Error) => {
+                cleanupTmpFile(tmpFilePath);
+                reject(err);
+            });
+
             stream.on('error', (err: Error) => {
+                cleanupTmpFile(tmpFilePath);
                 reject(err);
             });
         });
     }, `Download "${fileName}"`, 3, 2000);
+}
+
+// Ler arquivo do disco como Buffer (para operações pequenas como texto/docx)
+function readTmpFileAsBuffer(filePath: string): Buffer {
+    return fs.readFileSync(filePath);
 }
 
 // Classificar tipo de subpasta pelo nome
@@ -674,15 +756,16 @@ async function processSingleFolder(folderId: string, folderName: string) {
                 continue;
             }
 
-            await yieldEventLoop();
+            await slowDown(); // Pausa entre arquivos para economizar RAM
 
             switch (type) {
                 case 'vsl': {
                     if (isVideoFile(mime, file.name) && !vslUrl) {
                         await logBot('info', `🎥 Baixando VSL video "${file.name}"...`, folderName);
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            const url = await uploadToSupabase(buffer, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                            cleanupTmpFile(tmpPath);
                             if (url) {
                                 vslUrl = url;
                                 await logBot('success', `✅ VSL video salvo`, folderName);
@@ -715,9 +798,11 @@ async function processSingleFolder(folderId: string, folderName: string) {
                         }
                     } else if (isDocxFile(mime, file.name) && !texto) {
                         await logBot('info', `📄 Baixando Word "${file.name}"...`, folderName);
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            const docxText = await extractTextFromDocx(buffer, file.name);
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            const buf = readTmpFileAsBuffer(tmpPath);
+                            const docxText = await extractTextFromDocx(buf, file.name);
+                            cleanupTmpFile(tmpPath);
                             if (docxText) {
                                 texto = docxText;
                                 vslDescricao = texto.substring(0, 500);
@@ -726,9 +811,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                         }
                     } else if (isTextFile(mime, file.name) && !texto) {
                         await logBot('info', `📝 Baixando arquivo de texto "${file.name}"...`, folderName);
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            const fullText = buffer.toString('utf-8').trim();
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            const fullText = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
+                            cleanupTmpFile(tmpPath);
                             if (fullText.length > 5) {
                                 texto = fullText;
                                 vslDescricao = texto.substring(0, 500);
@@ -755,9 +841,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                             await logBot('error', `❌ Falha ao exportar HTML do Google Doc`, folderName, { error: (docErr as any).message });
                         }
                     } else if ((mime.includes('text/html') || mime.includes('text/plain') || file.name.toLowerCase().endsWith('.html')) && !htmlContent) {
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            htmlContent = buffer.toString('utf-8').trim();
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            htmlContent = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
+                            cleanupTmpFile(tmpPath);
                             await logBot('success', `✅ HTML landing page carregada (${htmlContent.length} chars)`, folderName);
                         }
                     }
@@ -767,9 +854,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                 case 'criativo': {
                     if (isImageFile(mime, file.name)) {
                         await logBot('info', `🖼️ Baixando imagem criativa "${file.name}"...`, folderName);
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            const url = await uploadToSupabase(buffer, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
+                            cleanupTmpFile(tmpPath);
                             if (url) {
                                 if (!imagemUrl) {
                                     imagemUrl = url;
@@ -780,9 +868,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                         }
                     } else if (isVideoFile(mime, file.name)) {
                         await logBot('info', `🎬 Baixando vídeo criativo "${file.name}"...`, folderName);
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            const url = await uploadToSupabase(buffer, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                            cleanupTmpFile(tmpPath);
                             if (url) {
                                 criativoUrls.push(url);
                                 await logBot('success', `✅ Vídeo criativo enviado`, folderName);
@@ -795,21 +884,24 @@ async function processSingleFolder(folderId: string, folderName: string) {
                 default: {
                     logger.info(`Bot:     🔍 Unknown subfolder type, trying generic for "${file.name}"`);
                     if (isImageFile(mime, file.name) && !imagemUrl) {
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            const url = await uploadToSupabase(buffer, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
+                            cleanupTmpFile(tmpPath);
                             if (url) imagemUrl = url;
                         }
                     } else if (isVideoFile(mime, file.name) && !vslUrl) {
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            const url = await uploadToSupabase(buffer, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                            cleanupTmpFile(tmpPath);
                             if (url) vslUrl = url;
                         }
                     } else if (isTextFile(mime, file.name) && !texto) {
-                        const buffer = await downloadFile(file.id, file.name);
-                        if (buffer) {
-                            texto = buffer.toString('utf-8').trim();
+                        const tmpPath = await downloadFile(file.id, file.name);
+                        if (tmpPath) {
+                            texto = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
+                            cleanupTmpFile(tmpPath);
                             vslDescricao = texto.substring(0, 500);
                         }
                     }
@@ -826,7 +918,7 @@ async function processSingleFolder(folderId: string, folderName: string) {
 
         if (isGoogleAppsFile(mime)) continue;
 
-        await yieldEventLoop();
+        await slowDown(); // Pausa entre arquivos
 
         // Google Doc solto → texto
         if (isGoogleDoc(mime) && !texto) {
@@ -844,28 +936,33 @@ async function processSingleFolder(folderId: string, folderName: string) {
             continue;
         }
 
-        const buffer = await downloadFile(file.id, file.name);
-        if (!buffer) continue;
+        const tmpPath = await downloadFile(file.id, file.name);
+        if (!tmpPath) continue;
 
         if (isDocxFile(mime, file.name) && !texto) {
-            const docxText = await extractTextFromDocx(buffer, file.name);
+            const buf = readTmpFileAsBuffer(tmpPath);
+            const docxText = await extractTextFromDocx(buf, file.name);
+            cleanupTmpFile(tmpPath);
             if (docxText) {
                 texto = docxText;
                 vslDescricao = texto.substring(0, 500);
                 await logBot('success', `✅ Word (.docx) solto carregado (${texto.length} chars)`, folderName);
             }
         } else if (isTextFile(mime, file.name) && !texto) {
-            texto = buffer.toString('utf-8').trim();
+            texto = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
+            cleanupTmpFile(tmpPath);
             vslDescricao = texto.substring(0, 500);
             await logBot('success', `✅ Arquivo de texto solto carregado (${texto.length} chars)`, folderName);
         } else if (isImageFile(mime, file.name) && !imagemUrl) {
-            const url = await uploadToSupabase(buffer, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
+            const url = await uploadToSupabase(tmpPath, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
+            cleanupTmpFile(tmpPath);
             if (url) {
                 imagemUrl = url;
                 await logBot('success', `✅ Imagem solta enviada`, folderName);
             }
         } else if (isVideoFile(mime, file.name) && !vslUrl) {
-            const url = await uploadToSupabase(buffer, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+            cleanupTmpFile(tmpPath);
             if (url) {
                 vslUrl = url;
                 await logBot('success', `✅ Vídeo solto enviado como VSL`, folderName);
@@ -1071,11 +1168,10 @@ async function runBotCycle() {
                 try {
                     await logBot('info', `[${i + 1}/${folders.length}] Iniciando: "${folder.name}"`, folder.name);
 
-                    // --- FASE 2.2 — Timeout de 10 min por pasta ---
-                    // Se download/upload travar, libera o bot após 10 min
+                    // --- Timeout de 5 min por pasta (conservador para Render) ---
                     await withTimeout(
                         processSingleFolder(folder.id, folder.name),
-                        10 * 60 * 1000,
+                        5 * 60 * 1000,
                         `Processamento da pasta "${folder.name}"`
                     );
 
@@ -1085,9 +1181,9 @@ async function runBotCycle() {
                     await logBot('error', `Erro ao processar "${folder.name}": ${err.message}`, folder.name, { error: err.message });
                 }
 
-                // Ceder event loop e pequena pausa entre ofertas
-                await new Promise(r => setTimeout(r, 1000));
-                await yieldEventLoop();
+                // Pausa longa entre ofertas + GC forçado para liberar RAM
+                await slowDown(PAUSE_BETWEEN_OFFERS_MS);
+                forceGC();
             }
         }
 
@@ -1155,9 +1251,9 @@ export const botService = {
 
         await logBot('success', 'Bot iniciado com sucesso.');
 
-        // Iniciar ciclo imediatamente e agendar loop
+        // Iniciar ciclo imediatamente e agendar loop (30 min entre ciclos — conservador)
         runBotCycle();
-        loopInterval = setInterval(runBotCycle, 10 * 60 * 1000);
+        loopInterval = setInterval(runBotCycle, 30 * 60 * 1000);
 
         return {
             message: 'Bot iniciado',
