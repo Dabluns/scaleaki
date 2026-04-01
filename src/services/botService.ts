@@ -38,6 +38,10 @@ try {
     if (process.env.GOOGLE_CREDENTIALS_JSON) {
         // Produção (Render): ler credenciais da variável de ambiente
         const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+        // Fix: \n na private_key fica corrompido em env vars (double-escaped)
+        if (creds.private_key) {
+            creds.private_key = creds.private_key.replace(/\\n/g, '\n');
+        }
         auth = new google.auth.GoogleAuth({
             credentials: creds,
             scopes: ['https://www.googleapis.com/auth/drive.readonly'],
