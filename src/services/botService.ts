@@ -35,10 +35,22 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 let drive: any = null;
 try {
     let auth;
-    if (process.env.GOOGLE_CREDENTIALS_JSON) {
-        // Produção (Render): ler credenciais da variável de ambiente
-        const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-        // Fix: \n na private_key fica corrompido em env vars (double-escaped)
+    let creds: any = null;
+
+    // Método 1 (RECOMENDADO): Base64-encoded credentials — à prova de corrupção
+    if (process.env.GOOGLE_CREDENTIALS_BASE64) {
+        const decoded = Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64').toString('utf-8');
+        creds = JSON.parse(decoded);
+        logger.info('Google Drive auth: usando GOOGLE_CREDENTIALS_BASE64 (base64)');
+    }
+    // Método 2: JSON direto na env var (pode corromper newlines)
+    else if (process.env.GOOGLE_CREDENTIALS_JSON) {
+        creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+        logger.info('Google Drive auth: usando GOOGLE_CREDENTIALS_JSON (env var)');
+    }
+
+    if (creds) {
+        // Garantir que a private_key tenha newlines reais
         if (creds.private_key) {
             creds.private_key = creds.private_key.replace(/\\n/g, '\n');
         }
@@ -46,9 +58,8 @@ try {
             credentials: creds,
             scopes: ['https://www.googleapis.com/auth/drive.readonly'],
         });
-        logger.info('Google Drive auth: usando GOOGLE_CREDENTIALS_JSON (env var)');
     } else {
-        // Desenvolvimento local: ler do arquivo
+        // Método 3: Desenvolvimento local — ler do arquivo
         auth = new google.auth.GoogleAuth({
             keyFile: 'google-credentials.json',
             scopes: ['https://www.googleapis.com/auth/drive.readonly'],
