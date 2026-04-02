@@ -35,9 +35,8 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const HOST = process.env.HOST || 'localhost';
 
-// Configurar trust proxy para obter IP real do cliente através de proxies/load balancers
-// Isso permite que req.ip funcione corretamente com x-forwarded-for
-app.set('trust proxy', true);
+// Configurar trust proxy para Render/Vercel (1 = confiar no primeiro proxy)
+app.set('trust proxy', 1);
 
 // Rate limiting - Proteção contra DDoS
 const RATE_LIMIT_WINDOW_MINUTES = Number(process.env.RATE_LIMIT_WINDOW_MINUTES || 15);
@@ -52,6 +51,7 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false }, // Desabilitar validação rígida de trust proxy
   skip: (req) => {
     // Health checks e root não contam
     if (req.path === '/health' || req.path === '/') return true;
