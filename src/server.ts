@@ -41,7 +41,7 @@ app.set('trust proxy', true);
 
 // Rate limiting - Proteção contra DDoS
 const RATE_LIMIT_WINDOW_MINUTES = Number(process.env.RATE_LIMIT_WINDOW_MINUTES || 15);
-const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 100);
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 500);
 
 const limiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MINUTES * 60 * 1000,
@@ -52,13 +52,19 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Configurável via env; por padrão não pula prefixos
   skip: (req) => {
+    // Health checks e root não contam
+    if (req.path === '/health' || req.path === '/') return true;
+
+    // Pular prefixos configuráveis via env
     const cfg = process.env.RATE_LIMIT_SKIP_PREFIXES;
-    if (!cfg) return false;
-    const path = req.path || req.originalUrl || '';
-    const prefixed = cfg.split(',').map(p => p.trim()).filter(Boolean);
-    return prefixed.some(p => path.startsWith(p));
+    if (cfg) {
+      const path = req.path || req.originalUrl || '';
+      const prefixed = cfg.split(',').map(p => p.trim()).filter(Boolean);
+      if (prefixed.some(p => path.startsWith(p))) return true;
+    }
+
+    return false;
   }
 });
 
