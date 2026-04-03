@@ -18,8 +18,8 @@ export const corsConfig: CorsOptions = {
       return callback(null, true);
     }
 
-    // Permitir requisições sem origin (ex: Postman, mobile apps)
-    if (!origin && process.env.NODE_ENV === 'development') {
+    // Permitir requisições sem origin (ex: chamadas server-to-server (Next.js), cURL, Postman)
+    if (!origin) {
       return callback(null, true);
     }
     

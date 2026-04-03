@@ -204,7 +204,8 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
   res.status(500).json({
     error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Algo deu errado',
+    message: err.message, // Mostrar sempre a mensagem real temporariamente para debugar a Render
+    stack: err.stack,
     timestamp: new Date().toISOString(),
   });
 });
