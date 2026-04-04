@@ -244,17 +244,18 @@ async function uploadToSupabase(source: Buffer | string, fileName: string, mimeT
 
         await yieldEventLoop();
 
-        // Ler do disco se for um caminho de arquivo
-        let buffer: Buffer;
-        if (typeof source === 'string') {
-            buffer = fs.readFileSync(source);
-        } else {
-            buffer = source;
-        }
+        // Ler via stream se for caminho de arquivo, para não estourar RAM com VSLs gigantes de 1GB
+        const fileData = typeof source === 'string' ? fs.createReadStream(source) : source;
 
+        // Com o supabase-js no Node, stream é suportado nativamente
+        // A flag duplex: 'half' é requerida internamente pelo Node fetch, mas o Supabase client v2 trata isso.
         const { error } = await supabase.storage
             .from(bucket)
-            .upload(uploadPath, buffer, { contentType: mimeType, upsert: false });
+            .upload(uploadPath, fileData, { 
+                contentType: mimeType, 
+                upsert: false,
+                duplex: 'half' // Assegura compatibilidade com Node fetch streams
+            } as any);
 
         if (error) {
             throw new Error(`Supabase upload error(${fileName}): ${error.message}`);
@@ -564,9 +565,9 @@ async function slowDown(ms: number = PAUSE_BETWEEN_FILES_MS): Promise<void> {
     await yieldEventLoop();
 }
 
-// Limites CONSERVADORES para Render Free (512MB RAM)
-const WARN_FILE_SIZE = 15 * 1024 * 1024; // 15MB — warning
-const MAX_FILE_SIZE = 50 * 1024 * 1024;  // 50MB — limite absoluto
+// Limites expandidos para suportar VSLs (Download via stream não esgota RAM)
+const WARN_FILE_SIZE = 100 * 1024 * 1024; // 100MB — warning
+const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB — limite absoluto
 
 // Diretório temporário para downloads (disco, não RAM)
 const TMP_DIR = path.join(os.tmpdir(), 'scaleaki-bot');
@@ -1169,10 +1170,10 @@ async function runBotCycle() {
                 try {
                     await logBot('info', `[${i + 1}/${folders.length}] Iniciando: "${folder.name}"`, folder.name);
 
-                    // --- Timeout de 5 min por pasta (conservador para Render) ---
+                    // --- Timeout de 30 min por pasta (para suportar download de VSLs grandes) ---
                     await withTimeout(
                         processSingleFolder(folder.id, folder.name),
-                        5 * 60 * 1000,
+                        30 * 60 * 1000,
                         `Processamento da pasta "${folder.name}"`
                     );
 
