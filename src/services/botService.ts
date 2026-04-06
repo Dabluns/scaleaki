@@ -251,8 +251,8 @@ async function uploadToSupabase(source: Buffer | string, fileName: string, mimeT
         // A flag duplex: 'half' é requerida internamente pelo Node fetch, mas o Supabase client v2 trata isso.
         const { error } = await supabase.storage
             .from(bucket)
-            .upload(uploadPath, fileData, { 
-                contentType: mimeType, 
+            .upload(uploadPath, fileData, {
+                contentType: mimeType,
                 upsert: false,
                 duplex: 'half' // Assegura compatibilidade com Node fetch streams
             } as any);
@@ -763,17 +763,24 @@ async function processSingleFolder(folderId: string, folderName: string) {
             switch (type) {
                 case 'vsl': {
                     if (isVideoFile(mime, file.name) && !vslUrl) {
-                        await logBot('info', `🎥 Baixando VSL video "${file.name}"...`, folderName);
-                        const tmpPath = await downloadFile(file.id, file.name);
-                        if (tmpPath) {
-                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
-                            cleanupTmpFile(tmpPath);
-                            if (url) {
-                                vslUrl = url;
-                                await logBot('success', `✅ VSL video salvo`, folderName);
-                            }
+                        const fileSize = parseInt(file.size || '0', 10);
+                        if (fileSize > (50 * 1024 * 1024)) {
+                            await logBot('warning', `🎥 VSL "${file.name}" é maior que 50MB. Aplicando Alternative 2 (Iframe do Google Drive)...`, folderName);
+                            vslUrl = `https://drive.google.com/file/d/${file.id}/preview`;
+                            await logBot('success', `✅ VSL video configurado para Iframe do Drive`, folderName);
                         } else {
-                            await logBot('warning', `❌ Falha ao baixar VSL video "${file.name}"`, folderName);
+                            await logBot('info', `🎥 Baixando VSL video "${file.name}"...`, folderName);
+                            const tmpPath = await downloadFile(file.id, file.name);
+                            if (tmpPath) {
+                                const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                                cleanupTmpFile(tmpPath);
+                                if (url) {
+                                    vslUrl = url;
+                                    await logBot('success', `✅ VSL video salvo no Supabase`, folderName);
+                                }
+                            } else {
+                                await logBot('warning', `❌ Falha ao baixar VSL video "${file.name}"`, folderName);
+                            }
                         }
                     }
                     break;
@@ -893,11 +900,17 @@ async function processSingleFolder(folderId: string, folderName: string) {
                             if (url) imagemUrl = url;
                         }
                     } else if (isVideoFile(mime, file.name) && !vslUrl) {
-                        const tmpPath = await downloadFile(file.id, file.name);
-                        if (tmpPath) {
-                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
-                            cleanupTmpFile(tmpPath);
-                            if (url) vslUrl = url;
+                        const fileSize = parseInt(file.size || '0', 10);
+                        if (fileSize > (50 * 1024 * 1024)) {
+                            await logBot('warning', `🎥 (Root) VSL "${file.name}" é maior que 50MB. Aplicando Alternative 2 (Iframe do Google Drive)...`, folderName);
+                            vslUrl = `https://drive.google.com/file/d/${file.id}/preview`;
+                        } else {
+                            const tmpPath = await downloadFile(file.id, file.name);
+                            if (tmpPath) {
+                                const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                                cleanupTmpFile(tmpPath);
+                                if (url) vslUrl = url;
+                            }
                         }
                     } else if (isTextFile(mime, file.name) && !texto) {
                         const tmpPath = await downloadFile(file.id, file.name);
@@ -963,11 +976,17 @@ async function processSingleFolder(folderId: string, folderName: string) {
                 await logBot('success', `✅ Imagem solta enviada`, folderName);
             }
         } else if (isVideoFile(mime, file.name) && !vslUrl) {
-            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
-            cleanupTmpFile(tmpPath);
-            if (url) {
-                vslUrl = url;
-                await logBot('success', `✅ Vídeo solto enviado como VSL`, folderName);
+            const fileSize = parseInt(file.size || '0', 10);
+            if (fileSize > (50 * 1024 * 1024)) {
+                await logBot('warning', `🎥 (Loose) VSL "${file.name}" solta é maior que 50MB. Aplicando Alternative 2 (Iframe do Google Drive)...`, folderName);
+                vslUrl = `https://drive.google.com/file/d/${file.id}/preview`;
+            } else {
+                const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
+                cleanupTmpFile(tmpPath);
+                if (url) {
+                    vslUrl = url;
+                    await logBot('success', `✅ Vídeo solto enviado como VSL`, folderName);
+                }
             }
         }
     }
