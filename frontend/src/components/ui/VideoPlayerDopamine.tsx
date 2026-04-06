@@ -43,11 +43,22 @@ function getVimeoEmbed(url: string): string | null {
   return null;
 }
 
+function getDriveEmbed(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('drive.google.com') && u.pathname.includes('/file/d/')) {
+      return url.endsWith('/preview') ? url : url.replace('/view', '/preview');
+    }
+  } catch { }
+  return null;
+}
+
 export const VideoPlayerDopamine: React.FC<VideoPlayerDopamineProps> = ({ src, poster, title }) => {
   const yt = getYouTubeEmbed(src);
   const vimeo = getVimeoEmbed(src);
-  const isEmbed = Boolean(yt || vimeo);
-  const embedSrc = yt || vimeo || '';
+  const drive = getDriveEmbed(src);
+  const isEmbed = Boolean(yt || vimeo || drive);
+  const embedSrc = yt || vimeo || drive || '';
 
   return (
     <div className="relative group/player rounded-[3.5rem] overflow-hidden bg-[#0a0a0a] border border-white/5 shadow-2xl">
