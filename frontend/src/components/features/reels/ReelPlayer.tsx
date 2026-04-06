@@ -126,11 +126,19 @@ export function ReelPlayer({ oferta, isActive, onView }: ReelPlayerProps) {
           </div>
 
           {/* Video Surface */}
-          <video
-            ref={videoRef} src={oferta.vsl} poster={oferta.imagem || undefined}
-            className="w-full h-full object-cover"
-            loop muted={isMuted} playsInline onClick={togglePlay}
-          />
+          {oferta.vsl.includes('drive.google.com') ? (
+            <iframe
+              src={oferta.vsl}
+              className="w-full h-[50%] absolute top-1/2 -translate-y-1/2 z-20 bg-black pointer-events-auto"
+              allow="autoplay; fullscreen"
+            />
+          ) : (
+            <video
+              ref={videoRef} src={oferta.vsl} poster={oferta.imagem || undefined}
+              className="w-full h-full object-cover relative z-10"
+              loop muted={isMuted} playsInline onClick={togglePlay}
+            />
+          )}
 
           {/* Vertical Progress Bar (Right Side) */}
           <div className="absolute top-1/4 bottom-1/4 right-3 w-[2px] bg-white/5 z-30 rounded-full overflow-hidden">
