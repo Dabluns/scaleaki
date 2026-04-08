@@ -111,9 +111,9 @@ export default function PlanoSettingsPage() {
 
   const handleSelecionarPlano = (planoId: PlanoType) => {
     const checkoutUrls = {
-      mensal: process.env.NEXT_PUBLIC_CHECKOUT_MENSAL_URL,
-      trimestral: process.env.NEXT_PUBLIC_CHECKOUT_TRIMESTRAL_URL,
-      anual: process.env.NEXT_PUBLIC_CHECKOUT_ANUAL_URL,
+      mensal: process.env.NEXT_PUBLIC_CHECKOUT_MENSAL_URL || 'https://pay.cakto.com.br/ut3ydqz_386793',
+      trimestral: process.env.NEXT_PUBLIC_CHECKOUT_TRIMESTRAL_URL || 'https://pay.cakto.com.br/tnywokf',
+      anual: process.env.NEXT_PUBLIC_CHECKOUT_ANUAL_URL || 'https://pay.cakto.com.br/wd65xuw',
     };
     const url = checkoutUrls[planoId];
     if (url && url.startsWith('http')) {
