@@ -132,6 +132,7 @@ function AuthPageContent() {
       if (data.message && data.message.includes('Verifique seu email')) {
         router.push(`/auth/check-email?email=${encodeURIComponent(registerEmail)}`);
       } else {
+        await checkAuth();
         router.push('/planos');
       }
     } catch (err: any) {
