@@ -1076,51 +1076,59 @@ async function processSingleFolder(folderId: string, folderName: string) {
     const importStatus = (hasImage && hasVsl && hasText) ? 'complete' : 'partial';
 
     // === CRIAR OFERTA (com campos de rastreabilidade) ===
-    await prisma.oferta.create({
-        data: {
-            titulo,
-            texto: texto || 'Sem descrição',
-            imagem: imagemUrl,
-            vsl: vslUrl,
-            vslDescricao: vslDescricao || null,
-            nichoId,
-            plataforma: 'facebook_ads',
-            tipoOferta: 'ecommerce',
-            status: 'ativa',
-            linguagem: 'pt_BR',
-            links: JSON.stringify(linksData),
-            metricas: JSON.stringify({}),
-            isActive: true,
-            // Novos campos de rastreabilidade
-            driveFileId: folderId,
-            importSource: 'bot_v1',
+    try {
+        await prisma.oferta.create({
+            data: {
+                titulo,
+                texto: texto || 'Sem descrição',
+                imagem: imagemUrl,
+                vsl: vslUrl,
+                vslDescricao: vslDescricao || null,
+                nichoId,
+                plataforma: 'facebook_ads',
+                tipoOferta: 'ecommerce',
+                status: 'ativa',
+                linguagem: 'pt_BR',
+                links: JSON.stringify(linksData),
+                metricas: JSON.stringify({}),
+                isActive: true,
+                // Novos campos de rastreabilidade
+                driveFileId: folderId,
+                importSource: 'bot_v1',
+                importStatus,
+                importedAt: new Date(),
+                importDetails: JSON.stringify({
+                    hasImage,
+                    hasVsl,
+                    hasText,
+                    hasHtml: !!htmlContent,
+                    creativesCount: criativoUrls.length,
+                    textLength: texto?.length || 0,
+                    classifiedByAI: !!genAI,
+                    cycleId: currentCycleId,
+                }),
+            }
+        });
+
+        const uploadSummary = [
+            imagemUrl ? '📷 Imagem' : null,
+            vslUrl ? '🎥 VSL' : null,
+            texto ? '📝 Texto' : null,
+            htmlContent ? '🌐 HTML' : null,
+            criativoUrls.length > 0 ? `🎨 ${criativoUrls.length} criativos` : null,
+        ].filter(Boolean).join(', ');
+
+        await logBot('success', `✅ Oferta "${titulo}" criada (${importStatus}) [${uploadSummary}]`, folderName, {
             importStatus,
-            importedAt: new Date(),
-            importDetails: JSON.stringify({
-                hasImage,
-                hasVsl,
-                hasText,
-                hasHtml: !!htmlContent,
-                creativesCount: criativoUrls.length,
-                textLength: texto?.length || 0,
-                classifiedByAI: !!genAI,
-                cycleId: currentCycleId,
-            }),
+            nichoId,
+        });
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            await logBot('warning', `⚠️ Oferta saltada no último momento: já registrada em um processamento paralelo.`, folderName);
+        } else {
+            throw err;
         }
-    });
-
-    const uploadSummary = [
-        imagemUrl ? '📷 Imagem' : null,
-        vslUrl ? '🎥 VSL' : null,
-        texto ? '📝 Texto' : null,
-        htmlContent ? '🌐 HTML' : null,
-        criativoUrls.length > 0 ? `🎨 ${criativoUrls.length} criativos` : null,
-    ].filter(Boolean).join(', ');
-
-    await logBot('success', `✅ Oferta "${titulo}" criada (${importStatus}) [${uploadSummary}]`, folderName, {
-        importStatus,
-        nichoId,
-    });
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────
