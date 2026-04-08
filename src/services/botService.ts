@@ -694,15 +694,9 @@ async function processSingleFolder(folderId: string, folderName: string) {
     });
 
     if (existing) {
-        // Se a oferta já existe E está completa, pular
-        const isComplete = existing.imagem && existing.vsl && existing.texto !== 'Sem descrição';
-        if (isComplete) {
-            await logBot('info', `Oferta "${folderName}" já existe e está completa, pulando.`, folderName);
-            return;
-        }
-        // Se existe mas está incompleta, deletar e reprocessar
-        await logBot('info', `Oferta "${folderName}" existe mas está INCOMPLETA — reprocessando.`, folderName);
-        await prisma.oferta.delete({ where: { id: existing.id } });
+        // Se a oferta já existe (mesmo que incompleta), pular para focar apenas em NOVAS ofertas.
+        await logBot('info', `Oferta "${folderName}" já registrada no banco. Pulando processamento para focar em pastas novas.`, folderName);
+        return;
     }
 
     await logBot('info', `===== Processando pasta de oferta: "${folderName}" =====`, folderName);
