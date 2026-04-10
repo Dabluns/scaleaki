@@ -36,7 +36,7 @@ import clsx from 'clsx';
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'ofertas' | 'users' | 'bot' | 'nichos'>('ofertas');
   const [mounted, setMounted] = useState(false);
-  const { ofertas } = useOfertaContext();
+  const { ofertas, pagination } = useOfertaContext();
   const { nichos } = useNichos();
 
   useEffect(() => {
@@ -74,8 +74,9 @@ export default function AdminPage() {
     }
   ];
 
-  // Stats for the HUD
-  const totalOffers = useCounter(ofertas.length, { duration: 1500 });
+  // Stats for the HUD - Usando o 'total' da paginação para refletir todo o banco do SaaS, ou falling back para o length
+  const totalGlobalOfertas = pagination?.total || ofertas.length;
+  const totalOffers = useCounter(totalGlobalOfertas, { duration: 1500 });
   const totalNichos = useCounter(nichos.length, { duration: 1500 });
   const systemStability = useCounter(99.8, { duration: 2000 }); // Simulated precision
   const activeNodes = useCounter(12, { duration: 1800 }); // Simulated
