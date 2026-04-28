@@ -17,6 +17,16 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/d/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'drive.google.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'zoogfqvckgglbediccwe.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },

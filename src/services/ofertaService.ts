@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import cacheService from './cacheService';
+import driveStorageService from './driveStorageService';
 import {
   Oferta,
   CreateOfertaInput,
@@ -421,48 +422,36 @@ export async function updateOferta(id: string, data: UpdateOfertaInput): Promise
 
     // Se a imagem foi substituída (nova URL diferente da antiga)
     if (data.imagem && data.imagem !== existingOferta.imagem && existingOferta.imagem) {
-      const oldImagePath = extractSupabaseStoragePath(existingOferta.imagem);
-      if (oldImagePath) {
-        filesToDelete.push(oldImagePath);
-        logger.info('Imagem antiga marcada para exclusão', {
-          oldUrl: existingOferta.imagem,
-          newUrl: data.imagem
-        });
-      }
+      filesToDelete.push({ bucket: 'images', path: existingOferta.imagem });
+      logger.info('Imagem antiga marcada para exclusão', {
+        oldUrl: existingOferta.imagem,
+        newUrl: data.imagem
+      });
     }
 
     // Se a imagem foi removida (data.imagem é null ou vazio e existia antes)
     if ((data.imagem === null || data.imagem === '') && existingOferta.imagem) {
-      const oldImagePath = extractSupabaseStoragePath(existingOferta.imagem);
-      if (oldImagePath) {
-        filesToDelete.push(oldImagePath);
-        logger.info('Imagem antiga marcada para exclusão (removida)', {
-          oldUrl: existingOferta.imagem
-        });
-      }
+      filesToDelete.push({ bucket: 'images', path: existingOferta.imagem });
+      logger.info('Imagem antiga marcada para exclusão (removida)', {
+        oldUrl: existingOferta.imagem
+      });
     }
 
     // Se o VSL foi substituído
     if (data.vsl && data.vsl !== existingOferta.vsl && existingOferta.vsl) {
-      const oldVslPath = extractSupabaseStoragePath(existingOferta.vsl);
-      if (oldVslPath) {
-        filesToDelete.push(oldVslPath);
-        logger.info('VSL antigo marcado para exclusão', {
-          oldUrl: existingOferta.vsl,
-          newUrl: data.vsl
-        });
-      }
+      filesToDelete.push({ bucket: 'videos', path: existingOferta.vsl });
+      logger.info('VSL antigo marcado para exclusão', {
+        oldUrl: existingOferta.vsl,
+        newUrl: data.vsl
+      });
     }
 
     // Se o VSL foi removido
     if ((data.vsl === null || data.vsl === '') && existingOferta.vsl) {
-      const oldVslPath = extractSupabaseStoragePath(existingOferta.vsl);
-      if (oldVslPath) {
-        filesToDelete.push(oldVslPath);
-        logger.info('VSL antigo marcado para exclusão (removido)', {
-          oldUrl: existingOferta.vsl
-        });
-      }
+      filesToDelete.push({ bucket: 'videos', path: existingOferta.vsl });
+      logger.info('VSL antigo marcado para exclusão (removido)', {
+        oldUrl: existingOferta.vsl
+      });
     }
 
     // Comparar arrays de links para detectar imagens removidas
@@ -485,13 +474,10 @@ export async function updateOferta(id: string, data: UpdateOfertaInput): Promise
 
         // Marcar cada link removido para exclusão
         removedLinks.forEach(removedLink => {
-          const linkPath = extractSupabaseStoragePath(removedLink);
-          if (linkPath) {
-            filesToDelete.push(linkPath);
-            logger.info('Link/imagem adicional marcada para exclusão', {
-              oldUrl: removedLink
-            });
-          }
+          filesToDelete.push({ bucket: 'images', path: removedLink });
+          logger.info('Link/imagem adicional marcada para exclusão', {
+            oldUrl: removedLink
+          });
         });
 
         if (removedLinks.length > 0) {
@@ -508,51 +494,24 @@ export async function updateOferta(id: string, data: UpdateOfertaInput): Promise
       }
     }
 
-    // Deletar arquivos antigos do storage (em paralelo)
+    // Deletar arquivos antigos do storage (Drive ou Supabase legado)
     if (filesToDelete.length > 0) {
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-        // Usar SERVICE_ROLE_KEY para deletar (tem permissões administrativas)
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+        const deletePromises = filesToDelete.map(async ({ bucket, path }) => {
+          try {
+            // Reconstruir URL e usar driveStorageService
+            const url = path; // path aqui contém a URL original
+            await driveStorageService.deleteFileFromUrl(url);
+          } catch (err) {
+            logger.warn('Erro ao deletar arquivo antigo do storage', {
+              bucket,
+              path,
+              error: err instanceof Error ? err.message : String(err)
+            });
+          }
+        });
 
-        if (supabaseUrl && supabaseKey) {
-          const deletePromises = filesToDelete.map(async ({ bucket, path }) => {
-            try {
-              const response = await fetch(
-                `${supabaseUrl}/storage/v1/object/${bucket}/${path}`,
-                {
-                  method: 'DELETE',
-                  headers: {
-                    'Authorization': `Bearer ${supabaseKey}`,
-                    'apikey': supabaseKey
-                  }
-                }
-              );
-
-              if (response.ok) {
-                logger.info('Arquivo antigo deletado do storage', { bucket, path });
-              } else {
-                const errorText = await response.text().catch(() => 'Unknown error');
-                logger.warn('Falha ao deletar arquivo antigo do storage', {
-                  bucket,
-                  path,
-                  status: response.status,
-                  error: errorText
-                });
-              }
-            } catch (err) {
-              logger.warn('Erro ao deletar arquivo antigo do storage', {
-                bucket,
-                path,
-                error: err instanceof Error ? err.message : String(err)
-              });
-            }
-          });
-
-          await Promise.allSettled(deletePromises);
-        } else {
-          logger.warn('Credenciais do Supabase não configuradas, pulando exclusão de arquivos antigos');
-        }
+        await Promise.allSettled(deletePromises);
       } catch (err) {
         logger.error('Erro durante limpeza de arquivos antigos', {
           error: err instanceof Error ? err.message : String(err)
@@ -596,21 +555,30 @@ export async function updateOferta(id: string, data: UpdateOfertaInput): Promise
   }
 }
 
-// Helper para extrair bucket e path de URL do Supabase Storage
-function extractSupabaseStoragePath(url: string | null): { bucket: string; path: string } | null {
+// Helper para extrair informações de storage de uma URL (Drive ou Supabase legado)
+function extractStorageInfo(url: string | null): { type: 'drive' | 'supabase' | 'unknown'; fileId?: string; bucket?: string; path?: string } | null {
   if (!url) return null;
 
   try {
-    // URL formato: https://xxxxx.supabase.co/storage/v1/object/public/BUCKET/PATH
-    const match = url.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)/);
-    if (match) {
+    // Verificar se é URL do Google Drive
+    if (driveStorageService.isDriveUrl(url)) {
+      const fileId = driveStorageService.extractFileId(url);
+      if (fileId) {
+        return { type: 'drive', fileId };
+      }
+    }
+
+    // Verificar se é URL do Supabase (legado)
+    const supabaseMatch = url.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)/);
+    if (supabaseMatch) {
       return {
-        bucket: match[1],
-        path: match[2]
+        type: 'supabase',
+        bucket: supabaseMatch[1],
+        path: supabaseMatch[2]
       };
     }
   } catch (error) {
-    logger.warn('Failed to extract storage path from URL', { url });
+    logger.warn('Failed to extract storage info from URL', { url });
   }
   return null;
 }
@@ -626,67 +594,32 @@ export async function deleteOferta(id: string): Promise<void> {
       throw new Error('Oferta não encontrada');
     }
 
-    // Deletar arquivos do Supabase Storage (se existirem)
-    const filesToDelete: Array<{ bucket: string; path: string }> = [];
+    // Deletar arquivos do storage (Drive ou Supabase legado)
+    const urlsToDelete: string[] = [];
 
     // Imagem
     if (existingOferta.imagem) {
-      const imagePath = extractSupabaseStoragePath(existingOferta.imagem);
-      if (imagePath) filesToDelete.push(imagePath);
+      urlsToDelete.push(existingOferta.imagem);
     }
 
     // VSL
     if (existingOferta.vsl) {
-      const vslPath = extractSupabaseStoragePath(existingOferta.vsl);
-      if (vslPath) filesToDelete.push(vslPath);
+      urlsToDelete.push(existingOferta.vsl);
     }
 
-    // Deletar arquivos do storage (em paralelo)
-    if (filesToDelete.length > 0) {
+    // Deletar arquivos do storage
+    if (urlsToDelete.length > 0) {
       try {
-        // Usar API do Supabase via HTTP
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-        // Usar SERVICE_ROLE_KEY para deletar (tem permissões administrativas)
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+        const deletePromises = urlsToDelete.map(url =>
+          driveStorageService.deleteFileFromUrl(url).catch(err => {
+            logger.warn('Error deleting file from storage', {
+              url: url.substring(0, 80),
+              error: err instanceof Error ? err.message : String(err)
+            });
+          })
+        );
 
-        if (supabaseUrl && supabaseKey) {
-          const deletePromises = filesToDelete.map(async ({ bucket, path }) => {
-            try {
-              const response = await fetch(
-                `${supabaseUrl}/storage/v1/object/${bucket}/${path}`,
-                {
-                  method: 'DELETE',
-                  headers: {
-                    'Authorization': `Bearer ${supabaseKey}`,
-                    'apikey': supabaseKey
-                  }
-                }
-              );
-
-              if (response.ok) {
-                logger.info('File deleted from storage', { bucket, path });
-              } else {
-                const errorText = await response.text().catch(() => 'Unknown error');
-                logger.warn('Failed to delete file from storage', {
-                  bucket,
-                  path,
-                  status: response.status,
-                  error: errorText
-                });
-              }
-            } catch (err) {
-              logger.warn('Error deleting file from storage', {
-                bucket,
-                path,
-                error: err instanceof Error ? err.message : String(err)
-              });
-            }
-          });
-
-          await Promise.allSettled(deletePromises);
-        } else {
-          logger.warn('Supabase credentials not configured, skipping storage deletion');
-        }
+        await Promise.allSettled(deletePromises);
       } catch (err) {
         logger.error('Error during storage cleanup', {
           error: err instanceof Error ? err.message : String(err)
@@ -703,7 +636,7 @@ export async function deleteOferta(id: string): Promise<void> {
     // Invalidar cache relacionado
     await invalidateOfertaCache({ ofertaId: id, nichoId: existingOferta.nichoId });
 
-    logger.info('Oferta deleted successfully', { ofertaId: id, filesDeleted: filesToDelete.length });
+    logger.info('Oferta deleted successfully', { ofertaId: id, filesDeleted: urlsToDelete.length });
   } catch (error) {
     logger.error('Error deleting oferta', { id, error: error instanceof Error ? error.message : String(error) });
     throw error;
