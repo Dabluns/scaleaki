@@ -1,5 +1,3 @@
-import { google } from 'googleapis';
-import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Readable } from 'stream';
 import * as fs from 'fs';
@@ -9,53 +7,23 @@ import mammoth from 'mammoth';
 import prisma from '../config/database';
 import logger from '../config/logger';
 import { randomUUID } from 'crypto';
+import driveStorageService from './driveStorageService';
 
 // ─────────────────────────────────────────────────────────────────
-// Bot Service v3.0 — Render Free Tier Optimized (512MB RAM)
-// Disk-based downloads, env credentials, slow & steady processing
+// Bot Service v4.0 — Google Drive Storage (sem Supabase)
+// Usa Drive direto para imagens/vídeos, sem re-upload
 // ─────────────────────────────────────────────────────────────────
 
 // --- CONFIGURAÇÕES ---
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID || '';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-const BUCKET_IMAGES = 'images';
-const BUCKET_VIDEOS = 'videos';
 
 // Pausas para economizar RAM (Render Free = 512MB)
 const PAUSE_BETWEEN_FILES_MS = 2000;  // 2s entre cada arquivo
 const PAUSE_BETWEEN_OFFERS_MS = 5000; // 5s entre cada oferta
 
-// Instâncias
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// Auth do Google Drive — escreve arquivo de credenciais se vier de env var
-const CREDENTIALS_FILE = 'google-credentials.json';
-let drive: any = null;
-try {
-    // Se tiver Base64 na env var, escrever o arquivo no disco ANTES de autenticar
-    // Isso é idêntico a ter o arquivo localmente — zero risco de corrupção
-    if (process.env.GOOGLE_CREDENTIALS_BASE64) {
-        const decoded = Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64').toString('utf-8');
-        fs.writeFileSync(CREDENTIALS_FILE, decoded, 'utf-8');
-        logger.info('Google Drive: arquivo de credenciais criado a partir de GOOGLE_CREDENTIALS_BASE64');
-    } else if (process.env.GOOGLE_CREDENTIALS_JSON) {
-        fs.writeFileSync(CREDENTIALS_FILE, process.env.GOOGLE_CREDENTIALS_JSON, 'utf-8');
-        logger.info('Google Drive: arquivo de credenciais criado a partir de GOOGLE_CREDENTIALS_JSON');
-    }
-
-    // Sempre usar keyFile — funciona 100% igual ao desenvolvimento local
-    const auth = new google.auth.GoogleAuth({
-        keyFile: CREDENTIALS_FILE,
-        scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-    });
-    drive = google.drive({ version: 'v3', auth });
-    logger.info('Google Drive auth: OK ✅');
-} catch (err) {
-    logger.warn('Google Drive auth failed (credentials missing?)', err);
-}
+// Google Drive client (inicializado pelo driveStorageService)
+const drive = driveStorageService.getDriveClient();
 
 // Auth do Gemini
 let genAI: any = null;
@@ -78,8 +46,6 @@ function validateBotConfig(): { valid: boolean; errors: string[]; warnings: stri
 
     if (!GOOGLE_DRIVE_FOLDER_ID) errors.push('DRIVE_FOLDER_ID não configurado');
     if (!drive) errors.push('Google Drive auth falhou — google-credentials.json ausente ou inválido');
-    if (!SUPABASE_URL) errors.push('NEXT_PUBLIC_SUPABASE_URL não configurado');
-    if (!SUPABASE_KEY) errors.push('SUPABASE_SERVICE_ROLE_KEY não configurado');
     if (!GEMINI_API_KEY) warnings.push('GEMINI_API_KEY não configurado — classificação de nicho por IA desabilitada');
 
     return { valid: errors.length === 0, errors, warnings };
@@ -229,53 +195,33 @@ async function withTimeout<T>(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// uploadToSupabase v3.0 — Aceita Buffer OU caminho de arquivo
-// Quando recebe caminho, lê do disco e limpa após upload
+// getPublicDriveUrl — Torna arquivo público e retorna URL
+// Substitui uploadToSupabase: sem download/re-upload necessário!
 // ─────────────────────────────────────────────────────────────────
 
-async function uploadToSupabase(source: Buffer | string, fileName: string, mimeType: string, bucket: string): Promise<string | null> {
+async function getPublicDriveUrl(fileId: string, fileName: string, mimeType: string): Promise<string | null> {
     return withRetry(async () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const timestamp = Date.now();
-        const cleanName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const uploadPath = `${year}/${month}/${timestamp}-${cleanName}`;
-
         await yieldEventLoop();
 
-        // Ler via stream se for caminho de arquivo, para não estourar RAM com VSLs gigantes de 1GB
-        const fileData = typeof source === 'string' ? fs.createReadStream(source) : source;
-
-        // Com o supabase-js no Node, stream é suportado nativamente
-        // A flag duplex: 'half' é requerida internamente pelo Node fetch, mas o Supabase client v2 trata isso.
-        const { error } = await supabase.storage
-            .from(bucket)
-            .upload(uploadPath, fileData, {
-                contentType: mimeType,
-                upsert: false,
-                duplex: 'half' // Assegura compatibilidade com Node fetch streams
-            } as any);
-
-        if (error) {
-            throw new Error(`Supabase upload error(${fileName}): ${error.message}`);
+        // Tornar arquivo público (qualquer pessoa com link pode ver)
+        const success = await driveStorageService.makeFilePublic(fileId);
+        if (!success) {
+            throw new Error(`Falha ao tornar arquivo "${fileName}" público`);
         }
 
-        const { data } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
-        return data.publicUrl;
+        // Retornar URL baseado no tipo
+        const isVideo = mimeType.includes('video/');
+        const url = isVideo
+            ? driveStorageService.getPublicVideoUrl(fileId)
+            : driveStorageService.getPublicImageUrl(fileId);
 
-        // Se a source era arquivo temporário, limpar do disco
-    }, `Upload "${fileName}"`, 3, 2000);
+        return url;
+    }, `DrivePublicUrl "${fileName}"`, 3, 2000);
 }
 
 async function deleteFileFromUrl(url: string) {
     try {
-        const filePath = url.split(`${BUCKET_IMAGES}/`).pop() || url.split(`${BUCKET_VIDEOS}/`).pop();
-        if (!filePath) return;
-
-        const bucket = url.includes(BUCKET_IMAGES) ? BUCKET_IMAGES : BUCKET_VIDEOS;
-        await supabase.storage.from(bucket).remove([filePath]);
-        logger.info(`Rollback: Deleted file ${filePath}`);
+        await driveStorageService.deleteFileFromUrl(url);
     } catch (err) {
         logger.error(`Rollback failed for ${url}`, err);
     }
@@ -757,24 +703,13 @@ async function processSingleFolder(folderId: string, folderName: string) {
             switch (type) {
                 case 'vsl': {
                     if (isVideoFile(mime, file.name) && !vslUrl) {
-                        const fileSize = parseInt(file.size || '0', 10);
-                        if (fileSize > (50 * 1024 * 1024)) {
-                            await logBot('warning', `🎥 VSL "${file.name}" é maior que 50MB. Aplicando Alternative 2 (Iframe do Google Drive)...`, folderName);
-                            vslUrl = `https://drive.google.com/file/d/${file.id}/preview`;
-                            await logBot('success', `✅ VSL video configurado para Iframe do Drive`, folderName);
+                        await logBot('info', `🎥 Configurando VSL video "${file.name}" via Drive...`, folderName);
+                        const url = await getPublicDriveUrl(file.id, file.name, mime || 'video/mp4');
+                        if (url) {
+                            vslUrl = url;
+                            await logBot('success', `✅ VSL video configurado via Drive`, folderName);
                         } else {
-                            await logBot('info', `🎥 Baixando VSL video "${file.name}"...`, folderName);
-                            const tmpPath = await downloadFile(file.id, file.name);
-                            if (tmpPath) {
-                                const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
-                                cleanupTmpFile(tmpPath);
-                                if (url) {
-                                    vslUrl = url;
-                                    await logBot('success', `✅ VSL video salvo no Supabase`, folderName);
-                                }
-                            } else {
-                                await logBot('warning', `❌ Falha ao baixar VSL video "${file.name}"`, folderName);
-                            }
+                            await logBot('warning', `❌ Falha ao configurar VSL video "${file.name}"`, folderName);
                         }
                     }
                     break;
@@ -856,29 +791,21 @@ async function processSingleFolder(folderId: string, folderName: string) {
 
                 case 'criativo': {
                     if (isImageFile(mime, file.name)) {
-                        await logBot('info', `🖼️ Baixando imagem criativa "${file.name}"...`, folderName);
-                        const tmpPath = await downloadFile(file.id, file.name);
-                        if (tmpPath) {
-                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
-                            cleanupTmpFile(tmpPath);
-                            if (url) {
-                                if (!imagemUrl) {
-                                    imagemUrl = url;
-                                    await logBot('success', `✅ Imagem principal definida`, folderName);
-                                }
-                                criativoUrls.push(url);
+                        await logBot('info', `🖼️ Configurando imagem criativa "${file.name}" via Drive...`, folderName);
+                        const url = await getPublicDriveUrl(file.id, file.name, mime || 'image/jpeg');
+                        if (url) {
+                            if (!imagemUrl) {
+                                imagemUrl = url;
+                                await logBot('success', `✅ Imagem principal definida via Drive`, folderName);
                             }
+                            criativoUrls.push(url);
                         }
                     } else if (isVideoFile(mime, file.name)) {
-                        await logBot('info', `🎬 Baixando vídeo criativo "${file.name}"...`, folderName);
-                        const tmpPath = await downloadFile(file.id, file.name);
-                        if (tmpPath) {
-                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
-                            cleanupTmpFile(tmpPath);
-                            if (url) {
-                                criativoUrls.push(url);
-                                await logBot('success', `✅ Vídeo criativo enviado`, folderName);
-                            }
+                        await logBot('info', `🎬 Configurando vídeo criativo "${file.name}" via Drive...`, folderName);
+                        const url = await getPublicDriveUrl(file.id, file.name, mime || 'video/mp4');
+                        if (url) {
+                            criativoUrls.push(url);
+                            await logBot('success', `✅ Vídeo criativo configurado via Drive`, folderName);
                         }
                     }
                     break;
@@ -887,25 +814,11 @@ async function processSingleFolder(folderId: string, folderName: string) {
                 default: {
                     logger.info(`Bot:     🔍 Unknown subfolder type, trying generic for "${file.name}"`);
                     if (isImageFile(mime, file.name) && !imagemUrl) {
-                        const tmpPath = await downloadFile(file.id, file.name);
-                        if (tmpPath) {
-                            const url = await uploadToSupabase(tmpPath, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
-                            cleanupTmpFile(tmpPath);
-                            if (url) imagemUrl = url;
-                        }
+                        const url = await getPublicDriveUrl(file.id, file.name, mime || 'image/jpeg');
+                        if (url) imagemUrl = url;
                     } else if (isVideoFile(mime, file.name) && !vslUrl) {
-                        const fileSize = parseInt(file.size || '0', 10);
-                        if (fileSize > (50 * 1024 * 1024)) {
-                            await logBot('warning', `🎥 (Root) VSL "${file.name}" é maior que 50MB. Aplicando Alternative 2 (Iframe do Google Drive)...`, folderName);
-                            vslUrl = `https://drive.google.com/file/d/${file.id}/preview`;
-                        } else {
-                            const tmpPath = await downloadFile(file.id, file.name);
-                            if (tmpPath) {
-                                const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
-                                cleanupTmpFile(tmpPath);
-                                if (url) vslUrl = url;
-                            }
-                        }
+                        const url = await getPublicDriveUrl(file.id, file.name, mime || 'video/mp4');
+                        if (url) vslUrl = url;
                     } else if (isTextFile(mime, file.name) && !texto) {
                         const tmpPath = await downloadFile(file.id, file.name);
                         if (tmpPath) {
@@ -945,42 +858,40 @@ async function processSingleFolder(folderId: string, folderName: string) {
             continue;
         }
 
-        const tmpPath = await downloadFile(file.id, file.name);
-        if (!tmpPath) continue;
-
+        // Arquivos de texto/docx ainda precisam de download para ler o conteúdo
         if (isDocxFile(mime, file.name) && !texto) {
-            const buf = readTmpFileAsBuffer(tmpPath);
-            const docxText = await extractTextFromDocx(buf, file.name);
-            cleanupTmpFile(tmpPath);
-            if (docxText) {
-                texto = docxText;
-                vslDescricao = texto.substring(0, 500);
-                await logBot('success', `✅ Word (.docx) solto carregado (${texto.length} chars)`, folderName);
+            const tmpPath = await downloadFile(file.id, file.name);
+            if (tmpPath) {
+                const buf = readTmpFileAsBuffer(tmpPath);
+                const docxText = await extractTextFromDocx(buf, file.name);
+                cleanupTmpFile(tmpPath);
+                if (docxText) {
+                    texto = docxText;
+                    vslDescricao = texto.substring(0, 500);
+                    await logBot('success', `✅ Word (.docx) solto carregado (${texto.length} chars)`, folderName);
+                }
             }
         } else if (isTextFile(mime, file.name) && !texto) {
-            texto = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
-            cleanupTmpFile(tmpPath);
-            vslDescricao = texto.substring(0, 500);
-            await logBot('success', `✅ Arquivo de texto solto carregado (${texto.length} chars)`, folderName);
+            const tmpPath = await downloadFile(file.id, file.name);
+            if (tmpPath) {
+                texto = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
+                cleanupTmpFile(tmpPath);
+                vslDescricao = texto.substring(0, 500);
+                await logBot('success', `✅ Arquivo de texto solto carregado (${texto.length} chars)`, folderName);
+            }
         } else if (isImageFile(mime, file.name) && !imagemUrl) {
-            const url = await uploadToSupabase(tmpPath, file.name, mime || 'image/jpeg', BUCKET_IMAGES);
-            cleanupTmpFile(tmpPath);
+            // Sem download — usa URL do Drive diretamente
+            const url = await getPublicDriveUrl(file.id, file.name, mime || 'image/jpeg');
             if (url) {
                 imagemUrl = url;
-                await logBot('success', `✅ Imagem solta enviada`, folderName);
+                await logBot('success', `✅ Imagem solta configurada via Drive`, folderName);
             }
         } else if (isVideoFile(mime, file.name) && !vslUrl) {
-            const fileSize = parseInt(file.size || '0', 10);
-            if (fileSize > (50 * 1024 * 1024)) {
-                await logBot('warning', `🎥 (Loose) VSL "${file.name}" solta é maior que 50MB. Aplicando Alternative 2 (Iframe do Google Drive)...`, folderName);
-                vslUrl = `https://drive.google.com/file/d/${file.id}/preview`;
-            } else {
-                const url = await uploadToSupabase(tmpPath, file.name, mime || 'video/mp4', BUCKET_VIDEOS);
-                cleanupTmpFile(tmpPath);
-                if (url) {
-                    vslUrl = url;
-                    await logBot('success', `✅ Vídeo solto enviado como VSL`, folderName);
-                }
+            // Sem download — usa URL do Drive diretamente
+            const url = await getPublicDriveUrl(file.id, file.name, mime || 'video/mp4');
+            if (url) {
+                vslUrl = url;
+                await logBot('success', `✅ Vídeo solto configurado como VSL via Drive`, folderName);
             }
         }
     }

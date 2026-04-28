@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { storageCleanupService } from '../services/storageCleanupService';
+import { runStorageCleanup } from '../services/storageCleanupService';
 import logger from '../config/logger';
 
 // Agendar limpeza diária às 03:00 AM
@@ -9,9 +9,9 @@ export const startCleanupJob = () => {
     cron.schedule('0 3 * * *', async () => {
         logger.info('🕒 Executando limpeza agendada de Storage (03:00 AM)...');
         try {
-            const result = await storageCleanupService.runCleanup();
+            const result = await runStorageCleanup();
             if (result.success) {
-                logger.info(`✅ Limpeza agendada concluída. Arquivos removidos: ${result.deleted}`);
+                logger.info(`✅ Limpeza agendada concluída. Arquivos removidos: ${result.deletedFiles}`);
             }
         } catch (error) {
             logger.error('❌ Falha na limpeza agendada:', error);

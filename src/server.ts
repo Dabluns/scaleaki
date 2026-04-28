@@ -25,6 +25,7 @@ import keysRoutes from './routes/keysRoutes';
 import webhooksRoutes from './routes/webhooksRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import botRoutes from './routes/botRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 import { botService } from './services/botService';
 import { startBillingMonitor } from './services/billingService';
 
@@ -153,6 +154,7 @@ app.use('/keys', keysRoutes);
 app.use('/webhooks', webhooksRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/bot', botRoutes);
+app.use('/upload', uploadRoutes);
 
 import { startCleanupJob } from './jobs/cleanupJob';
 
