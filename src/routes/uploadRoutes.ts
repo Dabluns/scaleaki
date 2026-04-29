@@ -1,9 +1,20 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const multer = require('multer');
 import driveStorageService from '../services/driveStorageService';
 import logger from '../config/logger';
 
 const router = Router();
+
+// Interface para o arquivo processado pelo multer
+interface MulterFile {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    size: number;
+    buffer: Buffer;
+}
 
 // Multer para processar uploads em memória (max 700MB para vídeos)
 const upload = multer({
@@ -20,7 +31,7 @@ const upload = multer({
  */
 router.post('/drive', upload.single('file'), async (req: Request, res: Response) => {
     try {
-        const file = req.file;
+        const file = (req as any).file as MulterFile | undefined;
         const kind = String(req.body.kind || ''); // 'vsl' | 'imagem' | 'extra' | 'avatar'
 
         if (!file) {
