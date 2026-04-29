@@ -660,6 +660,7 @@ async function processSingleFolder(folderId: string, folderName: string) {
     let imagemUrl: string | null = null;
     let vslUrl: string | null = null;
     let vslDescricao = '';
+    let transcricaoUrl: string | null = null;
     const criativoUrls: string[] = [];
 
     // Separar subpastas e arquivos soltos
@@ -727,7 +728,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                             if (docText.length > 5) {
                                 texto = docText;
                                 vslDescricao = texto.substring(0, 500);
-                                await logBot('success', `✅ Transcrição carregada (${texto.length} chars)`, folderName);
+                                // Tornar Google Doc público também
+                                const docUrl = await getPublicDriveUrl(file.id, file.name, 'application/vnd.google-apps.document');
+                                if (docUrl) transcricaoUrl = docUrl;
+                                await logBot('success', `✅ Transcrição carregada (${texto.length} chars) + URL Drive`, folderName);
                             } else {
                                 await logBot('warning', `⚠️ Google Doc "${file.name}" está vazio ou muito curto`, folderName);
                             }
@@ -744,7 +748,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                             if (docxText) {
                                 texto = docxText;
                                 vslDescricao = texto.substring(0, 500);
-                                await logBot('success', `✅ Word (.docx) carregado (${texto.length} chars)`, folderName);
+                                // Tornar .docx público no Drive
+                                const docUrl = await getPublicDriveUrl(file.id, file.name, mime || 'application/octet-stream');
+                                if (docUrl) transcricaoUrl = docUrl;
+                                await logBot('success', `✅ Word (.docx) carregado (${texto.length} chars) + URL Drive`, folderName);
                             }
                         }
                     } else if (isTextFile(mime, file.name) && !texto) {
@@ -756,7 +763,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                             if (fullText.length > 5) {
                                 texto = fullText;
                                 vslDescricao = texto.substring(0, 500);
-                                await logBot('success', `✅ Transcrição carregada (${texto.length} chars)`, folderName);
+                                // Tornar .txt público no Drive
+                                const txtUrl = await getPublicDriveUrl(file.id, file.name, mime || 'text/plain');
+                                if (txtUrl) transcricaoUrl = txtUrl;
+                                await logBot('success', `✅ Transcrição carregada (${texto.length} chars) + URL Drive`, folderName);
                             } else {
                                 await logBot('warning', `⚠️ Arquivo "${file.name}" muito curto (${fullText.length} chars)`, folderName);
                             }
@@ -825,6 +835,9 @@ async function processSingleFolder(folderId: string, folderName: string) {
                             texto = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
                             cleanupTmpFile(tmpPath);
                             vslDescricao = texto.substring(0, 500);
+                            // Tornar público no Drive
+                            const txtUrl = await getPublicDriveUrl(file.id, file.name, mime || 'text/plain');
+                            if (txtUrl) transcricaoUrl = txtUrl;
                         }
                     }
                     break;
@@ -868,7 +881,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                 if (docxText) {
                     texto = docxText;
                     vslDescricao = texto.substring(0, 500);
-                    await logBot('success', `✅ Word (.docx) solto carregado (${texto.length} chars)`, folderName);
+                    // Tornar .docx público no Drive
+                    const docUrl = await getPublicDriveUrl(file.id, file.name, mime || 'application/octet-stream');
+                    if (docUrl) transcricaoUrl = docUrl;
+                    await logBot('success', `✅ Word (.docx) solto carregado (${texto.length} chars) + URL Drive`, folderName);
                 }
             }
         } else if (isTextFile(mime, file.name) && !texto) {
@@ -877,7 +893,10 @@ async function processSingleFolder(folderId: string, folderName: string) {
                 texto = readTmpFileAsBuffer(tmpPath).toString('utf-8').trim();
                 cleanupTmpFile(tmpPath);
                 vslDescricao = texto.substring(0, 500);
-                await logBot('success', `✅ Arquivo de texto solto carregado (${texto.length} chars)`, folderName);
+                // Tornar .txt público no Drive
+                const txtUrl = await getPublicDriveUrl(file.id, file.name, mime || 'text/plain');
+                if (txtUrl) transcricaoUrl = txtUrl;
+                await logBot('success', `✅ Arquivo de texto solto carregado (${texto.length} chars) + URL Drive`, folderName);
             }
         } else if (isImageFile(mime, file.name) && !imagemUrl) {
             // Sem download — usa URL do Drive diretamente
@@ -979,6 +998,7 @@ async function processSingleFolder(folderId: string, folderName: string) {
     const linksData: Record<string, any> = {};
     if (criativoUrls.length > 0) linksData.criativos = criativoUrls;
     if (htmlContent) linksData.html = htmlContent;
+    if (transcricaoUrl) linksData.transcricao = transcricaoUrl;
 
     // ═══ FASE 1.5 — Determinar Import Status ═══
     const hasImage = !!imagemUrl;
