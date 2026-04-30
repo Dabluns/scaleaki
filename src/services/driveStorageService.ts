@@ -75,6 +75,42 @@ function getViewUrl(fileId: string): string {
     return `https://drive.google.com/uc?export=view&id=${fileId}`;
 }
 
+/**
+ * Gera URL de thumbnail do Google Drive
+ * Funciona para vídeos, PDFs e imagens públicas
+ * @param fileId - ID do arquivo no Drive
+ * @param width - Largura desejada (default: 800px)
+ */
+function getThumbnailUrl(fileId: string, width: number = 800): string {
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${width}`;
+}
+
+/**
+ * Busca a thumbnailLink oficial via API do Drive (melhor qualidade)
+ * Requer que o arquivo já esteja público
+ * Retorna null se não conseguir obter
+ */
+async function fetchThumbnailLink(fileId: string): Promise<string | null> {
+    if (!drive) return null;
+
+    try {
+        const res = await drive.files.get({
+            fileId,
+            fields: 'thumbnailLink',
+        });
+
+        const link = res.data.thumbnailLink;
+        if (link) {
+            // thumbnailLink vem com =s220 (220px), trocar para tamanho maior
+            return link.replace(/=s\d+$/, '=s800');
+        }
+    } catch (err) {
+        logger.warn(`DriveStorage: Falha ao buscar thumbnailLink para ${fileId}`, err);
+    }
+
+    return null;
+}
+
 // ─────────────────────────────────────────────────────────────────
 // DETECÇÃO E EXTRAÇÃO DE URLs
 // ─────────────────────────────────────────────────────────────────
@@ -394,6 +430,8 @@ export const driveStorageService = {
     getPublicVideoUrl,
     getDirectDownloadUrl,
     getViewUrl,
+    getThumbnailUrl,
+    fetchThumbnailLink,
 
     // Detecção
     extractFileId,
