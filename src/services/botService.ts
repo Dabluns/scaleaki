@@ -925,6 +925,30 @@ async function processSingleFolder(folderId: string, folderName: string) {
     };
     await logBot('info', `Resumo para "${titulo}": Img=${summary.imagem ? '✅' : '❌'} VSL=${summary.vsl ? '✅' : '❌'} Texto=${summary.texto}ch HTML=${summary.html}ch Criativos=${summary.criativos}`, folderName, summary);
 
+    // === AUTO-THUMBNAIL: Gerar thumbnail do VSL se não houver imagem ===
+    if (!imagemUrl && vslUrl) {
+        await logBot('info', `🖼️ Sem imagem dedicada — gerando thumbnail do VSL...`, folderName);
+        const vslFileId = driveStorageService.extractFileId(vslUrl);
+        if (vslFileId) {
+            try {
+                // Tentar buscar thumbnailLink oficial da API (melhor qualidade)
+                const apiThumbnail = await driveStorageService.fetchThumbnailLink(vslFileId);
+                if (apiThumbnail) {
+                    imagemUrl = apiThumbnail;
+                    await logBot('success', `✅ Thumbnail gerada via API do Drive`, folderName);
+                } else {
+                    // Fallback: usar endpoint público de thumbnail
+                    imagemUrl = driveStorageService.getThumbnailUrl(vslFileId, 800);
+                    await logBot('success', `✅ Thumbnail gerada via URL pública do Drive`, folderName);
+                }
+            } catch (err) {
+                // Último fallback: usar thumbnail simples
+                imagemUrl = driveStorageService.getThumbnailUrl(vslFileId, 800);
+                await logBot('warning', `⚠️ Usando thumbnail fallback para VSL`, folderName);
+            }
+        }
+    }
+
     // === CATEGORIZAR COM GEMINI ===
     let nichoId = '';
     const availableNiches = await prisma.nicho.findMany({ select: { id: true, nome: true } });
