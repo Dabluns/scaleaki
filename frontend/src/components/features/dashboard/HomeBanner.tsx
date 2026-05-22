@@ -41,7 +41,7 @@ export const HomeBanner: React.FC = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            Nova Geração de Escala Ativa
+            Mapeamento em Tempo Real
           </div>
 
           {/* Headline Cinematográfica e Impactante */}
@@ -51,9 +51,9 @@ export const HomeBanner: React.FC = () => {
               textShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(34, 197, 94, 0.2)',
             }}
           >
-            INTELIGÊNCIA<br />
+            SWIPE DE<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-200 to-cyan-400 animate-glow">
-              EM ESCALA
+              ESCALA
             </span>
           </h1>
 
@@ -91,7 +91,7 @@ export const HomeBanner: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400 shadow-inner group-hover/item:scale-110 transition-transform duration-500">
                 <Sparkles className="w-7 h-7" />
               </div>
-              <div className="text-[10px] md:text-xs font-black text-white/50 uppercase tracking-widest whitespace-nowrap">IA Generativa</div>
+              <div className="text-[10px] md:text-xs font-black text-white/50 uppercase tracking-widest whitespace-nowrap">Modelagem Direta</div>
             </div>
           </div>
         </div>
