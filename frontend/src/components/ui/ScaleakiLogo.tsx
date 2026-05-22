@@ -1,60 +1,35 @@
 import React from 'react';
+import Image from 'next/image';
 
-interface ScaleakiLogoProps extends React.SVGProps<SVGSVGElement> {
+interface ScaleakiLogoProps {
   size?: number;
   className?: string;
+  showText?: boolean;
 }
 
-export const ScaleakiLogo: React.FC<ScaleakiLogoProps> = ({ size = 40, className = '', ...props }) => {
+export const ScaleakiLogo: React.FC<ScaleakiLogoProps> = ({ size = 40, className = '', showText = false }) => {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      {...props}
-    >
-      <defs>
-        <linearGradient id="scaleaki-brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#22c55e" />
-          <stop offset="100%" stopColor="#15803d" />
-        </linearGradient>
-      </defs>
-      
-      {/* Background Rounded Square */}
-      <rect
-        x="0"
-        y="0"
-        width="100"
-        height="100"
-        rx="24"
-        fill="url(#scaleaki-brand-grad)"
-      />
-      
-      {/* White Circle */}
-      <circle
-        cx="50"
-        cy="50"
-        r="24"
-        stroke="white"
-        strokeWidth="8"
-        fill="none"
-      />
-      
-      {/* The Letter S */}
-      <text
-        x="50"
-        y="64"
-        fontFamily="Arial, system-ui, sans-serif"
-        fontWeight="900"
-        fontSize="40"
-        fill="white"
-        textAnchor="middle"
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div 
+        className="relative flex items-center justify-center shrink-0"
+        style={{ width: size, height: size }}
       >
-        S
-      </text>
-    </svg>
+        <Image
+          src="/branding/scaleaki.png"
+          alt="Scaleaki Logo Original"
+          width={size * 2} // Importante para manter nítido em telas retina (high-DPI)
+          height={size * 2}
+          className="w-full h-full object-contain"
+          quality={100}
+          priority
+        />
+      </div>
+      
+      {showText && (
+        <span className="font-bold tracking-tight text-white" style={{ fontSize: size * 0.45 }}>
+          Scale<span className="text-green-500">aki</span>
+        </span>
+      )}
+    </div>
   );
 };
