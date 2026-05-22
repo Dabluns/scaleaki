@@ -17,6 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSearchContext } from '@/context/SearchContext';
 import { useReelsStats } from '@/hooks/useReelsStats';
 import { getLucideIconByName } from '@/lib/icons';
+import { ScaleakiLogo } from '@/components/ui/ScaleakiLogo';
 
 // Sub-items de Configurações (espelhando o SettingsLayout)
 const configSubItems = [
@@ -271,20 +272,7 @@ export const Sidebar: React.FC = () => {
           >
             <div className="relative flex items-center justify-center">
               <div className="absolute inset-0 bg-green-500/20 blur-xl rounded-full" />
-              <svg viewBox="0 0 120 120" className="w-10 h-10 relative z-10">
-                <defs>
-                  <linearGradient id="sidebarLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#4ade80" />
-                    <stop offset="100%" stopColor="#16a34a" />
-                  </linearGradient>
-                </defs>
-                <rect x="10" y="10" width="100" height="100" rx="26" fill="url(#sidebarLogoGrad)" />
-                <path d="M20 20 Q 60 5 100 20 L 100 60 Q 60 45 20 60 Z" fill="white" fillOpacity="0.2" />
-                <g transform="translate(62, 58)">
-                  <circle cx="0" cy="0" r="24" stroke="white" strokeWidth="7" fill="none" />
-                  <text x="0" y="13" fontFamily="Arial" fontWeight="900" fontSize="38" fill="white" textAnchor="middle">$</text>
-                </g>
-              </svg>
+              <ScaleakiLogo size={40} className="relative z-10" />
             </div>
 
             <AnimatePresence>

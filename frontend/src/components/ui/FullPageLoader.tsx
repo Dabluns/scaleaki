@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { ScaleakiLogo } from '@/components/ui/ScaleakiLogo';
 
 interface FullPageLoaderProps {
     message?: string;
@@ -75,13 +76,7 @@ export const FullPageLoader: React.FC<FullPageLoaderProps> = ({
             <div className={`relative flex flex-col items-center transition-all duration-1000 ${isBooted ? 'opacity-100 animate-content' : 'opacity-0'}`}>
                 {/* Logo Minimalista */}
                 <div className="relative mb-8 flex items-center justify-center w-16 h-16 bg-white/5 rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(34,197,94,0.15)] backdrop-blur-sm">
-                    <Image
-                        src="/logo-mark.svg"
-                        alt="Scaleaki"
-                        width={32}
-                        height={32}
-                        className="object-contain opacity-90 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                    />
+                    <ScaleakiLogo size={40} className="opacity-90 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
                 </div>
 
                 {/* Textos Principais */}
