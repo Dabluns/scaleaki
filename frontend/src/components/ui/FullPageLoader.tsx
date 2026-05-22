@@ -9,101 +9,107 @@ interface FullPageLoaderProps {
 }
 
 const loadingPhrases = [
-    "Iniciando motores de busca...",
-    "Sincronizando banco de ofertas...",
-    "Otimizando pixels para escala...",
-    "Verificando credenciais neurais...",
-    "Preparando ambiente de alta conversão...",
-    "Analisando métricas do Facebook Ads...",
-    "Conectando ao núcleo Skaleaki...",
-    "Carregando criativos de alta performance..."
+    "Iniciando módulos...",
+    "Sincronizando ambiente...",
+    "Conectando ao servidor...",
+    "Validando sessão..."
 ];
 
 export const FullPageLoader: React.FC<FullPageLoaderProps> = ({
-    message = "Processando informações",
+    message = "Autenticando",
     submessage = "Aguarde um momento"
 }) => {
     const [phraseIndex, setPhraseIndex] = useState(0);
+    const [isBooted, setIsBooted] = useState(false);
 
     useEffect(() => {
+        // Sequência inicial de boot ("tela ligando")
+        const bootTimer = setTimeout(() => {
+            setIsBooted(true);
+        }, 600);
+
         const interval = setInterval(() => {
             setPhraseIndex((prev) => (prev + 1) % loadingPhrases.length);
-        }, 2000);
-        return () => clearInterval(interval);
+        }, 1500);
+        
+        return () => {
+            clearTimeout(bootTimer);
+            clearInterval(interval);
+        };
     }, []);
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-950 overflow-hidden">
-            {/* Background Cyberpunk Dinâmico */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#050505] overflow-hidden font-sans">
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes boot-line {
+                    0% { width: 0%; opacity: 0; box-shadow: 0 0 0 rgba(34,197,94,0); }
+                    30% { width: 100%; opacity: 1; box-shadow: 0 0 20px rgba(34,197,94,0.8); }
+                    50% { width: 100%; opacity: 1; height: 1px; }
+                    100% { width: 100%; opacity: 0; height: 100vh; }
+                }
+                @keyframes fade-in-scale {
+                    0% { opacity: 0; filter: blur(12px); transform: scale(0.9); }
+                    100% { opacity: 1; filter: blur(0); transform: scale(1); }
+                }
+                @keyframes minimal-scan {
+                    0% { left: 0%; width: 10%; }
+                    50% { width: 40%; }
+                    100% { left: 90%; width: 10%; }
+                }
+                .animate-boot {
+                    animation: boot-line 0.7s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+                }
+                .animate-content {
+                    animation: fade-in-scale 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .animate-minimal-scan {
+                    animation: minimal-scan 2s ease-in-out infinite alternate;
+                }
+            `}} />
 
-                {/* Grid animado de fundo */}
-                <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(rgba(34,197,94,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.1)_1px,transparent_1px)] bg-[size:40px_40px] animate-grid-pulse" />
-            </div>
+            {/* A linha de luz inicial (efeito tela ligando) */}
+            {!isBooted && (
+                <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-green-500 animate-boot z-50 origin-center" />
+            )}
 
-            <div className="relative flex flex-col items-center">
-                {/* Logo Central com Efeitos */}
-                <div className="relative mb-12 animate-float">
-                    {/* Anéis de energia */}
-                    <div className="absolute inset-0 -m-4 border-2 border-green-500/20 rounded-full animate-spin-slow" />
-                    <div className="absolute inset-0 -m-8 border border-cyan-500/10 rounded-full animate-reverse-spin-slow" style={{ animationDuration: '10s' }} />
-
-                    {/* Glow principal */}
-                    <div className="absolute inset-0 bg-green-500/20 rounded-full blur-2xl animate-pulse" />
-
-                    <div className="relative w-24 h-24 md:w-32 md:h-32 bg-gray-900 rounded-3xl p-4 border border-green-500/40 shadow-[0_0_50px_rgba(34,197,94,0.3)]">
-                        <Image
-                            src="/logo-mark.svg"
-                            alt="Skaleaki"
-                            width={128}
-                            height={128}
-                            className="w-full h-full object-contain animate-pulse-enhanced"
-                        />
-                    </div>
+            <div className={`relative flex flex-col items-center transition-all duration-1000 ${isBooted ? 'opacity-100 animate-content' : 'opacity-0'}`}>
+                {/* Logo Minimalista */}
+                <div className="relative mb-8 flex items-center justify-center w-16 h-16 bg-white/5 rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(34,197,94,0.15)] backdrop-blur-sm">
+                    <Image
+                        src="/logo-mark.svg"
+                        alt="Scaleaki"
+                        width={32}
+                        height={32}
+                        className="object-contain opacity-90 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                    />
                 </div>
 
-                {/* Textos de Status */}
-                <div className="text-center relative z-10 px-4">
-                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-2">
+                {/* Textos Principais */}
+                <div className="text-center relative z-10 px-4 flex flex-col items-center">
+                    <h2 className="text-lg md:text-xl font-medium text-white/90 tracking-wide mb-3 flex items-center gap-2">
                         {message}
-                        <span className="inline-flex w-8 text-left animate-pulse">...</span>
+                        <span className="flex gap-[3px] ml-1">
+                            <span className="w-[3px] h-[3px] bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-[3px] h-[3px] bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-[3px] h-[3px] bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </span>
                     </h2>
 
-                    <div className="h-6 overflow-hidden">
-                        <p className="text-green-400 font-mono text-sm md:text-base animate-slide-up key={phraseIndex}">
+                    <div className="h-5 overflow-hidden">
+                        <p className="text-green-500/60 font-mono text-[10px] md:text-xs tracking-[0.2em] uppercase transition-all duration-300">
                             {loadingPhrases[phraseIndex]}
                         </p>
                     </div>
 
-                    {/* Barra de Progresso Estilizada */}
-                    <div className="mt-8 w-48 md:w-64 h-1 bg-white/5 rounded-full overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-cyan-400 to-green-500 bg-[size:200%_100%] animate-gradient-wave" />
-
-                        {/* Brilho da barra */}
-                        <div className="absolute inset-0 bg-green-400 blur-sm opacity-50 animate-pulse" />
+                    {/* Barra de Progresso Ultra Minimalista */}
+                    <div className="mt-8 w-32 h-[1px] bg-white/10 overflow-hidden relative">
+                        <div className="absolute top-0 bottom-0 left-0 bg-green-500 animate-minimal-scan shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
                     </div>
                 </div>
             </div>
-
-            {/* Decorações Laterais Técnicas */}
-            <div className="absolute bottom-8 left-8 hidden md:block opacity-30 font-mono text-[10px] text-green-500 space-y-1">
-                <div>CORE_VERSION: 2.0.5_BUILD</div>
-                <div>SYS_STATUS: NEURAL_LINK_OK</div>
-            </div>
-            <div className="absolute bottom-8 right-8 hidden md:block opacity-30 font-mono text-[10px] text-cyan-500 text-right space-y-1">
-                <div>UI_ENGINE: SKALE_GLASS_V3</div>
-                <div>RENDER: TURBOPACK_ENABLED</div>
-            </div>
+            
+            {/* Background super sutil pra não ser 100% preto */}
+            <div className="absolute inset-0 pointer-events-none opacity-30 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-green-900/10 via-[#050505] to-[#050505]" />
         </div>
     );
 };
-
-// Adicionar keyframes extras necessários caso não existam
-const extraStyles = `
-  @keyframes reverse-spin-slow {
-    from { transform: rotate(360deg); }
-    to { transform: rotate(0deg); }
-  }
-`;
