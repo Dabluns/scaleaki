@@ -37,7 +37,7 @@ export const DashboardHero: React.FC = () => {
         >
           <div className="relative flex-shrink-0">
             <div className="absolute inset-0 bg-green-500/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            <UserAvatar size="lg" showLevel animated />
+            <UserAvatar size="md" showLevel animated />
           </div>
 
           <div className="flex-1 text-center md:text-left min-w-0">
@@ -45,7 +45,7 @@ export const DashboardHero: React.FC = () => {
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
               <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 whitespace-nowrap">Agente Ativo</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight tracking-tighter mb-2 uppercase break-words">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight tracking-tighter mb-2 uppercase">
               {getGreeting()}, <span className="text-green-500">{user?.name?.split(' ')[0] || 'EXPLORADOR'}</span>
             </h1>
             <p className="text-[10px] md:text-xs font-bold text-white/30 tracking-widest uppercase mb-4 truncate">
@@ -53,7 +53,7 @@ export const DashboardHero: React.FC = () => {
             </p>
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] md:text-xs font-bold text-emerald-500 max-w-full">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-              <span className="tracking-widest uppercase truncate">[ STATUS: SISTEMA OPERACIONAL PRONTO ]</span>
+              <span className="tracking-widest uppercase">[ STATUS: OPERACIONAL ]</span>
             </div>
           </div>
         </Card3D>

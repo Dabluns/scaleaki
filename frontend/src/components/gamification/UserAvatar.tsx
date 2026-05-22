@@ -75,7 +75,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
   // Avatar baseado no nível (apenas ícone limpo)
   const getAvatarEmoji = (level: number) => {
-    return <User className="w-1/2 h-1/2 text-white/80" />;
+    return <User className="w-[60%] h-[60%] text-white/80" />;
   };
 
   // Cores do gradiente baseado no nível (Tudo na paleta da marca - Verde)
