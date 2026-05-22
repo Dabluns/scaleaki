@@ -126,7 +126,7 @@ export const Card3D: React.FC<Card3DProps> = ({
         <div
           className={clsx(
             'absolute inset-0 rounded-lg -z-10 opacity-50',
-            'bg-gradient-to-r from-green-500 via-cyan-500 to-purple-500',
+            'bg-gradient-to-r from-green-600 via-green-400 to-emerald-500',
             'animate-gradient',
             {
               'opacity-75': isHovered,
