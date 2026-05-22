@@ -121,14 +121,22 @@ export function OfertaCard({ oferta, onView, getNichoName, className = '', isAdm
           {/* Background Gradient Layer */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-50 pointer-events-none" />
 
-          {/* Status Badge (Top Left) */}
-          <div className="absolute top-4 left-4 z-30 flex items-center gap-2">
-            <div className="px-2.5 py-1 bg-green-500 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-              <span className="text-[10px] font-black uppercase text-white tracking-widest">
-                Nova
+          {/* Status Badges (Top Left) */}
+          <div className="absolute top-4 left-4 z-30 flex flex-col gap-2">
+            <div className="px-2.5 py-1 bg-green-500/10 backdrop-blur-md border border-green-500/30 rounded flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-[9px] font-black uppercase text-green-400 tracking-widest">
+                [ EM ESCALA ]
               </span>
             </div>
+            {oferta.roi && oferta.roi > 0 && (
+              <div className="px-2.5 py-1 bg-black/60 backdrop-blur-md border border-white/10 rounded flex items-center gap-1.5">
+                <TrendingUp className="w-3 h-3 text-emerald-400" />
+                <span className="text-[9px] font-black uppercase text-white tracking-widest">
+                  ROI {Number(oferta.roi).toFixed(0)}%
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Admin / Favorite Controls (Top Right) */}
@@ -236,34 +244,33 @@ export function OfertaCard({ oferta, onView, getNichoName, className = '', isAdm
             </h3>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 gap-5 mb-8">
+            <div className="grid grid-cols-2 gap-4 mb-8 p-4 rounded-xl bg-black/40 border border-white/5">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Analisada em</span>
-                <div className="flex items-center gap-1.5 text-white/70">
+                <span className="text-[9px] uppercase tracking-[0.2em] text-white/30 font-bold">Data de Captura</span>
+                <div className="flex items-center gap-1.5 text-white/90">
                   <Calendar className="w-3.5 h-3.5 text-green-500/60" />
-                  <span className="text-sm font-medium">{formatDate(oferta.createdAt)}</span>
+                  <span className="text-xs font-black font-mono text-green-400">{formatDate(oferta.createdAt)}</span>
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Confiança</span>
-                <div className="flex items-center gap-1.5 text-white/70">
+                <span className="text-[9px] uppercase tracking-[0.2em] text-white/30 font-bold">Nível de Confiança</span>
+                <div className="flex items-center gap-1.5 text-white/90">
                   <ShieldCheck className="w-3.5 h-3.5 text-cyan-500/60" />
-                  <span className="text-sm font-medium">98.4%</span>
+                  <span className="text-xs font-black font-mono">98.4%</span>
                 </div>
               </div>
             </div>
 
-            {/* Action Button */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full py-5 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(255,255,255,0.05)]"
+              className="w-full py-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-green-500 hover:text-black transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(34,197,94,0.05)] hover:shadow-[0_0_30px_rgba(34,197,94,0.3)]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleClick();
               }}
             >
-              Abrir Oferta
+              [ Acessar Dossiê ]
               <ArrowUpRight className="w-4 h-4" />
             </motion.button>
           </div>

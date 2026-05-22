@@ -20,9 +20,9 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
 }) => {
   const pulseColors = {
     green: 'bg-green-500/20',
-    purple: 'bg-purple-500/20',
+    emerald: 'bg-emerald-500/20',
     cyan: 'bg-cyan-500/20',
-    orange: 'bg-orange-500/20',
+    dark: 'bg-black/40',
   };
 
   return (
@@ -33,7 +33,7 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
         {
           'animate-pulse': !shimmer,
           [pulseColors[pulseColor]]: !gradient,
-          'bg-gradient-to-br from-green-500/10 via-cyan-500/10 to-purple-500/10': gradient,
+          'bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent border border-green-500/20': gradient,
         },
         className
       )}
@@ -160,7 +160,7 @@ export const SkeletonGrid: React.FC<{
           key={i}
           shimmer={shimmer}
           gradient={gradient}
-          pulseColor={i % 2 === 0 ? 'green' : 'purple'}
+          pulseColor={i % 2 === 0 ? 'green' : 'emerald'}
         />
       ))}
     </div>
