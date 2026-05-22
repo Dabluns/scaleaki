@@ -15,7 +15,7 @@ export const ScaleakiLogo: React.FC<ScaleakiLogoProps> = ({ size = 40, className
         style={{ width: size, height: size }}
       >
         <Image
-          src="/branding/s.png"
+          src="/branding/s-transparente.png"
           alt="Scaleaki Logo Original com Cifrão"
           width={size * 2} // Importante para manter nítido em telas retina (high-DPI)
           height={size * 2}
