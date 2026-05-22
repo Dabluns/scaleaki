@@ -17,13 +17,6 @@ import { Card3D } from '@/components/ui/Card3D';
 export const DashboardHero: React.FC = () => {
   const { user } = useAuth();
   const { progress } = useGamification();
-  const [motivationalMessage, setMotivationalMessage] = useState<MotivationalMessage | null>(null);
-
-  useEffect(() => {
-    const hour = new Date().getHours();
-    const timeContext = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-    setMotivationalMessage(getMessageByContext(timeContext));
-  }, []);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -58,12 +51,10 @@ export const DashboardHero: React.FC = () => {
             <p className="text-[10px] md:text-xs font-bold text-white/30 tracking-widest uppercase mb-4 truncate">
               Comandante de Escala <span className="text-white/60">Nv. {progress?.level || 1}</span>
             </p>
-            {motivationalMessage && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] md:text-xs font-bold text-white/50 max-w-full">
-                <span className="flex-shrink-0">{motivationalMessage.emoji}</span>
-                <span className="truncate">{motivationalMessage.text}</span>
-              </div>
-            )}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] md:text-xs font-bold text-emerald-500 max-w-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+              <span className="tracking-widest uppercase truncate">[ STATUS: SISTEMA OPERACIONAL PRONTO ]</span>
+            </div>
           </div>
         </Card3D>
 

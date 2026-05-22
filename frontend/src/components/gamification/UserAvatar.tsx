@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGamification } from '@/context/GamificationContext';
 import { useAuth } from '@/context/AuthContext';
+import { User } from 'lucide-react';
 import clsx from 'clsx';
 
 interface UserAvatarProps {
@@ -72,22 +73,14 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     xl: 'w-10 h-10 text-base',
   };
 
-  // Avatar baseado no nível
+  // Avatar baseado no nível (apenas ícone limpo)
   const getAvatarEmoji = (level: number) => {
-    if (level >= 10) return '🚀'; // Mestre
-    if (level >= 7) return '⭐'; // Expert
-    if (level >= 5) return '💎'; // Avançado
-    if (level >= 3) return '🔥'; // Intermediário
-    return '🌱'; // Iniciante
+    return <User className="w-1/2 h-1/2 text-white/80" />;
   };
 
-  // Cores do gradiente baseado no nível
+  // Cores do gradiente baseado no nível (Tudo na paleta da marca - Verde)
   const getGradientClass = (level: number) => {
-    if (level >= 10) return 'from-yellow-500 to-orange-500'; // Mestre
-    if (level >= 7) return 'from-purple-500 to-pink-500'; // Expert
-    if (level >= 5) return 'from-cyan-500 to-blue-500'; // Avançado
-    if (level >= 3) return 'from-green-500 to-emerald-500'; // Intermediário
-    return 'from-green-400 to-green-500'; // Iniciante
+    return 'from-green-400 to-green-600';
   };
 
   if (!progress) {
@@ -153,7 +146,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           className={clsx(
             'absolute -bottom-1 -right-1',
             'rounded-full flex items-center justify-center',
-            'bg-gradient-to-r from-purple-500 to-pink-500',
+            'bg-gradient-to-r from-green-500 to-emerald-600',
             'text-white font-bold',
             'border-2 border-surface',
             'shadow-lg',

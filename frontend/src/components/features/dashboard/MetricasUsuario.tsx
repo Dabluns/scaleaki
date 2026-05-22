@@ -49,8 +49,8 @@ export function MetricasUsuario() {
       label: 'Ranking',
       value: progress?.level || 1,
       sub: `Nv. ${progress?.level || 1}. Rumo ao próximo nível.`,
-      color: '#fbbf24',
-      accent: 'text-yellow-400',
+      color: '#22c55e',
+      accent: 'text-green-500',
       ring: true
     },
     {
@@ -59,8 +59,8 @@ export function MetricasUsuario() {
       label: 'Favoritos',
       value: activityStats?.totalFavoritos || progress?.stats.totalFavoritos || 0,
       sub: 'Suas ofertas vencedoras salvas.',
-      color: '#ec4899',
-      accent: 'text-pink-400'
+      color: '#10b981',
+      accent: 'text-emerald-500'
     },
     {
       id: 'market',
@@ -77,8 +77,8 @@ export function MetricasUsuario() {
       label: 'Engajamento',
       value: progress?.xp || 0,
       sub: 'XP acumulado no ecossistema.',
-      color: '#22d3ee',
-      accent: 'text-cyan-400'
+      color: '#06b6d4',
+      accent: 'text-cyan-500'
     }
   ];
 
