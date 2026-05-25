@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import nookies from 'nookies';
 
 export interface AnuncioFacebook {
   id: string;
@@ -86,7 +87,8 @@ export function useFacebookAds() {
     setError(null);
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const cookies = nookies.get(null);
+      const token = cookies['auth_token'] || null;
       const res = await fetch(`${API_BASE}/fb-ads?${buildParams(f, p)}`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: abortRef.current.signal,
@@ -123,7 +125,8 @@ export function useFacebookAds() {
   }, [filters, fetchPage]);
 
   const triggerFunnelScan = useCallback(async (id: string): Promise<void> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const cookies = nookies.get(null);
+    const token = cookies['auth_token'] || null;
     await fetch(`${API_BASE}/fb-ads/${id}/scan-funil`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
@@ -131,7 +134,8 @@ export function useFacebookAds() {
   }, []);
 
   const fetchById = useCallback(async (id: string): Promise<AnuncioFacebook | null> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const cookies = nookies.get(null);
+    const token = cookies['auth_token'] || null;
     const res = await fetch(`${API_BASE}/fb-ads/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

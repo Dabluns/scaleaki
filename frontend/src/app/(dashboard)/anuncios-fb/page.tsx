@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import nookies from 'nookies';
 import { Megaphone, Flame, RefreshCw, Loader2, Zap } from 'lucide-react';
 import { useFacebookAds, AnuncioFacebook } from '@/hooks/useFacebookAds';
 import { FacebookAdsFilters } from '@/components/features/fbAds/FacebookAdsFilters';
@@ -23,7 +24,8 @@ function AnunciosFbContent() {
   const [syncing, setSyncing] = useState(false);
 
   const handleSync = async () => {
-    const token = localStorage.getItem('token');
+    const cookies = nookies.get(null);
+    const token = cookies['auth_token'] || null;
     setSyncing(true);
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/fb-ads/sync`, {
