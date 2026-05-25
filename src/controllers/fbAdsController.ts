@@ -116,7 +116,24 @@ export async function syncAds(req: Request, res: Response) {
     res.json({ message: 'Sync concluído', ...result });
   } catch (err: any) {
     logger.error('[FbAds] Erro no sync:', err);
-    res.status(500).json({ error: 'Erro ao sincronizar anúncios', details: err.message });
+    
+    let details = err.message;
+    let statusCode = 500;
+    
+    if (err.response?.data?.error) {
+      statusCode = err.response.status || 400;
+      const metaError = err.response.data.error;
+      details = metaError.message;
+      
+      // Personalizar mensagens comuns da API do Facebook para o usuário final
+      if (metaError.error_subcode === 2332002 || metaError.code === 10) {
+        details = 'Autorização necessária no Meta: acesse facebook.com/ads/library/api e siga as etapas para confirmar sua identidade e liberar o acesso ao aplicativo.';
+      } else if (metaError.code === 190) {
+        details = 'O Token de Acesso do Facebook Ad Library expirou ou é inválido. Por favor, gere um novo token no Meta Developers.';
+      }
+    }
+    
+    res.status(statusCode).json({ error: 'Erro ao sincronizar anúncios', details });
   }
 }
 
