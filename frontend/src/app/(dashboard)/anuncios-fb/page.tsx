@@ -28,12 +28,16 @@ function AnunciosFbContent() {
     const token = cookies['auth_token'] || null;
     setSyncing(true);
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token && token !== 'undefined' && token !== 'null') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/fb-ads/sync`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({ adActiveStatus: 'ACTIVE', countries: ['BR'], limit: 50 }),
       });
       refetch();

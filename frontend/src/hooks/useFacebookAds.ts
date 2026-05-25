@@ -89,8 +89,13 @@ export function useFacebookAds() {
     try {
       const cookies = nookies.get(null);
       const token = cookies['auth_token'] || null;
+      const headers: HeadersInit = {};
+      if (token && token !== 'undefined' && token !== 'null') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const res = await fetch(`${API_BASE}/fb-ads?${buildParams(f, p)}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
+        credentials: 'include',
         signal: abortRef.current.signal,
       });
 
@@ -127,17 +132,27 @@ export function useFacebookAds() {
   const triggerFunnelScan = useCallback(async (id: string): Promise<void> => {
     const cookies = nookies.get(null);
     const token = cookies['auth_token'] || null;
+    const headers: HeadersInit = {};
+    if (token && token !== 'undefined' && token !== 'null') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     await fetch(`${API_BASE}/fb-ads/${id}/scan-funil`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
+      credentials: 'include',
     });
   }, []);
 
   const fetchById = useCallback(async (id: string): Promise<AnuncioFacebook | null> => {
     const cookies = nookies.get(null);
     const token = cookies['auth_token'] || null;
+    const headers: HeadersInit = {};
+    if (token && token !== 'undefined' && token !== 'null') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE}/fb-ads/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
+      credentials: 'include',
     });
     if (!res.ok) return null;
     return res.json();
