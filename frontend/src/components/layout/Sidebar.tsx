@@ -7,7 +7,7 @@ import {
   BarChart3, ShieldCheck, LockKeyhole, Home, Package,
   ChevronDown, Image as ImageIcon, Clock, Sparkles, Trophy, Video,
   Menu, ChevronLeft, ChevronRight, LogOut,
-  User, Bell, FileText, CreditCard
+  User, Bell, FileText, CreditCard, Compass
 } from 'lucide-react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import clsx from 'clsx';
@@ -320,9 +320,16 @@ export const Sidebar: React.FC = () => {
               isActive={pathname === '/'}
             />
             <NavItem
+              href="/anuncios-fb"
+              icon={Compass}
+              label="Explorar"
+              collapsed={collapsed}
+              isActive={pathname === '/anuncios-fb'}
+            />
+            <NavItem
               href="/ofertas-recentes"
               icon={Clock}
-              label="Explorar"
+              label="Swipefile"
               collapsed={collapsed}
               isActive={pathname === '/ofertas-recentes'}
               hasNew={true}
