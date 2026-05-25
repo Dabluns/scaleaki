@@ -26,6 +26,7 @@ import webhooksRoutes from './routes/webhooksRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import botRoutes from './routes/botRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import fbAdsRoutes from './routes/fbAdsRoutes';
 import { botService } from './services/botService';
 import { startBillingMonitor } from './services/billingService';
 
@@ -155,6 +156,7 @@ app.use('/webhooks', webhooksRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/bot', botRoutes);
 app.use('/upload', uploadRoutes);
+app.use('/fb-ads', fbAdsRoutes);
 
 import { startCleanupJob } from './jobs/cleanupJob';
 

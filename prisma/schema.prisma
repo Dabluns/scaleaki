@@ -426,3 +426,65 @@ model BotLog {
   @@index([cycleId])
   @@index([createdAt(sort: Desc)])
 }
+
+// ========== FACEBOOK AD LIBRARY ==========
+
+model AnuncioFacebook {
+  id                 String    @id @default(uuid())
+
+  // --- Fonte 1: Facebook Ad Library API Oficial ---
+  fbAdId             String    @unique          // ID único da Ad Library (evita duplicatas)
+  pageId             String?                    // ID da página anunciante
+  pageName           String?                    // Nome da página anunciante
+  adCopy             String?                    // Texto/copy do anúncio (ad_creative_bodies)
+  adHeadline         String?                    // Headline do criativo (ad_creative_link_titles)
+  adCaption          String?                    // Legenda do link (ad_creative_link_captions)
+  adDescription      String?                    // Descrição do link (ad_creative_link_descriptions)
+  adSnapshotUrl      String?                    // URL do embed do criativo na Biblioteca
+  destinationUrl     String?                    // URL de destino da oferta
+  libraryUrl         String?                    // Link direto para a Biblioteca do FB
+  publisherPlatforms String?                    // JSON array: ["facebook","instagram"]
+  deliveryStartTime  DateTime?                  // Data de início da veiculação
+  deliveryStopTime   DateTime?                  // Data de fim (null = ainda ativo)
+  spendRange         String?                    // Faixa de gasto (ex: "<100", "100-499")
+  impressionsRange   String?                    // Faixa de impressões (ex: "1K-5K")
+  currency           String?                    // Moeda (BRL, USD, etc.)
+
+  // --- Fonte 1b: Graph API (/{page_id}?fields=...) ---
+  pageProfilePic     String?                    // URL da foto da página
+  pageLikes          Int?                       // Curtidas da página (fan_count)
+
+  // --- Fonte 2: Scraper Playwright (interface pública Ad Library) ---
+  duplicatas         Int?      @default(0)      // collationCount: "X anúncios usam esse criativo"
+  scraperLastRun     DateTime?                  // Última vez que o scraper atualizou esse registro
+
+  // --- Fonte 3: URLscan.io (Análise de Funil) ---
+  urlscanUuid        String?                    // UUID do scan no URLscan
+  checkout           String?                    // Plataforma detectada (Shopify, Kiwify, Hotmart...)
+  tecnologia         String?                    // Stack do site (Wordpress, VTEX, Webflow...)
+  funnelSubdomains   String?                    // JSON array de subdomínios do funil
+  activePixels       String?                    // JSON array de pixels ativos
+  landingScreenshot  String?                    // URL do screenshot PNG da landing page
+  externalServices   String?                    // JSON array de serviços externos detectados
+  urlscanLastRun     DateTime?                  // Última vez que o URLscan atualizou esse registro
+
+  // --- Curadoria Manual (Admin) ---
+  escala             Int?      @default(0)      // Score de escala definido pelo curador
+
+  // --- Controle ---
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([fbAdId])
+  @@index([pageId])
+  @@index([isActive])
+  @@index([deliveryStartTime])
+  @@index([checkout])
+  @@index([escala])
+  @@index([duplicatas])
+  @@index([isActive, deliveryStartTime(sort: Desc)])
+  @@index([isActive, escala(sort: Desc)])
+  @@index([isActive, duplicatas(sort: Desc)])
+}
+
