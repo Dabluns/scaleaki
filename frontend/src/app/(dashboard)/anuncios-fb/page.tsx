@@ -22,11 +22,13 @@ function AnunciosFbContent() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const handleSync = async () => {
     const cookies = nookies.get(null);
     const token = cookies['auth_token'] || null;
     setSyncing(true);
+    setSyncError(null);
     try {
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -34,13 +36,21 @@ function AnunciosFbContent() {
       if (token && token !== 'undefined' && token !== 'null') {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/fb-ads/sync`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/fb-ads/sync`, {
         method: 'POST',
         headers,
         credentials: 'include',
         body: JSON.stringify({ adActiveStatus: 'ACTIVE', countries: ['BR'], limit: 50 }),
       });
+      
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.details || data.error || 'Erro desconhecido ao sincronizar');
+      }
+      
       refetch();
+    } catch (err: any) {
+      setSyncError(err.message);
     } finally {
       setSyncing(false);
     }
@@ -130,9 +140,10 @@ function AnunciosFbContent() {
       />
 
       {/* ── ERRO ─────────────────────────────────────────────── */}
-      {error && (
-        <div className="mx-8 lg:mx-12 mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] font-bold">
-          Erro ao carregar anúncios: {error}
+      {(error || syncError) && (
+        <div className="mx-8 lg:mx-12 mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] font-bold flex flex-col gap-2">
+          {error && <div>Erro ao carregar anúncios: {error}</div>}
+          {syncError && <div>Erro de sincronização: {syncError}</div>}
         </div>
       )}
 

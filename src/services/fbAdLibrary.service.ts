@@ -35,13 +35,17 @@ export async function syncAdsFromLibrary(params: {
   limit?: number;
 }) {
   const {
-    searchTerms = '',
     adType = 'ALL',
     countries = ['BR'],
     adActiveStatus = 'ACTIVE',
     pageIds,
     limit = 50,
   } = params;
+
+  let searchTerms = params.searchTerms || '';
+  if (!searchTerms.trim() && (!pageIds || pageIds.length === 0)) {
+    searchTerms = 'oferta';
+  }
 
   const fields = [
     'id',
