@@ -155,7 +155,7 @@ export async function enrichPageData(fbAdId: string, pageId?: string) {
  * Polling para aguardar a execução do scraper do Apify concluir.
  */
 async function pollApifyRun(runId: string, token: string): Promise<string> {
-  const maxRetries = 20; // 20 * 5s = 100s max
+  const maxRetries = 60; // 60 * 5s = 300s max
   for (let i = 0; i < maxRetries; i++) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     try {
@@ -173,7 +173,7 @@ async function pollApifyRun(runId: string, token: string): Promise<string> {
       if (i === maxRetries - 1) throw err;
     }
   }
-  throw new Error('A execução do Apify expirou (timeout de 100 segundos).');
+  throw new Error('A execução do Apify expirou (timeout de 300 segundos).');
 }
 
 /**
@@ -192,15 +192,15 @@ export async function syncAdsFromApify(params: {
 
   const { searchTerms = 'oferta', countries = ['BR'], limit = 50 } = params;
 
-  logger.info('[Apify] Iniciando execução do scraper da Ad Library', { searchTerms, countries, limit });
+  logger.info('[Apify] Iniciando execução do scraper da Ad Library (curious_coder)', { searchTerms, countries, limit });
 
   const country = countries[0] || 'BR';
   const searchUrl = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${country}&q=${encodeURIComponent(searchTerms)}&media_type=all`;
 
-  // Inicia a execução do actor apify/facebook-ads-scraper
-  const runRes = await axios.post(`https://api.apify.com/v2/acts/apify~facebook-ads-scraper/runs?token=${token}`, {
-    startUrls: [{ url: searchUrl }],
-    maxResults: limit,
+  // Inicia a execução do actor curious_coder/facebook-ads-library-scraper
+  const runRes = await axios.post(`https://api.apify.com/v2/acts/curious_coder~facebook-ads-library-scraper/runs?token=${token}`, {
+    urls: [{ url: searchUrl }],
+    limit: limit,
   });
 
   const runId = runRes.data?.data?.id;
@@ -230,20 +230,25 @@ export async function syncAdsFromApify(params: {
 
         const fbAdId = String(item.ad_archive_id || item.id);
         const data = {
-          pageId: item.page_id || item.pageId || null,
-          pageName: item.page_name || item.pageName || null,
-          adCopy: item.body_text || item.text || item.ad_body_text || null,
-          adHeadline: item.title || item.ad_headline || item.ad_creative_link_titles?.[0] || null,
-          adCaption: item.ad_creative_link_captions?.[0] || null,
-          adDescription: item.ad_creative_link_descriptions?.[0] || null,
-          adSnapshotUrl: item.ad_snapshot_url || item.snapshotUrl || null,
-          deliveryStartTime: item.start_date ? new Date(item.start_date) : item.ad_delivery_start_time ? new Date(item.ad_delivery_start_time) : null,
-          deliveryStopTime: item.end_date ? new Date(item.end_date) : item.ad_delivery_stop_time ? new Date(item.ad_delivery_stop_time) : null,
-          publisherPlatforms: item.publisher_platforms ? JSON.stringify(item.publisher_platforms) : null,
+          pageId: item.page_id || item.pageId || item.snapshot?.page_id || null,
+          pageName: item.page_name || item.pageName || item.snapshot?.page_name || null,
+          adCopy: item.snapshot?.body?.text || item.body_text || item.text || item.ad_body_text || null,
+          adHeadline: item.snapshot?.title || item.title || item.ad_headline || item.ad_creative_link_titles?.[0] || null,
+          adCaption: item.snapshot?.caption || item.ad_creative_link_captions?.[0] || null,
+          adDescription: item.snapshot?.link_description || item.ad_creative_link_descriptions?.[0] || null,
+          adSnapshotUrl: item.ad_snapshot_url || item.snapshotUrl || item.ad_library_url || null,
+          destinationUrl: item.snapshot?.link_url || item.link_url || item.landing_page_url || null,
+          libraryUrl: item.ad_library_url || item.library_url || null,
+          publisherPlatforms: item.publisher_platform ? JSON.stringify(item.publisher_platform) : item.publisher_platforms ? JSON.stringify(item.publisher_platforms) : null,
+          deliveryStartTime: item.start_date_formatted ? new Date(item.start_date_formatted) : item.start_date ? new Date(item.start_date * 1000) : item.ad_delivery_start_time ? new Date(item.ad_delivery_start_time) : null,
+          deliveryStopTime: item.end_date_formatted ? new Date(item.end_date_formatted) : item.end_date ? new Date(item.end_date * 1000) : item.ad_delivery_stop_time ? new Date(item.ad_delivery_stop_time) : null,
           spendRange: item.spend ? (typeof item.spend === 'object' ? `${item.spend.lower_bound}-${item.spend.upper_bound}` : String(item.spend)) : null,
           impressionsRange: item.impressions ? (typeof item.impressions === 'object' ? `${item.impressions.lower_bound}-${item.impressions.upper_bound}` : String(item.impressions)) : null,
           currency: item.currency || null,
-          destinationUrl: item.link_url || item.landing_page_url || null,
+          pageProfilePic: item.snapshot?.page_profile_picture_url || item.pageProfilePic || null,
+          pageLikes: item.snapshot?.page_like_count || item.pageLikes || null,
+          duplicatas: item.collation_count || item.duplicatas || 0,
+          scraperLastRun: new Date(),
         };
 
         const existing = await prisma.anuncioFacebook.findUnique({ where: { fbAdId } });
