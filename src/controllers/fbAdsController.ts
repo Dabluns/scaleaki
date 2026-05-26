@@ -182,6 +182,10 @@ export async function triggerFunnelScan(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
+    if (!process.env.URLSCAN_API_KEY) {
+      return res.status(400).json({ error: 'A chave de API URLSCAN_API_KEY não está configurada no servidor (.env).' });
+    }
+
     const anuncio = await prisma.anuncioFacebook.findUnique({ where: { id } });
     if (!anuncio) return res.status(404).json({ error: 'Anúncio não encontrado' });
     if (!anuncio.destinationUrl) return res.status(400).json({ error: 'Anúncio sem URL de destino' });
