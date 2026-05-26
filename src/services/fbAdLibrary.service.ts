@@ -150,3 +150,117 @@ export async function enrichPageData(fbAdId: string, pageId?: string) {
     logger.warn(`[FbAdLibrary] Falha ao enriquecer página ${pageId}: ${err.message}`);
   }
 }
+
+/**
+ * Polling para aguardar a execução do scraper do Apify concluir.
+ */
+async function pollApifyRun(runId: string, token: string): Promise<string> {
+  const maxRetries = 20; // 20 * 5s = 100s max
+  for (let i = 0; i < maxRetries; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    try {
+      const res = await axios.get(`https://api.apify.com/v2/actor-runs/${runId}?token=${token}`);
+      const status = res.data?.data?.status;
+      logger.info(`[Apify] Checando status da execução ${runId}: ${status}`);
+      if (status === 'SUCCEEDED') {
+        return res.data?.data?.defaultDatasetId;
+      }
+      if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
+        throw new Error(`A execução do Apify terminou com status: ${status}`);
+      }
+    } catch (err: any) {
+      logger.error(`[Apify] Erro ao obter status da execução: ${err.message}`);
+      if (i === maxRetries - 1) throw err;
+    }
+  }
+  throw new Error('A execução do Apify expirou (timeout de 100 segundos).');
+}
+
+/**
+ * Sincroniza anúncios via Scraper público do Apify (apify/facebook-ads-scraper).
+ * Executa em background para evitar request timeout de servidores como Render.
+ */
+export async function syncAdsFromApify(params: {
+  searchTerms?: string;
+  countries?: string[];
+  limit?: number;
+}) {
+  const token = process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN;
+  if (!token) {
+    throw new Error('APIFY_TOKEN não está configurado nas variáveis de ambiente.');
+  }
+
+  const { searchTerms = 'oferta', countries = ['BR'], limit = 50 } = params;
+
+  logger.info('[Apify] Iniciando execução do scraper da Ad Library', { searchTerms, countries, limit });
+
+  // Inicia a execução do actor apify/facebook-ads-scraper
+  const runRes = await axios.post(`https://api.apify.com/v2/acts/apify~facebook-ads-scraper/runs?token=${token}`, {
+    searchTerms: [searchTerms],
+    countries,
+    limit,
+    adActiveStatus: 'ACTIVE',
+  });
+
+  const runId = runRes.data?.data?.id;
+  const defaultDatasetId = runRes.data?.data?.defaultDatasetId;
+
+  if (!runId || !defaultDatasetId) {
+    throw new Error('Falha ao iniciar execução no Apify (runId ou datasetId inválidos).');
+  }
+
+  logger.info(`[Apify] Scraper iniciado com sucesso. RunID: ${runId}. Aguardando conclusão...`);
+
+  // Executa o processamento do dataset em background
+  (async () => {
+    try {
+      const datasetId = await pollApifyRun(runId, token);
+      logger.info(`[Apify] Execução concluída. Dataset ID: ${datasetId}. Baixando itens...`);
+
+      const itemsRes = await axios.get(`https://api.apify.com/v2/datasets/${datasetId}/items?token=${token}`);
+      const items = itemsRes.data || [];
+      logger.info(`[Apify] ${items.length} itens recebidos do dataset.`);
+
+      let created = 0;
+      let updated = 0;
+
+      for (const item of items) {
+        if (!item.ad_archive_id && !item.id) continue;
+
+        const fbAdId = String(item.ad_archive_id || item.id);
+        const data = {
+          pageId: item.page_id || item.pageId || null,
+          pageName: item.page_name || item.pageName || null,
+          adCopy: item.body_text || item.text || item.ad_body_text || null,
+          adHeadline: item.title || item.ad_headline || item.ad_creative_link_titles?.[0] || null,
+          adCaption: item.ad_creative_link_captions?.[0] || null,
+          adDescription: item.ad_creative_link_descriptions?.[0] || null,
+          adSnapshotUrl: item.ad_snapshot_url || item.snapshotUrl || null,
+          deliveryStartTime: item.start_date ? new Date(item.start_date) : item.ad_delivery_start_time ? new Date(item.ad_delivery_start_time) : null,
+          deliveryStopTime: item.end_date ? new Date(item.end_date) : item.ad_delivery_stop_time ? new Date(item.ad_delivery_stop_time) : null,
+          publisherPlatforms: item.publisher_platforms ? JSON.stringify(item.publisher_platforms) : null,
+          spendRange: item.spend ? (typeof item.spend === 'object' ? `${item.spend.lower_bound}-${item.spend.upper_bound}` : String(item.spend)) : null,
+          impressionsRange: item.impressions ? (typeof item.impressions === 'object' ? `${item.impressions.lower_bound}-${item.impressions.upper_bound}` : String(item.impressions)) : null,
+          currency: item.currency || null,
+          destinationUrl: item.link_url || item.landing_page_url || null,
+        };
+
+        const existing = await prisma.anuncioFacebook.findUnique({ where: { fbAdId } });
+        if (existing) {
+          await prisma.anuncioFacebook.update({ where: { fbAdId }, data });
+          updated++;
+        } else {
+          await prisma.anuncioFacebook.create({ data: { fbAdId, ...data } });
+          created++;
+          enrichPageData(fbAdId, data.pageId).catch(() => {});
+        }
+      }
+
+      logger.info(`[Apify] Sincronização concluída via Scraper: ${created} criados, ${updated} atualizados.`);
+    } catch (err: any) {
+      logger.error(`[Apify] Erro na execução em segundo plano do scraper: ${err.message}`);
+    }
+  })();
+
+  return { runId, defaultDatasetId };
+}
