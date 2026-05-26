@@ -177,9 +177,89 @@ async function pollApifyRun(runId: string, token: string): Promise<string> {
 }
 
 /**
- * Sincroniza anúncios via Scraper público do Apify (apify/facebook-ads-scraper).
- * Executa em background para evitar request timeout de servidores como Render.
+ * Executa uma busca ao vivo na biblioteca do Facebook via Apify.
+ * Aguarda a conclusão e retorna os itens mapeados (sem salvar no banco).
  */
+export async function liveSearchFromApify(params: {
+  searchTerms: string;
+  countries?: string[];
+  limit?: number;
+}): Promise<any[]> {
+  const token = process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN;
+  if (!token) throw new Error('APIFY_TOKEN não configurado.');
+
+  const { searchTerms, countries = ['BR'], limit = 30 } = params;
+  const country = countries[0] || 'BR';
+  const searchUrl = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${country}&q=${encodeURIComponent(searchTerms)}&media_type=all`;
+
+  logger.info('[Apify][LiveSearch] Iniciando busca ao vivo', { searchTerms, limit });
+
+  const runRes = await axios.post(
+    `https://api.apify.com/v2/acts/curious_coder~facebook-ads-library-scraper/runs?token=${token}`,
+    { urls: [{ url: searchUrl }], limit }
+  );
+
+  const runId = runRes.data?.data?.id;
+  if (!runId) throw new Error('Falha ao iniciar execução no Apify.');
+
+  // Aguarda conclusão (síncrono, max 5 min)
+  const datasetId = await pollApifyRun(runId, token);
+  const itemsRes = await axios.get(`https://api.apify.com/v2/datasets/${datasetId}/items?token=${token}`);
+  const items: any[] = itemsRes.data || [];
+
+  logger.info(`[Apify][LiveSearch] ${items.length} anúncios recebidos para "${searchTerms}"`);
+
+  // Mapeia para o formato do frontend (sem salvar no banco)
+  return items
+    .filter(item => item.ad_archive_id || item.id)
+    .map(item => {
+      const fbAdId = String(item.ad_archive_id || item.id);
+      return {
+        id: fbAdId,
+        fbAdId,
+        pageName: item.page_name || item.pageName || item.snapshot?.page_name || null,
+        pageId: item.page_id || item.pageId || null,
+        pageProfilePic: item.snapshot?.page_profile_picture_url || null,
+        pageLikes: item.snapshot?.page_like_count || null,
+        adCopy: item.snapshot?.body?.text || item.body_text || item.text || null,
+        adHeadline: item.snapshot?.title || item.title || null,
+        adSnapshotUrl: item.ad_snapshot_url || item.snapshotUrl || null,
+        destinationUrl: item.snapshot?.link_url || item.link_url || item.landing_page_url || null,
+        libraryUrl: item.ad_library_url || null,
+        publisherPlatforms: item.publisher_platform
+          ? JSON.stringify(item.publisher_platform)
+          : item.publisher_platforms
+            ? JSON.stringify(item.publisher_platforms)
+            : null,
+        deliveryStartTime: item.start_date_formatted
+          ? new Date(item.start_date_formatted).toISOString()
+          : item.start_date
+            ? new Date(item.start_date * 1000).toISOString()
+            : null,
+        deliveryStopTime: null,
+        spendRange: null,
+        currency: item.currency || null,
+        duplicatas: item.collation_count || 0,
+        escala: null,
+        isActive: true,
+        checkout: null,
+        tecnologia: null,
+        activePixels: null,
+        funnelSubdomains: null,
+        externalServices: null,
+        landingScreenshot: null,
+        urlscanUuid: null,
+        urlscanLastRun: null,
+        scraperLastRun: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        // flag para indicar que é resultado ao-vivo, não está no BD
+        _isLive: true,
+      };
+    });
+}
+
+
 export async function syncAdsFromApify(params: {
   searchTerms?: string;
   countries?: string[];
