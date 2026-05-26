@@ -190,6 +190,11 @@ export async function triggerFunnelScan(req: Request, res: Response) {
     if (!anuncio) return res.status(404).json({ error: 'Anúncio não encontrado' });
     if (!anuncio.destinationUrl) return res.status(400).json({ error: 'Anúncio sem URL de destino' });
 
+    const destUrlLower = anuncio.destinationUrl.toLowerCase();
+    if (destUrlLower.includes('instagram.com') || destUrlLower.includes('facebook.com') || destUrlLower.includes('wa.me') || destUrlLower.includes('whatsapp.com')) {
+      return res.status(400).json({ error: 'Links de redes sociais (Instagram, WhatsApp, etc) não podem ser mapeados pelo URLscan.' });
+    }
+
     // Dispara em background — responde imediatamente
     scanFunnel(anuncio.fbAdId, anuncio.destinationUrl).catch(() => {});
 
