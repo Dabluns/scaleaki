@@ -10,6 +10,9 @@ const router = Router();
 router.get('/', authenticateJWT, ofertasRateLimiter, fbAdsController.listAnuncios);
 router.get('/:id', authenticateJWT, ofertasRateLimiter, fbAdsController.getAnuncio);
 
+// ─── Busca ao vivo na biblioteca do Facebook ──────────────────────────────────
+router.post('/search', authenticateJWT, heavyOperationRateLimiter, fbAdsController.liveSearch);
+
 // ─── Rotas de ação (autenticadas, qualquer usuário) ───────────────────────────
 router.post('/:id/scan-funil', authenticateJWT, heavyOperationRateLimiter, fbAdsController.triggerFunnelScan);
 

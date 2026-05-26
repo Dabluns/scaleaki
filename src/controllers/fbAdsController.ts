@@ -1,8 +1,35 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
-import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify } from '../services/fbAdLibrary.service';
+import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify, liveSearchFromApify } from '../services/fbAdLibrary.service';
 import { scanFunnel } from '../services/urlscan.service';
 import logger from '../config/logger';
+
+// ─── Busca ao vivo na Ad Library via Apify ────────────────────────────────────
+
+export async function liveSearch(req: Request, res: Response) {
+  try {
+    const { q, countries, limit } = req.body as {
+      q?: string;
+      countries?: string[];
+      limit?: number;
+    };
+
+    if (!q || !q.trim()) {
+      return res.status(400).json({ error: 'Parâmetro de busca "q" é obrigatório.' });
+    }
+
+    const results = await liveSearchFromApify({
+      searchTerms: q.trim(),
+      countries: countries || ['BR'],
+      limit: Math.min(limit || 30, 100),
+    });
+
+    res.json({ data: results, total: results.length, query: q.trim() });
+  } catch (err: any) {
+    logger.error('[FbAds] Erro na busca ao vivo:', err);
+    res.status(500).json({ error: err.message || 'Erro na busca ao vivo' });
+  }
+}
 
 // ─── Listagem com filtros e paginação ─────────────────────────────────────────
 
