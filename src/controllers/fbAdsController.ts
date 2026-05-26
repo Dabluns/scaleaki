@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
-import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify, liveSearchFromApify } from '../services/fbAdLibrary.service';
+import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify, liveSearchFromApify, calcEscala } from '../services/fbAdLibrary.service';
 import { scanFunnel } from '../services/urlscan.service';
 import logger from '../config/logger';
 
@@ -28,6 +28,33 @@ export async function liveSearch(req: Request, res: Response) {
   } catch (err: any) {
     logger.error('[FbAds] Erro na busca ao vivo:', err);
     res.status(500).json({ error: err.message || 'Erro na busca ao vivo' });
+  }
+}
+
+// ─── Recalcular escala de todos os anúncios existentes ──────────────────────────
+
+export async function recalcEscalaAll(req: Request, res: Response) {
+  try {
+    const todos = await prisma.anuncioFacebook.findMany({
+      select: { id: true, duplicatas: true, deliveryStartTime: true, deliveryStopTime: true, isActive: true },
+    });
+
+    let count = 0;
+    for (const ad of todos) {
+      const isActive = ad.isActive ?? !ad.deliveryStopTime;
+      const escala = calcEscala({
+        duplicatas: ad.duplicatas ?? 0,
+        deliveryStartTime: ad.deliveryStartTime,
+        isActive,
+      });
+      await prisma.anuncioFacebook.update({ where: { id: ad.id }, data: { escala, isActive } });
+      count++;
+    }
+
+    res.json({ message: `Escala recalculada para ${count} anúncios.`, count });
+  } catch (err: any) {
+    logger.error('[FbAds] Erro ao recalcular escala:', err);
+    res.status(500).json({ error: 'Erro ao recalcular escala' });
   }
 }
 

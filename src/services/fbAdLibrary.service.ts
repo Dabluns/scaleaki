@@ -5,6 +5,40 @@ import logger from '../config/logger';
 const FB_BASE = `https://graph.facebook.com/${process.env.FB_API_VERSION || 'v25.0'}`;
 const ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN!;
 
+/**
+ * Calcula o índice de escala de 0 a 100 com base em:
+ *  - Duplicatas (peso 50): escala logarítmica, saturando em ~20 cópias
+ *  - Dias no ar (peso 30): linear, satura em 90 dias
+ *  - Anúncio ativo (peso 20): bônus fixo
+ */
+export function calcEscala(params: {
+  duplicatas: number;
+  deliveryStartTime: Date | string | null;
+  isActive: boolean;
+}): number {
+  const { duplicatas, deliveryStartTime, isActive } = params;
+
+  // ── Duplicatas (0–50 pts) ──────────────────────────────────────
+  // log(1+n)/log(21) normaliza de 0 a 1 para n em [0,20]
+  const dupScore = Math.min(Math.log(1 + duplicatas) / Math.log(21), 1) * 50;
+
+  // ── Dias no ar (0–30 pts) ─────────────────────────────────────
+  let diasScore = 0;
+  if (deliveryStartTime) {
+    const start = new Date(deliveryStartTime).getTime();
+    if (!isNaN(start)) {
+      const daysOnAir = Math.max(0, (Date.now() - start) / 86_400_000);
+      diasScore = Math.min(daysOnAir / 90, 1) * 30;
+    }
+  }
+
+  // ── Ativo (0–20 pts) ─────────────────────────────────────────
+  const ativoScore = isActive ? 20 : 0;
+
+  return Math.round(dupScore + diasScore + ativoScore);
+}
+
+
 export interface FbAdResult {
   id: string;
   page_id?: string;
@@ -309,6 +343,18 @@ export async function syncAdsFromApify(params: {
         if (!item.ad_archive_id && !item.id) continue;
 
         const fbAdId = String(item.ad_archive_id || item.id);
+        const duplicatas = item.collation_count || item.duplicatas || 0;
+        const deliveryStartTime = item.start_date_formatted
+          ? new Date(item.start_date_formatted)
+          : item.start_date
+            ? new Date(item.start_date * 1000)
+            : item.ad_delivery_start_time
+              ? new Date(item.ad_delivery_start_time)
+              : null;
+        const isActive = !item.end_date && !item.end_date_formatted && !item.ad_delivery_stop_time;
+
+        const escala = calcEscala({ duplicatas, deliveryStartTime, isActive });
+
         const data = {
           pageId: item.page_id || item.pageId || item.snapshot?.page_id || null,
           pageName: item.page_name || item.pageName || item.snapshot?.page_name || null,
@@ -320,14 +366,22 @@ export async function syncAdsFromApify(params: {
           destinationUrl: item.snapshot?.link_url || item.link_url || item.landing_page_url || null,
           libraryUrl: item.ad_library_url || item.library_url || null,
           publisherPlatforms: item.publisher_platform ? JSON.stringify(item.publisher_platform) : item.publisher_platforms ? JSON.stringify(item.publisher_platforms) : null,
-          deliveryStartTime: item.start_date_formatted ? new Date(item.start_date_formatted) : item.start_date ? new Date(item.start_date * 1000) : item.ad_delivery_start_time ? new Date(item.ad_delivery_start_time) : null,
-          deliveryStopTime: item.end_date_formatted ? new Date(item.end_date_formatted) : item.end_date ? new Date(item.end_date * 1000) : item.ad_delivery_stop_time ? new Date(item.ad_delivery_stop_time) : null,
+          deliveryStartTime,
+          deliveryStopTime: item.end_date_formatted
+            ? new Date(item.end_date_formatted)
+            : item.end_date
+              ? new Date(item.end_date * 1000)
+              : item.ad_delivery_stop_time
+                ? new Date(item.ad_delivery_stop_time)
+                : null,
           spendRange: item.spend ? (typeof item.spend === 'object' ? `${item.spend.lower_bound}-${item.spend.upper_bound}` : String(item.spend)) : null,
           impressionsRange: item.impressions ? (typeof item.impressions === 'object' ? `${item.impressions.lower_bound}-${item.impressions.upper_bound}` : String(item.impressions)) : null,
           currency: item.currency || null,
           pageProfilePic: item.snapshot?.page_profile_picture_url || item.pageProfilePic || null,
           pageLikes: item.snapshot?.page_like_count || item.pageLikes || null,
-          duplicatas: item.collation_count || item.duplicatas || 0,
+          duplicatas,
+          isActive,
+          escala,
           scraperLastRun: new Date(),
         };
 
