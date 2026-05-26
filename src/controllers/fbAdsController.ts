@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
-import { syncAdsFromLibrary, enrichPageData } from '../services/fbAdLibrary.service';
+import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify } from '../services/fbAdLibrary.service';
 import { scanFunnel } from '../services/urlscan.service';
 import logger from '../config/logger';
 
@@ -103,6 +103,21 @@ export async function getAnuncio(req: Request, res: Response) {
 export async function syncAds(req: Request, res: Response) {
   try {
     const { searchTerms, adType, countries, adActiveStatus, pageIds, limit } = req.body;
+
+    const useApify = !!(process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN);
+
+    if (useApify) {
+      const result = await syncAdsFromApify({
+        searchTerms,
+        countries,
+        limit,
+      });
+      return res.json({
+        message: 'Sincronização via Scraper (Apify) iniciada em segundo plano. Os anúncios serão minerados e aparecerão em instantes.',
+        runId: result.runId,
+        isApify: true
+      });
+    }
 
     const result = await syncAdsFromLibrary({
       searchTerms,
