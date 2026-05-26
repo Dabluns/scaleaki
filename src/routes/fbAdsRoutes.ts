@@ -18,6 +18,7 @@ router.post('/:id/scan-funil', authenticateJWT, heavyOperationRateLimiter, fbAds
 
 // ─── Rotas de admin ───────────────────────────────────────────────────────────
 router.post('/sync', authenticateJWT, authorizeRoles(['admin']), heavyOperationRateLimiter, fbAdsController.syncAds);
+router.post('/recalc-escala', authenticateJWT, authorizeRoles(['admin']), fbAdsController.recalcEscalaAll);
 router.patch('/:id/escala', authenticateJWT, authorizeRoles(['admin']), fbAdsController.updateEscala);
 router.patch('/:id/toggle', authenticateJWT, authorizeRoles(['admin']), fbAdsController.toggleAnuncio);
 router.post('/:id/enrich-page', authenticateJWT, authorizeRoles(['admin']), fbAdsController.triggerPageEnrich);
