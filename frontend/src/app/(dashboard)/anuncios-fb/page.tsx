@@ -36,8 +36,10 @@ function AnunciosFbContent() {
   const [liveError, setLiveError] = useState<string | null>(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [liveTotal, setLiveTotal] = useState(0);
+  const [liveMining, setLiveMining] = useState(false); // Apify rodando em background
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const miningPollRef = useRef<NodeJS.Timeout | null>(null);
 
   const getAuthHeaders = useCallback((): HeadersInit => {
     const cookies = nookies.get(null);
@@ -80,6 +82,39 @@ function AnunciosFbContent() {
       const json = await res.json();
       setLiveResults(json.data || []);
       setLiveTotal(json.total || 0);
+
+      // Se Apify está minerando em background, inicia polling de 10s
+      if (json.miningStarted) {
+        setLiveMining(true);
+        if (miningPollRef.current) clearInterval(miningPollRef.current);
+        let polls = 0;
+        miningPollRef.current = setInterval(async () => {
+          polls++;
+          if (polls > 24) { // max 4 min
+            clearInterval(miningPollRef.current!);
+            setLiveMining(false);
+            return;
+          }
+          // Rebusca no BD (novos anúncios do Apify já foram salvos)
+          try {
+            const r2 = await fetch(`${API_BASE}/fb-ads/search`, {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              credentials: 'include',
+              body: JSON.stringify({ q: q.trim(), countries: ['BR'], limit: 50 }),
+            });
+            if (r2.ok) {
+              const j2 = await r2.json();
+              if (j2.total > (json.total || 0)) {
+                setLiveResults(j2.data || []);
+                setLiveTotal(j2.total || 0);
+                clearInterval(miningPollRef.current!);
+                setLiveMining(false);
+              }
+            }
+          } catch {}
+        }, 10000);
+      }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         setLiveError(err.message || 'Erro ao buscar anúncios');
@@ -110,7 +145,9 @@ function AnunciosFbContent() {
     setLiveResults([]);
     setLiveError(null);
     setLiveLoading(false);
+    setLiveMining(false);
     abortRef.current?.abort();
+    if (miningPollRef.current) clearInterval(miningPollRef.current);
   };
 
   const [recalcing, setRecalcing] = useState(false);
@@ -306,20 +343,25 @@ function AnunciosFbContent() {
           {/* Dica */}
           {!isLiveMode && (
             <p className="mt-2 ml-4 text-[9px] font-bold text-white/20 uppercase tracking-widest">
-              Digite 2+ caracteres para buscar em tempo real na biblioteca completa do Facebook
+              Digite 2+ caracteres para pesquisar no acervo e minerar novos anúncios
+            </p>
+          )}
+          {isLiveMode && liveLoading && (
+            <p className="mt-2 ml-4 text-[9px] font-bold text-blue-400/50 uppercase tracking-widest animate-pulse">
+              Pesquisando no acervo...
             </p>
           )}
           {isLiveMode && !liveLoading && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="mt-2 ml-4 text-[9px] font-bold text-blue-400/50 uppercase tracking-widest flex items-center gap-2">
-              <TrendingUp size={10} />
-              {liveTotal} anúncios encontrados ao vivo para "{liveQuery}"
+              className="mt-2 ml-4 text-[9px] font-bold uppercase tracking-widest flex items-center gap-2">
+              {liveMining ? (
+                <><Loader2 size={10} className="text-orange-400 animate-spin" />
+                <span className="text-orange-400/70">{liveTotal} no acervo — minerando mais anúncios do Facebook...</span></>
+              ) : (
+                <><TrendingUp size={10} className="text-blue-400/50" />
+                <span className="text-blue-400/50">{liveTotal} anúncios encontrados para "{liveQuery}"</span></>
+              )}
             </motion.p>
-          )}
-          {isLiveMode && liveLoading && (
-            <p className="mt-2 ml-4 text-[9px] font-bold text-blue-400/50 uppercase tracking-widest animate-pulse">
-              Minerando a biblioteca do Facebook...
-            </p>
           )}
         </div>
       </div>
@@ -333,14 +375,23 @@ function AnunciosFbContent() {
             exit={{ opacity: 0, height: 0 }}
             className="px-8 lg:px-12 mb-4"
           >
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20">
-              <Radio size={12} className="text-blue-400 animate-pulse" />
-              <span className="text-[10px] font-black text-blue-400/80 uppercase tracking-widest">
-                Modo Live — Resultados direto da Biblioteca do Facebook
-              </span>
-              <div className="ml-auto flex items-center gap-2">
-                <Database size={10} className="text-white/20" />
-                <span className="text-[9px] text-white/30 font-bold">Os resultados não são salvos automaticamente</span>
+            <div className={`flex items-center gap-3 p-3 rounded-2xl border transition-colors ${
+              liveMining
+                ? 'bg-orange-500/5 border-orange-500/20'
+                : 'bg-blue-500/5 border-blue-500/20'
+            }`}>
+              {liveMining
+                ? <><Loader2 size={12} className="text-orange-400 animate-spin" />
+                    <span className="text-[10px] font-black text-orange-400/80 uppercase tracking-widest">
+                      Acervo + Minerando Facebook em background
+                    </span></>
+                : <><Database size={12} className="text-blue-400" />
+                    <span className="text-[10px] font-black text-blue-400/80 uppercase tracking-widest">
+                      Pesquisando no Acervo Local
+                    </span></>
+              }
+              <div className="ml-auto">
+                <span className="text-[9px] text-white/30 font-bold">{liveTotal} resultados</span>
               </div>
             </div>
           </motion.div>
