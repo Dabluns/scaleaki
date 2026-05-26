@@ -228,10 +228,23 @@ export async function liveSearchFromApify(params: {
 
   logger.info('[Apify][LiveSearch] Iniciando busca ao vivo', { searchTerms, limit });
 
-  const runRes = await axios.post(
-    `https://api.apify.com/v2/acts/curious_coder~facebook-ads-library-scraper/runs?token=${token}`,
-    { urls: [{ url: searchUrl }], limit }
-  );
+  let runRes: any;
+  try {
+    runRes = await axios.post(
+      `https://api.apify.com/v2/acts/curious_coder~facebook-ads-library-scraper/runs?token=${token}`,
+      { urls: [{ url: searchUrl }], limit }
+    );
+  } catch (err: any) {
+    const apifyMsg = err.response?.data?.error?.message || err.response?.data?.message || err.message;
+    const status = err.response?.status;
+    if (status === 403) {
+      throw new Error(`Acesso negado ao actor Apify (403). Verifique se o actor "curious_coder/facebook-ads-library-scraper" está comprado/assinado na sua conta Apify em: https://apify.com/curious_coder/facebook-ads-library-scraper`);
+    }
+    if (status === 401) {
+      throw new Error(`Token Apify inválido ou expirado (401). Verifique a variável APIFY_TOKEN no servidor.`);
+    }
+    throw new Error(`Erro ao iniciar scraper Apify (${status}): ${apifyMsg}`);
+  }
 
   const runId = runRes.data?.data?.id;
   if (!runId) throw new Error('Falha ao iniciar execução no Apify.');
