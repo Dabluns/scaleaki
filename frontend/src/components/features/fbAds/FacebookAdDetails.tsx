@@ -136,14 +136,7 @@ export function FacebookAdDetails({ anuncioId, onClose, onFunnelScan, fetchById 
                   >
                     {/* Embed do criativo */}
                     <div className="relative min-h-[420px] bg-black border-r border-white/5 flex items-center justify-center overflow-hidden">
-                      {anuncio.adSnapshotUrl ? (
-                        <iframe
-                          src={anuncio.adSnapshotUrl}
-                          className="w-full h-full min-h-[420px] border-0"
-                          sandbox="allow-same-origin allow-scripts"
-                          title="Criativo do anúncio"
-                        />
-                      ) : anuncio.landingScreenshot ? (
+                      {anuncio.landingScreenshot ? (
                         <img
                           src={anuncio.landingScreenshot}
                           alt="Landing"

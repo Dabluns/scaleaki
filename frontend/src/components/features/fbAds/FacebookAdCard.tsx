@@ -83,14 +83,7 @@ export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardPro
         <div className="relative h-64 w-full overflow-hidden bg-black">
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10" />
 
-          {anuncio.adSnapshotUrl ? (
-            <iframe
-              src={anuncio.adSnapshotUrl}
-              className="w-full h-full border-0 scale-105 pointer-events-none"
-              sandbox="allow-same-origin"
-              title="Criativo do anúncio"
-            />
-          ) : anuncio.landingScreenshot && !imgError ? (
+          {anuncio.landingScreenshot && !imgError ? (
             <img
               src={anuncio.landingScreenshot}
               alt="Landing page"
