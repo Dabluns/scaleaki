@@ -26,9 +26,12 @@ const PIXEL_COLORS: Record<string, string> = {
 
 export function FunnelAnalysisTab({ anuncio, onScanFunnel, onRefresh }: FunnelAnalysisTabProps) {
   const [scanning, setScanning] = useState(false);
-  const [scanDone, setScanDone] = useState(false);
+  // polling = true enquanto aguardamos o servidor processar o scan
+  const [polling, setPolling] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
-  const [pollCount, setPollCount] = useState(0);
+  // Guarda se havia dados quando o scan foi disparado, para detectar novos dados
+  const hadDataBeforeScan = React.useRef(false);
+  const pollIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const pixels = parseJsonField<string>(anuncio.activePixels);
   const subdomains = parseJsonField<string>(anuncio.funnelSubdomains);
@@ -36,40 +39,56 @@ export function FunnelAnalysisTab({ anuncio, onScanFunnel, onRefresh }: FunnelAn
 
   const hasFunnelData = !!anuncio.urlscanUuid || pixels.length > 0 || subdomains.length > 0;
 
-  // Guarda o timestamp anterior para comparar quando parar o polling
-  const initialLastRun = React.useRef(anuncio.urlscanLastRun);
-
+  // Quando os dados de funil aparecerem ENQUANTO estamos em polling, para o intervalo
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (scanDone) {
-      interval = setInterval(async () => {
-        if (onRefresh) {
-          await onRefresh();
-          setPollCount((prev) => prev + 1);
-        }
-      }, 5000);
+    if (polling && hasFunnelData && !hadDataBeforeScan.current) {
+      stopPolling();
     }
-    return () => clearInterval(interval);
-  }, [scanDone, onRefresh]);
+  }, [polling, hasFunnelData]);
 
-  useEffect(() => {
-    // Se o lastRun mudou ou passou de 12 tentativas (60s), para o polling
-    if (scanDone && (anuncio.urlscanLastRun !== initialLastRun.current || pollCount >= 12)) {
-      setScanDone(false);
-      setPollCount(0);
-      initialLastRun.current = anuncio.urlscanLastRun;
+  const stopPolling = () => {
+    setPolling(false);
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
     }
-  }, [scanDone, anuncio.urlscanLastRun, pollCount]);
+  };
+
+  const startPolling = () => {
+    // Para polling anterior se existir
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 24; // 24 × 5s = 2 minutos
+
+    pollIntervalRef.current = setInterval(async () => {
+      attempts++;
+      if (attempts >= MAX_ATTEMPTS) {
+        stopPolling();
+        return;
+      }
+      if (onRefresh) {
+        await onRefresh();
+      }
+    }, 5000);
+  };
+
+  // Limpa o intervalo ao desmontar
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
 
   const handleScan = async () => {
     setScanning(true);
-    setScanDone(false);
     setScanError(null);
-    setPollCount(0);
-    initialLastRun.current = anuncio.urlscanLastRun;
+    // Salva se havia dados antes do scan (para não parar o polling prematuramente)
+    hadDataBeforeScan.current = hasFunnelData;
     try {
       await onScanFunnel();
-      setScanDone(true);
+      setPolling(true);
+      startPolling();
     } catch (err: any) {
       setScanError(err.message || 'Erro ao iniciar análise');
     } finally {
@@ -200,7 +219,7 @@ export function FunnelAnalysisTab({ anuncio, onScanFunnel, onRefresh }: FunnelAn
       )}
 
       {/* Sem dados — estado vazio */}
-      {!hasFunnelData && !scanning && (
+      {!hasFunnelData && !scanning && !polling && (
         <div className="p-10 rounded-2xl border border-dashed border-white/10 flex flex-col items-center gap-4">
           <Network size={32} className="text-white/10" />
           <div className="text-center">
@@ -213,7 +232,7 @@ export function FunnelAnalysisTab({ anuncio, onScanFunnel, onRefresh }: FunnelAn
       {/* Botão de (re)análise */}
       <div className="pt-2">
         <AnimatePresence mode="wait">
-          {scanDone ? (
+          {polling ? (
             <motion.div
               key="done"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -221,8 +240,8 @@ export function FunnelAnalysisTab({ anuncio, onScanFunnel, onRefresh }: FunnelAn
               exit={{ opacity: 0 }}
               className="flex items-center gap-2 p-4 rounded-2xl bg-green-500/10 border border-green-500/30 text-green-400"
             >
-              <CheckCircle2 size={16} />
-              <span className="text-[11px] font-black uppercase tracking-widest">Scan Iniciado — Resultados em ~60 segundos</span>
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-[11px] font-black uppercase tracking-widest">Scan Iniciado — Aguardando Resultados...</span>
             </motion.div>
           ) : (
             <motion.button
