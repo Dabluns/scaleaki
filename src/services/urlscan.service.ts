@@ -131,7 +131,9 @@ async function pollResult(uuid: string, maxAttempts = 12, intervalMs = 5000): Pr
   for (let i = 0; i < maxAttempts; i++) {
     await sleep(intervalMs);
     try {
-      const res = await axios.get(`${URLSCAN_API}/result/${uuid}/`);
+      const res = await axios.get(`${URLSCAN_API}/result/${uuid}/`, {
+        headers: { 'API-Key': API_KEY }
+      });
       if (res.status === 200) return res.data;
     } catch (err: any) {
       if (err.response?.status !== 404) throw err;
