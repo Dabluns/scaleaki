@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import nookies from 'nookies';
 import {
   Megaphone, Flame, RefreshCw, Loader2, Zap,
-  Search, X, Radio, Database, TrendingUp
+  Search, X, Radio, Database, TrendingUp, BarChart3
 } from 'lucide-react';
 import { useFacebookAds, AnuncioFacebook } from '@/hooks/useFacebookAds';
 import { FacebookAdsFilters } from '@/components/features/fbAds/FacebookAdsFilters';
@@ -113,6 +113,32 @@ function AnunciosFbContent() {
     abortRef.current?.abort();
   };
 
+  const [recalcing, setRecalcing] = useState(false);
+
+  const handleRecalcEscala = async () => {
+    const cookies = nookies.get(null);
+    const token = cookies['auth_token'] || null;
+    setRecalcing(true);
+    try {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token && token !== 'undefined' && token !== 'null') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(`${API_BASE}/fb-ads/recalc-escala`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Erro ao recalcular');
+      refetch();
+    } catch (err: any) {
+      setSyncError(err.message);
+    } finally {
+      setRecalcing(false);
+    }
+  };
+
   const handleSync = async () => {
     const cookies = nookies.get(null);
     const token = cookies['auth_token'] || null;
@@ -197,15 +223,21 @@ function AnunciosFbContent() {
 
         {/* Admin controls */}
         {isAdmin && (
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               onClick={refetch}
-              className="flex items-center gap-2 px-6 py-4 bg-white/[0.03] border border-white/5 rounded-2xl text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white/60 transition-all">
+              className="flex items-center gap-2 px-5 py-3 bg-white/[0.03] border border-white/5 rounded-2xl text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white/60 transition-all">
               <RefreshCw size={14} /> Atualizar
             </motion.button>
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              onClick={handleRecalcEscala} disabled={recalcing}
+              title="Recalcula a escala de TODOS os anúncios baseado em duplicatas + tempo no ar + status"
+              className="flex items-center gap-2 px-5 py-3 bg-orange-500/10 border border-orange-500/30 rounded-2xl text-[10px] font-black text-orange-400 uppercase tracking-widest hover:bg-orange-500 hover:text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              {recalcing ? <><Loader2 size={14} className="animate-spin" /> Recalculando...</> : <><BarChart3 size={14} /> Recalc Escala</>}
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               onClick={handleSync} disabled={syncing}
-              className="flex items-center gap-2 px-6 py-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl text-[10px] font-black text-blue-400 uppercase tracking-widest hover:bg-blue-500 hover:text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              className="flex items-center gap-2 px-5 py-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl text-[10px] font-black text-blue-400 uppercase tracking-widest hover:bg-blue-500 hover:text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               {syncing ? <><Loader2 size={14} className="animate-spin" /> Sincronizando...</> : <><Zap size={14} /> Sincronizar</>}
             </motion.button>
           </div>
