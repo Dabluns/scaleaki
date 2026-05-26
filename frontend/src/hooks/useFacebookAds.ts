@@ -155,9 +155,10 @@ export function useFacebookAds() {
     if (token && token !== 'undefined' && token !== 'null') {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    const res = await fetch(`${API_BASE}/fb-ads/${id}`, {
+    const res = await fetch(`${API_BASE}/fb-ads/${id}?t=${Date.now()}`, {
       headers,
       credentials: 'include',
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     return res.json();
