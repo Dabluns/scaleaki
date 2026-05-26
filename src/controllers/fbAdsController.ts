@@ -68,6 +68,56 @@ export async function liveSearch(req: Request, res: Response) {
   }
 }
 
+// ─── Receber anúncios da Extensão do Chrome ──────────────────────────────────
+
+export async function syncExtension(req: Request, res: Response) {
+  try {
+    const { ads } = req.body;
+    if (!Array.isArray(ads)) {
+      return res.status(400).json({ error: 'Formato inválido. Esperado um array "ads".' });
+    }
+
+    let created = 0;
+    let updated = 0;
+
+    for (const item of ads) {
+      if (!item.fbAdId) continue;
+
+      const duplicatas = item.duplicatas || 0;
+      const deliveryStartTime = item.deliveryStartTime ? new Date(item.deliveryStartTime) : null;
+      const isActive = item.isActive !== false;
+
+      const escala = calcEscala({ duplicatas, deliveryStartTime, isActive });
+
+      const data = {
+        pageName: item.pageName || null,
+        pageProfilePic: item.pageProfilePic || null,
+        adCopy: item.adCopy || null,
+        adHeadline: item.adHeadline || null,
+        destinationUrl: item.destinationUrl || null,
+        deliveryStartTime,
+        duplicatas,
+        isActive,
+        escala,
+        scraperLastRun: new Date(),
+      };
+
+      const existing = await prisma.anuncioFacebook.findUnique({ where: { fbAdId: item.fbAdId } });
+      if (existing) {
+        await prisma.anuncioFacebook.update({ where: { fbAdId: item.fbAdId }, data });
+        updated++;
+      } else {
+        await prisma.anuncioFacebook.create({ data: { fbAdId: item.fbAdId, ...data } });
+        created++;
+      }
+    }
+
+    res.json({ message: 'Sincronização da extensão concluída', created, updated });
+  } catch (err: any) {
+    logger.error('[FbAds] Erro ao sincronizar via extensão:', err);
+    res.status(500).json({ error: err.message || 'Erro na sincronização' });
+  }
+}
 
 // ─── Recalcular escala de todos os anúncios existentes ──────────────────────────
 

@@ -14,6 +14,7 @@ router.post('/search', authenticateJWT, heavyOperationRateLimiter, fbAdsControll
 
 // ─── Rotas de admin (estáticas) ───────────────────────────────────────────────
 router.post('/sync', authenticateJWT, authorizeRoles(['admin']), heavyOperationRateLimiter, fbAdsController.syncAds);
+router.post('/sync-extension', authenticateJWT, authorizeRoles(['admin']), fbAdsController.syncExtension);
 router.post('/recalc-escala', authenticateJWT, authorizeRoles(['admin']), fbAdsController.recalcEscalaAll);
 
 // ─── Rotas dinâmicas (/:id) — devem vir POR ÚLTIMO ───────────────────────────

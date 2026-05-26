@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Scaleaki Miner",
+  "version": "1.0",
+  "description": "Extrai anúncios da Biblioteca de Anúncios do Facebook e os envia automaticamente para o Scaleaki.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.facebook.com/*",
+    "http://localhost:*/*",
+    "https://scaleaki-backend.onrender.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/ads/library/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
