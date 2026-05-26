@@ -136,11 +136,16 @@ export function useFacebookAds() {
     if (token && token !== 'undefined' && token !== 'null') {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    await fetch(`${API_BASE}/fb-ads/${id}/scan-funil`, {
+    const res = await fetch(`${API_BASE}/fb-ads/${id}/scan-funil`, {
       method: 'POST',
       headers,
       credentials: 'include',
     });
+    
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Erro ao iniciar scan');
+    }
   }, []);
 
   const fetchById = useCallback(async (id: string): Promise<AnuncioFacebook | null> => {

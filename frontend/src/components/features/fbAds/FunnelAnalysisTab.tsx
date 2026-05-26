@@ -26,6 +26,7 @@ const PIXEL_COLORS: Record<string, string> = {
 export function FunnelAnalysisTab({ anuncio, onScanFunnel }: FunnelAnalysisTabProps) {
   const [scanning, setScanning] = useState(false);
   const [scanDone, setScanDone] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   const pixels = parseJsonField<string>(anuncio.activePixels);
   const subdomains = parseJsonField<string>(anuncio.funnelSubdomains);
@@ -36,9 +37,12 @@ export function FunnelAnalysisTab({ anuncio, onScanFunnel }: FunnelAnalysisTabPr
   const handleScan = async () => {
     setScanning(true);
     setScanDone(false);
+    setScanError(null);
     try {
       await onScanFunnel();
       setScanDone(true);
+    } catch (err: any) {
+      setScanError(err.message || 'Erro ao iniciar análise');
     } finally {
       setScanning(false);
     }
@@ -46,6 +50,12 @@ export function FunnelAnalysisTab({ anuncio, onScanFunnel }: FunnelAnalysisTabPr
 
   return (
     <div className="space-y-6">
+      {scanError && (
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-2">
+          <AlertCircle size={14} />
+          {scanError}
+        </div>
+      )}
       {/* Screenshot da landing page */}
       {anuncio.landingScreenshot && (
         <div className="rounded-2xl overflow-hidden border border-white/5 bg-black/40 relative group">
