@@ -194,12 +194,13 @@ export async function syncAdsFromApify(params: {
 
   logger.info('[Apify] Iniciando execução do scraper da Ad Library', { searchTerms, countries, limit });
 
+  const country = countries[0] || 'BR';
+  const searchUrl = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${country}&q=${encodeURIComponent(searchTerms)}&media_type=all`;
+
   // Inicia a execução do actor apify/facebook-ads-scraper
   const runRes = await axios.post(`https://api.apify.com/v2/acts/apify~facebook-ads-scraper/runs?token=${token}`, {
-    searchTerms: [searchTerms],
-    countries,
-    limit,
-    adActiveStatus: 'ACTIVE',
+    startUrls: [{ url: searchUrl }],
+    maxResults: limit,
   });
 
   const runId = runRes.data?.data?.id;
