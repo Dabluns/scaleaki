@@ -70,6 +70,14 @@ const limiter = rateLimit({
   }
 });
 
+// ── CORS deve ser o PRIMEIRO middleware — antes de rate limit e helmet ────────
+// Sem isso, respostas de erro (429, 403) não terão o header CORS e o
+// browser vai reportar erroneamente como "CORS policy blocked".
+app.use(cors(corsConfig));
+
+// Responder preflights OPTIONS imediatamente (antes de qualquer outro middleware)
+app.options('*', cors(corsConfig));
+
 // Aplicar rate limiting global
 app.use(limiter);
 
@@ -89,7 +97,6 @@ app.use(helmet({
     preload: process.env.HSTS_PRELOAD !== 'false'
   }
 }));
-app.use(cors(corsConfig)); // Usar configuração segura do CORS
 app.use(cookieParser()); // Adicionar cookie-parser
 
 // Compressão otimizada por tipo de resposta
