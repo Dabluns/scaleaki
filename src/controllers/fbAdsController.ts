@@ -18,18 +18,56 @@ export async function liveSearch(req: Request, res: Response) {
       return res.status(400).json({ error: 'Parâmetro de busca "q" é obrigatório.' });
     }
 
-    const results = await liveSearchFromApify({
-      searchTerms: q.trim(),
-      countries: countries || ['BR'],
-      limit: Math.min(limit || 30, 100),
-    });
+    const query = q.trim();
+    const take = Math.min(limit || 50, 100);
 
-    res.json({ data: results, total: results.length, query: q.trim() });
+    // ── 1. Busca imediata no banco de dados ──────────────────────────────────
+    const where: any = {
+      isActive: true,
+      OR: [
+        { pageName:    { contains: query, mode: 'insensitive' } },
+        { adCopy:      { contains: query, mode: 'insensitive' } },
+        { adHeadline:  { contains: query, mode: 'insensitive' } },
+        { destinationUrl: { contains: query, mode: 'insensitive' } },
+      ],
+    };
+
+    const [dbResults, total] = await Promise.all([
+      prisma.anuncioFacebook.findMany({
+        where,
+        take,
+        orderBy: [{ escala: 'desc' }, { duplicatas: 'desc' }, { createdAt: 'desc' }],
+      }),
+      prisma.anuncioFacebook.count({ where }),
+    ]);
+
+    // ── 2. Dispara mining em background via Apify (fire & forget) ────────────
+    let miningStarted = false;
+    const hasApify = !!(process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN);
+    if (hasApify) {
+      syncAdsFromApify({
+        searchTerms: query,
+        countries: countries || ['BR'],
+        limit: 50,
+      }).catch((err: any) => {
+        logger.warn(`[FbAds/LiveSearch] Apify indisponível (${err.message}) — usando apenas BD`);
+      });
+      miningStarted = true;
+    }
+
+    res.json({
+      data: dbResults,
+      total,
+      query,
+      source: 'database',
+      miningStarted,
+    });
   } catch (err: any) {
     logger.error('[FbAds] Erro na busca ao vivo:', err);
-    res.status(500).json({ error: err.message || 'Erro na busca ao vivo' });
+    res.status(500).json({ error: err.message || 'Erro na busca' });
   }
 }
+
 
 // ─── Recalcular escala de todos os anúncios existentes ──────────────────────────
 
