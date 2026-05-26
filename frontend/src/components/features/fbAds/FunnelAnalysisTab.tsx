@@ -11,6 +11,7 @@ import { AnuncioFacebook, parseJsonField } from '@/hooks/useFacebookAds';
 interface FunnelAnalysisTabProps {
   anuncio: AnuncioFacebook;
   onScanFunnel: () => Promise<void>;
+  onRefresh?: () => Promise<void>;
 }
 
 const PIXEL_COLORS: Record<string, string> = {
@@ -23,21 +24,49 @@ const PIXEL_COLORS: Record<string, string> = {
   'Snapchat Pixel': 'text-yellow-300 bg-yellow-300/10 border-yellow-300/30',
 };
 
-export function FunnelAnalysisTab({ anuncio, onScanFunnel }: FunnelAnalysisTabProps) {
+export function FunnelAnalysisTab({ anuncio, onScanFunnel, onRefresh }: FunnelAnalysisTabProps) {
   const [scanning, setScanning] = useState(false);
   const [scanDone, setScanDone] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [pollCount, setPollCount] = useState(0);
 
   const pixels = parseJsonField<string>(anuncio.activePixels);
   const subdomains = parseJsonField<string>(anuncio.funnelSubdomains);
   const services = parseJsonField<string>(anuncio.externalServices);
 
-  const hasFunnelData = anuncio.urlscanUuid || pixels.length > 0 || subdomains.length > 0;
+  const hasFunnelData = !!anuncio.urlscanUuid || pixels.length > 0 || subdomains.length > 0;
+
+  // Guarda o timestamp anterior para comparar quando parar o polling
+  const initialLastRun = React.useRef(anuncio.urlscanLastRun);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (scanDone) {
+      interval = setInterval(async () => {
+        if (onRefresh) {
+          await onRefresh();
+          setPollCount((prev) => prev + 1);
+        }
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [scanDone, onRefresh]);
+
+  useEffect(() => {
+    // Se o lastRun mudou ou passou de 12 tentativas (60s), para o polling
+    if (scanDone && (anuncio.urlscanLastRun !== initialLastRun.current || pollCount >= 12)) {
+      setScanDone(false);
+      setPollCount(0);
+      initialLastRun.current = anuncio.urlscanLastRun;
+    }
+  }, [scanDone, anuncio.urlscanLastRun, pollCount]);
 
   const handleScan = async () => {
     setScanning(true);
     setScanDone(false);
     setScanError(null);
+    setPollCount(0);
+    initialLastRun.current = anuncio.urlscanLastRun;
     try {
       await onScanFunnel();
       setScanDone(true);

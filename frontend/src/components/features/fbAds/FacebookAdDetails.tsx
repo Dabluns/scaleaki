@@ -356,6 +356,10 @@ export function FacebookAdDetails({ anuncioId, onClose, onFunnelScan, fetchById 
                     <FunnelAnalysisTab
                       anuncio={anuncio}
                       onScanFunnel={() => onFunnelScan(anuncio.id)}
+                      onRefresh={async () => {
+                        const updated = await fetchById(anuncio.id);
+                        if (updated) setAnuncio(updated);
+                      }}
                     />
                   </motion.div>
                 )}
