@@ -20,12 +20,15 @@ import {
   Search,
   ChevronRight,
   Database,
-  Terminal
+  Terminal,
+  Flame,
+  Megaphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCounter } from '@/hooks/useCounter';
 import { useOfertaContext } from '@/context/OfertaContext';
 import { useNichos } from '@/context/NichoContext';
+import { useFacebookAds } from '@/hooks/useFacebookAds';
 import clsx from 'clsx';
 
 // ─────────────────────────────────────────────────────────────────
@@ -33,11 +36,11 @@ import clsx from 'clsx';
 // Design Path: Mastery High-Fidelity / Strategic Command HUD
 // ─────────────────────────────────────────────────────────────────
 
-export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'ofertas' | 'users' | 'bot' | 'nichos'>('ofertas');
   const [mounted, setMounted] = useState(false);
   const { ofertas, pagination } = useOfertaContext();
   const { nichos } = useNichos();
+  const { meta: fbMeta, anuncios: fbAnuncios } = useFacebookAds();
 
   useEffect(() => {
     setMounted(true);
@@ -116,34 +119,64 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Industrial HUD Metrics Cluster */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 min-w-[300px] xl:min-w-[700px]">
-              <div className="flex flex-col gap-2 p-2 group/stat">
-                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-green-500 transition-colors">Ofertas_DB</span>
-                <div className="flex items-baseline gap-2 pl-3">
-                  <span className="text-5xl font-black text-white italic group-hover/stat:text-green-500 transition-colors">{totalOffers.count.toString().padStart(2, '0')}</span>
-                  <span className="text-[10px] font-black text-white/10 uppercase italic">Units</span>
+            <div className="flex flex-col gap-6">
+              {/* Industrial HUD Metrics Cluster */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 min-w-[300px] xl:min-w-[700px]">
+                <div className="flex flex-col gap-2 p-2 group/stat">
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-green-500 transition-colors">Ofertas_DB</span>
+                  <div className="flex items-baseline gap-2 pl-3">
+                    <span className="text-5xl font-black text-white italic group-hover/stat:text-green-500 transition-colors">{totalOffers.count.toString().padStart(2, '0')}</span>
+                    <span className="text-[10px] font-black text-white/10 uppercase italic">Units</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 p-2 group/stat">
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-cyan-500 transition-colors">Central_Nichos</span>
+                  <div className="flex items-baseline gap-2 pl-3">
+                    <span className="text-5xl font-black text-white italic group-hover/stat:text-cyan-500 transition-colors">{totalNichos.count.toString().padStart(2, '0')}</span>
+                    <span className="text-[10px] font-black text-white/10 uppercase italic">Nodes</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 p-2 group/stat">
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-yellow-500 transition-colors">Uptime_HQ</span>
+                  <div className="flex items-baseline gap-2 pl-3">
+                    <span className="text-5xl font-black text-green-500 italic group-hover/stat:scale-105 transition-transform">{systemStability.count}%</span>
+                    <span className="text-[10px] font-black text-white/10 uppercase italic">Stable</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 p-2 group/stat">
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-purple-500 transition-colors">Bot_Protocols</span>
+                  <div className="flex items-baseline gap-2 pl-3">
+                    <span className="text-5xl font-black text-white italic group-hover/stat:text-purple-500 transition-colors">01</span>
+                    <span className="text-[10px] font-black text-white/10 uppercase italic">Active</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 p-2 group/stat">
-                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-cyan-500 transition-colors">Central_Nichos</span>
-                <div className="flex items-baseline gap-2 pl-3">
-                  <span className="text-5xl font-black text-white italic group-hover/stat:text-cyan-500 transition-colors">{totalNichos.count.toString().padStart(2, '0')}</span>
-                  <span className="text-[10px] font-black text-white/10 uppercase italic">Nodes</span>
+
+              {/* FB Ads Stats Block (Moved from FB Ads page) */}
+              <div className="flex items-center justify-end gap-6 pt-4 border-t border-white/5">
+                <div className="flex flex-col text-right">
+                  <span className="text-4xl font-black text-white italic leading-none">{fbMeta.total}</span>
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Minerados no Acervo FB</span>
                 </div>
-              </div>
-              <div className="flex flex-col gap-2 p-2 group/stat">
-                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-yellow-500 transition-colors">Uptime_HQ</span>
-                <div className="flex items-baseline gap-2 pl-3">
-                  <span className="text-5xl font-black text-green-500 italic group-hover/stat:scale-105 transition-transform">{systemStability.count}%</span>
-                  <span className="text-[10px] font-black text-white/10 uppercase italic">Stable</span>
+                <div className="w-px h-10 bg-white/10" />
+                <div className="flex flex-col text-right">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="text-4xl font-black text-orange-400 italic leading-none">
+                      {fbAnuncios.filter(a => (a.escala ?? 0) > 0).length}
+                    </span>
+                    <Flame size={14} className="text-orange-400" />
+                  </div>
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Com Escala</span>
                 </div>
-              </div>
-              <div className="flex flex-col gap-2 p-2 group/stat">
-                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest border-l-2 border-white/5 pl-3 group-hover/stat:border-purple-500 transition-colors">Bot_Protocols</span>
-                <div className="flex items-baseline gap-2 pl-3">
-                  <span className="text-5xl font-black text-white italic group-hover/stat:text-purple-500 transition-colors">01</span>
-                  <span className="text-[10px] font-black text-white/10 uppercase italic">Active</span>
+                <div className="w-px h-10 bg-white/10" />
+                <div className="flex flex-col text-right">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="text-4xl font-black text-purple-400 italic leading-none">
+                      {fbAnuncios.filter(a => (a.duplicatas ?? 0) > 1).length}
+                    </span>
+                    <Megaphone size={14} className="text-purple-400" />
+                  </div>
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Em Duplicação</span>
                 </div>
               </div>
             </div>
