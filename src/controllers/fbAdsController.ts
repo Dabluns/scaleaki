@@ -94,6 +94,7 @@ export async function syncExtension(req: Request, res: Response) {
         pageProfilePic: item.pageProfilePic || null,
         adCopy: item.adCopy || null,
         adHeadline: item.adHeadline || null,
+        adSnapshotUrl: item.adSnapshotUrl || null,
         destinationUrl: item.destinationUrl || null,
         deliveryStartTime,
         duplicatas,
