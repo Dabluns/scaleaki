@@ -36,6 +36,7 @@ import clsx from 'clsx';
 // Design Path: Mastery High-Fidelity / Strategic Command HUD
 // ─────────────────────────────────────────────────────────────────
 
+export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'ofertas' | 'users' | 'bot' | 'nichos'>('ofertas');
   const [mounted, setMounted] = useState(false);
   const { ofertas, pagination } = useOfertaContext();
