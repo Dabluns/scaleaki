@@ -229,33 +229,35 @@ function AnunciosFbContent() {
             ANÚNCIOS <span className="text-blue-500">FB</span>
           </h1>
 
-          {/* Stats */}
-          <div className="mt-8 flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-4xl font-black text-white italic leading-none">{meta.total}</span>
-              <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Minerados no Acervo</span>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <Flame size={14} className="text-orange-400" />
-                <span className="text-4xl font-black text-orange-400 italic leading-none">
-                  {anuncios.filter(a => (a.escala ?? 0) > 0).length}
-                </span>
+          {/* Stats (Apenas Admin) */}
+          {isAdmin && (
+            <div className="mt-8 flex items-center gap-6">
+              <div className="flex flex-col">
+                <span className="text-4xl font-black text-white italic leading-none">{meta.total}</span>
+                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Minerados no Acervo</span>
               </div>
-              <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Com Escala</span>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <Megaphone size={14} className="text-purple-400" />
-                <span className="text-4xl font-black text-purple-400 italic leading-none">
-                  {anuncios.filter(a => (a.duplicatas ?? 0) > 1).length}
-                </span>
+              <div className="w-px h-10 bg-white/10" />
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <Flame size={14} className="text-orange-400" />
+                  <span className="text-4xl font-black text-orange-400 italic leading-none">
+                    {anuncios.filter(a => (a.escala ?? 0) > 0).length}
+                  </span>
+                </div>
+                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Com Escala</span>
               </div>
-              <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Em Duplicação</span>
+              <div className="w-px h-10 bg-white/10" />
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <Megaphone size={14} className="text-purple-400" />
+                  <span className="text-4xl font-black text-purple-400 italic leading-none">
+                    {anuncios.filter(a => (a.duplicatas ?? 0) > 1).length}
+                  </span>
+                </div>
+                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mt-1">Em Duplicação</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Admin controls */}
