@@ -83,23 +83,32 @@ export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardPro
         <div className="relative h-64 w-full overflow-hidden bg-black">
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10" />
 
-          {(anuncio.landingScreenshot || anuncio.adSnapshotUrl) && !imgError ? (
-            <img
-              src={anuncio.landingScreenshot || anuncio.adSnapshotUrl || undefined}
-              alt="Preview da Oferta"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#111] to-black">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center">
-                  <ExternalLink size={20} className="text-white/10" />
+          {(() => {
+            const hasValidSnapshot = anuncio.adSnapshotUrl && !anuncio.adSnapshotUrl.includes('/ads/library/?id=');
+            const previewImage = anuncio.landingScreenshot || (hasValidSnapshot ? anuncio.adSnapshotUrl : null);
+            
+            if (previewImage && !imgError) {
+              return (
+                <img
+                  src={previewImage}
+                  alt="Preview da Oferta"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  onError={() => setImgError(true)}
+                />
+              );
+            }
+            
+            return (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#111] to-black">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center">
+                    <ExternalLink size={20} className="text-white/10" />
+                  </div>
+                  <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.3em]">Sem Preview</span>
                 </div>
-                <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.3em]">Sem Preview</span>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Tempo no ar — bottom left sobre imagem */}
           <div className="absolute bottom-3 left-3 z-20">
