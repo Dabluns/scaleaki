@@ -142,7 +142,11 @@ async function startMiner() {
 
           console.log(`✅ [Sucesso] ${response.data.created} criados, ${response.data.updated} atualizados.`);
         } catch (apiError) {
-          console.error(`❌ [Erro da API]`, apiError.response ? apiError.response.data : apiError.message);
+          if (apiError.response) {
+            console.error(`❌ [Erro da API ${apiError.response.status}]`, JSON.stringify(apiError.response.data).substring(0, 500));
+          } else {
+            console.error(`❌ [Erro da API]`, apiError.message);
+          }
         }
       }
     } catch (err) {
