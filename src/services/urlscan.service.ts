@@ -173,12 +173,9 @@ function detectPixels(urls: string[]): string[] {
 }
 
 function extractSubdomains(domains: string[], destinationUrl: string): string[] {
-  try {
-    const base = new URL(destinationUrl).hostname.replace(/^www\./, '');
-    return domains.filter(d => d.endsWith(base) && d !== base && d !== `www.${base}`);
-  } catch {
-    return [];
-  }
+  // A pedido do usuário, agora retornamos toda a "Domain Tree" mapeada pelo URLscan,
+  // ou seja, todos os domínios externos que o site carregou (ex: i.pravatar.cc, flagcdn.com, etc)
+  return domains || [];
 }
 
 function extractExternalServices(domains: string[], destinationUrl: string): string[] {

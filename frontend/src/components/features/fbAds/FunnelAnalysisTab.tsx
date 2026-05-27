@@ -184,7 +184,7 @@ export function FunnelAnalysisTab({ anuncio, onScanFunnel, onRefresh }: FunnelAn
           <div className="flex items-center gap-2 mb-4">
             <Network size={14} className="text-green-400" />
             <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">
-              Subdomínios do Funil ({subdomains.length})
+              Árvore de Domínios ({subdomains.length})
             </span>
           </div>
           <div className="space-y-2">
