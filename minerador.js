@@ -95,10 +95,11 @@ async function startMiner() {
           }
 
           let adSnapshotUrl = null;
-          const images = container.querySelectorAll('img');
-          for (let img of images) {
-            // Pega a imagem principal (maior) e ignora a de perfil
-            if (img.src && !img.src.includes('profile') && img.clientWidth > 80) {
+          const images = Array.from(container.querySelectorAll('img'));
+          // A imagem do criativo geralmente é a última renderizada no card, depois do perfil
+          for (let i = images.length - 1; i >= 0; i--) {
+            const img = images[i];
+            if (img.src && img.src.includes('scontent')) {
               adSnapshotUrl = img.src;
               break;
             }
