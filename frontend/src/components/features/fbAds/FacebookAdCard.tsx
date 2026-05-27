@@ -15,7 +15,7 @@ interface FacebookAdCardProps {
 export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardProps) {
   const [imgError, setImgError] = useState(false);
   const daysOnAir = calcDaysOnAir(anuncio.deliveryStartTime);
-  const isActive = anuncio.isActive && !anuncio.deliveryStopTime;
+  const isActive = anuncio.isActive;
 
   const platforms: string[] = (() => {
     try { return JSON.parse(anuncio.publisherPlatforms || '[]'); } catch { return []; }
