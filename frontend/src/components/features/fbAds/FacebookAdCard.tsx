@@ -83,10 +83,10 @@ export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardPro
         <div className="relative h-64 w-full overflow-hidden bg-black">
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10" />
 
-          {anuncio.landingScreenshot && !imgError ? (
+          {(anuncio.landingScreenshot || anuncio.adSnapshotUrl) && !imgError ? (
             <img
-              src={anuncio.landingScreenshot}
-              alt="Landing page"
+              src={anuncio.landingScreenshot || anuncio.adSnapshotUrl || undefined}
+              alt="Preview da Oferta"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               onError={() => setImgError(true)}
             />
