@@ -128,24 +128,28 @@ async function startMiner() {
       
       if (newAds.length > 0) {
         newAds.forEach(ad => sentAds.add(ad.fbAdId));
-        console.log(`[🎯] Encontrados ${newAds.length} anúncios. Enviando para a API...`);
+        console.log(`[🎯] Encontrados ${newAds.length} novos anúncios.`);
         
-        try {
-          // Envia para o Backend que criamos para a Extensão do Chrome (funciona perfeitamente aqui)
-          const response = await axios.post(`${API_URL}/fb-ads/sync-extension`, {
-            ads: newAds
-          }, {
-            headers: {
-              'Authorization': `Bearer ${JWT_TOKEN}`
+        // Envia em lotes de 10 para evitar Payload Too Large (Erro 413) na API do Render
+        const chunkSize = 10;
+        for (let i = 0; i < newAds.length; i += chunkSize) {
+          const chunk = newAds.slice(i, i + chunkSize);
+          console.log(`[⏳] Enviando lote ${Math.floor(i/chunkSize) + 1} de ${Math.ceil(newAds.length/chunkSize)}...`);
+          try {
+            const response = await axios.post(`${API_URL}/fb-ads/sync-extension`, {
+              ads: chunk
+            }, {
+              headers: {
+                'Authorization': `Bearer ${JWT_TOKEN}`
+              }
+            });
+            console.log(`✅ [Sucesso Lote] ${response.data.created} criados, ${response.data.updated} atualizados.`);
+          } catch (apiError) {
+            if (apiError.response) {
+              console.error(`❌ [Erro da API ${apiError.response.status}]`, JSON.stringify(apiError.response.data).substring(0, 500));
+            } else {
+              console.error(`❌ [Erro da API]`, apiError.message);
             }
-          });
-
-          console.log(`✅ [Sucesso] ${response.data.created} criados, ${response.data.updated} atualizados.`);
-        } catch (apiError) {
-          if (apiError.response) {
-            console.error(`❌ [Erro da API ${apiError.response.status}]`, JSON.stringify(apiError.response.data).substring(0, 500));
-          } else {
-            console.error(`❌ [Erro da API]`, apiError.message);
           }
         }
       }
