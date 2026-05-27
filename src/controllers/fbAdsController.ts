@@ -165,9 +165,20 @@ export async function listAnuncios(req: Request, res: Response) {
     const take = Math.min(Number(limit), 100);
     const skip = (Number(page) - 1) * take;
 
+    const authReq = req as any; // tipagem rápida para pegar user
+    const isAdmin = authReq.user?.role === 'admin';
+
+    // Para usuários comuns (não-admins), forçamos escalaMin >= 30 (somente ofertas escaladas)
+    let finalEscalaMin = escalaMin ? Number(escalaMin) : undefined;
+    if (!isAdmin) {
+      if (!finalEscalaMin || finalEscalaMin < 30) {
+        finalEscalaMin = 30;
+      }
+    }
+
     const where: any = { isActive: status !== 'inactive' };
     if (checkout) where.checkout = checkout;
-    if (escalaMin) where.escala = { gte: Number(escalaMin) };
+    if (finalEscalaMin !== undefined) where.escala = { gte: finalEscalaMin };
     if (duplicatasMin) where.duplicatas = { gte: Number(duplicatasMin) };
     if (search) {
       where.OR = [

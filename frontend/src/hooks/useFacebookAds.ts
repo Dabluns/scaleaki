@@ -60,7 +60,7 @@ export function useFacebookAds() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FbAdsFilters>({ orderBy: 'createdAt', order: 'desc', status: 'active' });
+  const [filters, setFilters] = useState<FbAdsFilters>({ orderBy: 'createdAt', order: 'desc', status: 'active', escalaMin: 30 });
   const [page, setPage] = useState(1);
   const abortRef = useRef<AbortController | null>(null);
 
