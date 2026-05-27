@@ -1,5 +1,9 @@
 (function() {
-  console.log('[Scaleaki] Injector de rede inicializado!');
+  // Evita injetar duas vezes se a extensão rodar de novo na mesma aba
+  if (window.__scaleaki_injected) return;
+  window.__scaleaki_injected = true;
+
+  console.log('[Scaleaki] 🕵️‍♂️ Injector de rede INVISÍVEL inicializado com sucesso (Main World)!');
 
   // Interceptar FETCH
   const origFetch = window.fetch;

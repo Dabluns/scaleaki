@@ -1,10 +1,4 @@
-// ─── 1. Injeta o interceptador na página ──────────────────────────────────────
-const script = document.createElement('script');
-script.src = chrome.runtime.getURL('inject.js');
-script.onload = function() { this.remove(); };
-(document.head || document.documentElement).appendChild(script);
-
-// ─── 2. Estado local ────────────────────────────────────────────────────────
+// ─── 1. Estado local (Injeção via background.js) ────────────────────────────
 let isMining = false;
 let apiUrl = '';
 let token = '';
