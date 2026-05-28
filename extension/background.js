@@ -1,21 +1,4 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'download_media') {
-    const { url, filename } = request.payload;
-    chrome.downloads.download({
-      url: url,
-      filename: filename,
-      saveAs: false
-    }, (downloadId) => {
-      if (chrome.runtime.lastError) {
-        console.error("Erro no download:", chrome.runtime.lastError);
-        sendResponse({ success: false, error: chrome.runtime.lastError.message });
-      } else {
-        sendResponse({ success: true, downloadId });
-      }
-    });
-    return true; // Keep message channel open for async response
-  }
-
   if (request.action === 'save_to_scaleaki') {
     const adData = request.payload;
     
@@ -26,8 +9,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'download_media') {
-    const url = request.url;
-    const filename = request.filename || 'scaleaki_criativo';
+    const url = request.url || (request.payload && request.payload.url);
+    const filename = request.filename || (request.payload && request.payload.filename) || 'scaleaki_criativo';
     
     chrome.downloads.download({
       url: url,
@@ -35,6 +18,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       saveAs: false
     }, (downloadId) => {
       if (chrome.runtime.lastError) {
+        console.error("Erro no download:", chrome.runtime.lastError);
         sendResponse({ success: false, error: chrome.runtime.lastError.message });
       } else {
         sendResponse({ success: true, downloadId });

@@ -172,7 +172,13 @@ function openSaveModal(adData) {
     const ext = type === 'video' ? 'mp4' : 'jpg';
     const filename = `scaleaki_${adData.id}_${index}.${ext}`;
     showToast('Iniciando download...');
-    chrome.runtime.sendMessage({ action: 'download_media', url, filename });
+    chrome.runtime.sendMessage({ action: 'download_media', url, filename }, (response) => {
+      if (chrome.runtime.lastError) {
+        showToast('Erro interno de extensão. Atualize a página.', true);
+      } else if (response && response.error) {
+        showToast('Erro no download: ' + response.error, true);
+      }
+    });
   };
 
   if (adData.mediaUrls && adData.mediaUrls.length > 0) {
