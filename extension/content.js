@@ -360,12 +360,11 @@ function injectInlineButton(cardNode) {
   updateCounter();
 
   // Procurar o local ideal: logo abaixo de "Ver detalhes do anúncio" ou "Ver resumo"
-  // O Facebook usa spans ou divs para o botão "Ver resumo". Vamos buscar ele.
   const allDivs = Array.from(cardNode.querySelectorAll('div, span'));
-  const summaryBtn = allDivs.find(d => 
-    (d.innerText === 'Ver resumo' || d.innerText === 'See summary details' || d.innerText === 'Detalhes do anúncio') && 
-    d.offsetHeight > 10
-  );
+  const summaryBtn = allDivs.find(d => {
+    const text = d.innerText ? d.innerText.trim() : '';
+    return (text === 'Ver resumo' || text === 'See summary details' || text === 'Ver detalhes do anúncio') && d.offsetHeight > 10;
+  });
 
   const container = summaryBtn ? summaryBtn.closest('div[role="button"]') || summaryBtn.parentElement : cardNode;
 
@@ -383,7 +382,7 @@ function injectInlineButton(cardNode) {
   };
 
   // Insere logo apos o botão de resumo
-  if (container && container.parentElement) {
+  if (container && container.parentElement && summaryBtn) {
     // Insere o botão em uma div wrapper
     const wrapper = document.createElement('div');
     wrapper.style.padding = '0 12px 12px 12px'; // Match card padding
@@ -392,6 +391,7 @@ function injectInlineButton(cardNode) {
     // Tenta inserir depois do container do "Ver resumo"
     container.parentElement.insertBefore(wrapper, container.nextSibling);
   } else {
+    // Fallback: se não achar o botão, coloca no fim do card
     cardNode.appendChild(btn);
   }
 }
@@ -409,18 +409,28 @@ const observer = new MutationObserver((mutations) => {
     if (leaf.dataset.scaleakiMarked) return;
     leaf.dataset.scaleakiMarked = "true";
     
-    // Procura o card root (container pai de todo o anúncio)
-    let card = leaf.closest('.xh8yej3'); 
-    if (!card) {
-      let parent = leaf.parentElement;
-      // Sobe na árvore até achar o container grande que engloba o anúncio e o botão "Ver resumo"
-      while(parent && parent.tagName !== 'BODY') {
-        if (parent.clientHeight >= 500 || (parent.innerText && (parent.innerText.includes('Ver resumo') || parent.innerText.includes('See summary')))) {
+    // Sobe na árvore até achar o container grande que engloba tanto o topo (Patrocinado) quanto o rodapé (Ver resumo/detalhes)
+    let card = leaf.parentElement;
+    let found = false;
+    
+    while(card && card.tagName !== 'BODY') {
+      const text = card.innerText || '';
+      if (text.includes('Patrocinado') && (text.includes('Ver resumo') || text.includes('Ver detalhes') || text.includes('See summary'))) {
+        found = true;
+        break;
+      }
+      card = card.parentElement;
+    }
+    
+    // Se não encontrou pela heurística de texto duplo, usa fallback de altura (min 450px)
+    if (!found) {
+      card = leaf.parentElement;
+      while(card && card.tagName !== 'BODY') {
+        if (card.clientHeight >= 450) {
           break;
         }
-        parent = parent.parentElement;
+        card = card.parentElement;
       }
-      card = parent || leaf.parentElement;
     }
     
     if (card) {
