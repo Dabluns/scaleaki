@@ -5,6 +5,48 @@ import logger from '../config/logger';
 const FB_BASE = `https://graph.facebook.com/${process.env.FB_API_VERSION || 'v25.0'}`;
 const ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN!;
 
+// ─── Detecção de checkout pela URL de destino ─────────────────────────────────
+// Rápido, offline, sem URLscan. Cobre os principais players BR + globais.
+// Cada pattern testa o domínio/subdomínio da destinationUrl do anúncio.
+
+const CHECKOUT_URL_SIGNATURES: Array<{ pattern: RegExp; name: string }> = [
+  { pattern: /hotmart\.com|pay\.hotmart\.com|go\.hotmart\.com|hotm\.art/i,       name: 'Hotmart' },
+  { pattern: /kiwify\.com\.br|pay\.kiwify\.com\.br/i,                             name: 'Kiwify' },
+  { pattern: /myshopify\.com|checkout\.shopify\.com|shopify\.com/i,               name: 'Shopify' },
+  { pattern: /yampi\.com\.br|checkout\.yampi\.com\.br/i,                          name: 'Yampi' },
+  { pattern: /cartpanda\.com|pay\.cartpanda\.com/i,                               name: 'CartPanda' },
+  { pattern: /perfectpay\.com\.br|pay\.perfectpay\.com\.br/i,                     name: 'PerfectPay' },
+  { pattern: /eduzz\.com|pay\.eduzz\.com|nutror\.com/i,                           name: 'Eduzz' },
+  { pattern: /monetizze\.com\.br|ev\.monetizze\.com\.br/i,                        name: 'Monetizze' },
+  { pattern: /herospark\.com|pay\.herospark\.com/i,                               name: 'HeroSpark' },
+  { pattern: /guru\.com\.br|checkout\.guru\.com\.br/i,                            name: 'Guru' },
+  { pattern: /braip\.com|checkout\.braip\.com/i,                                  name: 'Braip' },
+  { pattern: /ticto\.com\.br|pay\.ticto\.com\.br/i,                              name: 'Ticto' },
+  { pattern: /lastlink\.com/i,                                                    name: 'Lastlink' },
+  { pattern: /doppus\.com/i,                                                      name: 'Doppus' },
+  { pattern: /pepper\.com\.br/i,                                                  name: 'Pepper' },
+  { pattern: /appmax\.com\.br/i,                                                  name: 'Appmax' },
+  { pattern: /payt\.com\.br/i,                                                   name: 'Payt' },
+  { pattern: /tribopay\.com\.br/i,                                               name: 'TriboPay' },
+  { pattern: /intellipay\.com\.br/i,                                             name: 'IntelliPay' },
+  { pattern: /mercadopago\.com/i,                                                name: 'Mercado Pago' },
+  { pattern: /buy\.stripe\.com|checkout\.stripe\.com/i,                          name: 'Stripe' },
+];
+
+/**
+ * Detecta a plataforma de checkout a partir da URL de destino do anúncio.
+ * Retorna null se não reconhecer nenhum padrão conhecido.
+ */
+export function detectCheckoutFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  for (const { pattern, name } of CHECKOUT_URL_SIGNATURES) {
+    if (pattern.test(url)) return name;
+  }
+  return null;
+}
+
+
+
 /**
  * Calcula o índice de escala de 0 a 100 com base em:
  *  - Duplicatas (peso 50): escala logarítmica, saturando em ~20 cópias
@@ -121,6 +163,8 @@ export async function syncAdsFromLibrary(params: {
   let updated = 0;
 
   for (const ad of ads) {
+    const destinationUrl = ad.ad_snapshot_url ?? null; // API oficial não retorna link direto
+
     const data = {
       pageId: ad.page_id,
       pageName: ad.page_name,
@@ -135,6 +179,7 @@ export async function syncAdsFromLibrary(params: {
       spendRange: ad.spend ? `${ad.spend.lower_bound}-${ad.spend.upper_bound}` : null,
       impressionsRange: ad.impressions ? `${ad.impressions.lower_bound}-${ad.impressions.upper_bound}` : null,
       currency: ad.currency ?? null,
+      checkout: detectCheckoutFromUrl(destinationUrl),
     };
 
     const existing = await prisma.anuncioFacebook.findUnique({ where: { fbAdId: ad.id } });
@@ -261,38 +306,41 @@ export async function liveSearchFromApify(params: {
     .filter(item => item.ad_archive_id || item.id)
     .map(item => {
       const fbAdId = String(item.ad_archive_id || item.id);
-      return {
-        id: fbAdId,
-        fbAdId,
-        pageName: item.page_name || item.pageName || item.snapshot?.page_name || null,
-        pageId: item.page_id || item.pageId || null,
-        pageProfilePic: item.snapshot?.page_profile_picture_url || null,
-        pageLikes: item.snapshot?.page_like_count || null,
-        adCopy: item.snapshot?.body?.text || item.body_text || item.text || null,
-        adHeadline: item.snapshot?.title || item.title || null,
-        adSnapshotUrl: item.ad_snapshot_url || item.snapshotUrl || null,
-        destinationUrl: item.snapshot?.link_url || item.link_url || item.landing_page_url || null,
-        libraryUrl: item.ad_library_url || null,
-        publisherPlatforms: item.publisher_platform
-          ? JSON.stringify(item.publisher_platform)
-          : item.publisher_platforms
-            ? JSON.stringify(item.publisher_platforms)
-            : null,
-        deliveryStartTime: item.start_date_formatted
-          ? new Date(item.start_date_formatted).toISOString()
-          : item.start_date
-            ? new Date(item.start_date * 1000).toISOString()
-            : null,
-        deliveryStopTime: null,
-        spendRange: null,
-        currency: item.currency || null,
-        duplicatas: item.collation_count || 0,
-        escala: null,
-        isActive: true,
-        checkout: null,
-        tecnologia: null,
-        activePixels: null,
-        funnelSubdomains: null,
+        const destinationUrl = item.snapshot?.link_url || item.link_url || item.landing_page_url || null;
+
+        return {
+          id: fbAdId,
+          fbAdId,
+          pageName: item.page_name || item.pageName || item.snapshot?.page_name || null,
+          pageId: item.page_id || item.pageId || null,
+          pageProfilePic: item.snapshot?.page_profile_picture_url || null,
+          pageLikes: item.snapshot?.page_like_count || null,
+          adCopy: item.snapshot?.body?.text || item.body_text || item.text || null,
+          adHeadline: item.snapshot?.title || item.title || null,
+          adSnapshotUrl: item.ad_snapshot_url || item.snapshotUrl || null,
+          destinationUrl,
+          libraryUrl: item.ad_library_url || null,
+          publisherPlatforms: item.publisher_platform
+            ? JSON.stringify(item.publisher_platform)
+            : item.publisher_platforms
+              ? JSON.stringify(item.publisher_platforms)
+              : null,
+          deliveryStartTime: item.start_date_formatted
+            ? new Date(item.start_date_formatted).toISOString()
+            : item.start_date
+              ? new Date(item.start_date * 1000).toISOString()
+              : null,
+          deliveryStopTime: null,
+          spendRange: null,
+          currency: item.currency || null,
+          duplicatas: item.collation_count || 0,
+          escala: null,
+          isActive: true,
+          checkout: detectCheckoutFromUrl(destinationUrl),
+          tecnologia: null,
+          activePixels: null,
+          funnelSubdomains: null,
+
         externalServices: null,
         landingScreenshot: null,
         urlscanUuid: null,
@@ -368,6 +416,8 @@ export async function syncAdsFromApify(params: {
 
         const escala = calcEscala({ duplicatas, deliveryStartTime, isActive });
 
+        const destinationUrl = item.snapshot?.link_url || item.link_url || item.landing_page_url || null;
+
         const data = {
           pageId: item.page_id || item.pageId || item.snapshot?.page_id || null,
           pageName: item.page_name || item.pageName || item.snapshot?.page_name || null,
@@ -376,7 +426,7 @@ export async function syncAdsFromApify(params: {
           adCaption: item.snapshot?.caption || item.ad_creative_link_captions?.[0] || null,
           adDescription: item.snapshot?.link_description || item.ad_creative_link_descriptions?.[0] || null,
           adSnapshotUrl: item.ad_snapshot_url || item.snapshotUrl || item.ad_library_url || null,
-          destinationUrl: item.snapshot?.link_url || item.link_url || item.landing_page_url || null,
+          destinationUrl,
           libraryUrl: item.ad_library_url || item.library_url || null,
           publisherPlatforms: item.publisher_platform ? JSON.stringify(item.publisher_platform) : item.publisher_platforms ? JSON.stringify(item.publisher_platforms) : null,
           deliveryStartTime,
@@ -395,6 +445,7 @@ export async function syncAdsFromApify(params: {
           duplicatas,
           isActive,
           escala,
+          checkout: detectCheckoutFromUrl(destinationUrl),
           scraperLastRun: new Date(),
         };
 

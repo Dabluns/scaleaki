@@ -16,6 +16,7 @@ router.post('/search', authenticateJWT, heavyOperationRateLimiter, fbAdsControll
 router.post('/sync', authenticateJWT, authorizeRoles(['admin']), heavyOperationRateLimiter, fbAdsController.syncAds);
 router.post('/sync-extension', authenticateJWT, authorizeRoles(['admin']), fbAdsController.syncExtension);
 router.post('/recalc-escala', authenticateJWT, authorizeRoles(['admin']), fbAdsController.recalcEscalaAll);
+router.post('/backfill-checkouts', authenticateJWT, authorizeRoles(['admin']), fbAdsController.backfillCheckouts);
 
 // ─── Rotas dinâmicas (/:id) — devem vir POR ÚLTIMO ───────────────────────────
 router.get('/:id', authenticateJWT, ofertasRateLimiter, fbAdsController.getAnuncio);
