@@ -11,6 +11,7 @@ const router = Router();
 // ─── Listagem e busca ─────────────────────────────────────────────────────────
 router.get('/', authenticateJWT, ofertasRateLimiter, fbAdsController.listAnuncios);
 router.post('/search', authenticateJWT, heavyOperationRateLimiter, fbAdsController.liveSearch);
+router.post('/user-save', authenticateJWT, fbAdsController.saveAdFromUser);
 
 // ─── Rotas de admin (estáticas) ───────────────────────────────────────────────
 router.post('/sync', authenticateJWT, authorizeRoles(['admin']), heavyOperationRateLimiter, fbAdsController.syncAds);
