@@ -6,7 +6,7 @@ function showToast(message, isError = false) {
   const toast = document.createElement('div');
   toast.className = 'scaleaki-toast';
   toast.style.borderColor = isError ? '#ef4444' : '#22c55e';
-  toast.innerHTML = \`<span style="color: \${isError ? '#ef4444' : '#22c55e'}">\${isError ? '❌' : '✅'}</span> \${message}\`;
+  toast.innerHTML = `<span style="color: ${isError ? '#ef4444' : '#22c55e'}">${isError ? '❌' : '✅'}</span> ${message}`;
   
   document.body.appendChild(toast);
   
@@ -25,7 +25,7 @@ function injectBottomBar() {
   bar.id = 'scaleaki-bottom-bar';
   bar.className = 'scaleaki-bottom-bar';
   
-  bar.innerHTML = \`
+  bar.innerHTML = `
     <div class="scaleaki-bar-logo">scale<span>aki</span> Toolkit</div>
     <div class="scaleaki-bar-actions">
       <button class="scaleaki-bar-btn" id="scaleaki-btn-mine">
@@ -39,7 +39,7 @@ function injectBottomBar() {
         <span>Anúncios Encontrados</span>
       </div>
     </div>
-  \`;
+  `;
 
   document.body.appendChild(bar);
 
@@ -69,7 +69,7 @@ function openSaveModal(adData) {
   // Usamos o nome da página como sugestão pro Nome do Produto
   const defaultName = adData.pageName || '';
 
-  overlay.innerHTML = \`
+  overlay.innerHTML = `
     <div class="scaleaki-modal">
       <div class="scaleaki-modal-header">
         <h3>Adicionando anúncio ao Scaleaki</h3>
@@ -78,7 +78,7 @@ function openSaveModal(adData) {
       <div class="scaleaki-modal-body">
         <div class="scaleaki-input-group">
           <label>Nome do Produto/Oferta *</label>
-          <input type="text" id="scaleaki-input-name" value="\${defaultName}" placeholder="Ex: Protocolo Zero Dor">
+          <input type="text" id="scaleaki-input-name" value="${defaultName}" placeholder="Ex: Protocolo Zero Dor">
         </div>
         <div class="scaleaki-input-group">
           <label>Tecnologia/Checkout (Opcional)</label>
@@ -100,7 +100,7 @@ function openSaveModal(adData) {
         <button id="scaleaki-btn-confirm-save">Adicionar Oferta</button>
       </div>
     </div>
-  \`;
+  `;
 
   document.body.appendChild(overlay);
 
@@ -128,7 +128,7 @@ function openSaveModal(adData) {
 
     // Enviar para o background
     const payload = {
-      fbAdId: adData.id || \`ext_\${Date.now()}\`,
+      fbAdId: adData.id || `ext_${Date.now()}`,
       pageName: nameVal, // Sobrescreve com o nome escolhido
       adCopy: adData.adCopy,
       adHeadline: adData.pageName, 
@@ -178,10 +178,10 @@ function extractAdData(cardNode) {
   const data = { id: '', pageName: 'Desconhecido', adCopy: '', destinationUrl: '', mediaUrls: [], libraryUrl: '' };
 
   const textContent = cardNode.innerText || '';
-  const idMatch = textContent.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*(\d+)/i);
+  const idMatch = textContent.match(/(?:ID|Identificação)s+das+bibliotecas*(?:des*anúncios)?:s*(d+)/i);
   if (idMatch && idMatch[1]) {
     data.id = idMatch[1];
-    data.libraryUrl = \`https://www.facebook.com/ads/library/?id=\${data.id}\`;
+    data.libraryUrl = `https://www.facebook.com/ads/library/?id=${data.id}`;
   }
 
   const pageLinks = Array.from(cardNode.querySelectorAll('a[href*="facebook.com/"], a[href*="instagram.com/"]'));
