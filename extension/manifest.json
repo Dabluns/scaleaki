@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Scaleaki - Ad Toolkit",
+  "version": "1.0.0",
+  "description": "Ferramenta oficial do Scaleaki para garimpo, download de criativos e análise na Biblioteca de Anúncios do Facebook.",
+  "permissions": [
+    "storage",
+    "downloads",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.facebook.com/*",
+    "*://*.scaleaki.site/*",
+    "http://localhost:4000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.facebook.com/ads/library/*"],
+      "css": ["style.css"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

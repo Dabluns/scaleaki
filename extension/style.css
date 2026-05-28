@@ -1,0 +1,170 @@
+/* Premium Dark/Emerald Theme for Scaleaki Injected Tools */
+
+.scaleaki-toolkit {
+  margin-top: 12px;
+  padding: 12px;
+  background: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: white;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+  position: relative;
+}
+
+.scaleaki-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 8px;
+}
+
+.scaleaki-logo {
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scaleaki-logo span {
+  color: #22c55e;
+}
+
+.scaleaki-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.scaleaki-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.scaleaki-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.scaleaki-btn.primary {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.scaleaki-btn.primary:hover {
+  background: #22c55e;
+  color: black;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+}
+
+.scaleaki-btn.save-btn {
+  grid-column: span 2;
+  background: #22c55e;
+  color: black;
+  border: none;
+  padding: 12px;
+  font-size: 12px;
+}
+
+.scaleaki-btn.save-btn:hover {
+  background: #4ade80;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+}
+
+.scaleaki-info-panel {
+  display: none;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 4px;
+}
+
+.scaleaki-info-panel.active {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scaleaki-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.scaleaki-info-label {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.scaleaki-info-value {
+  color: white;
+  font-weight: 600;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scaleaki-info-value a {
+  color: #4ade80;
+  text-decoration: none;
+}
+
+.scaleaki-info-value a:hover {
+  text-decoration: underline;
+}
+
+.scaleaki-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #0d0d0d;
+  border: 1px solid #22c55e;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(34, 197, 94, 0.2);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.scaleaki-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}

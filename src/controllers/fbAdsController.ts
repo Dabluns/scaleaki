@@ -121,6 +121,55 @@ export async function syncExtension(req: Request, res: Response) {
   }
 }
 
+// ─── Salvar anúncio individual via Extensão do Cliente ────────────────────────
+
+export async function saveAdFromUser(req: Request, res: Response) {
+  try {
+    const { ad } = req.body;
+    if (!ad || !ad.fbAdId) {
+      return res.status(400).json({ error: 'Dados do anúncio inválidos ou faltando fbAdId.' });
+    }
+
+    // Aqui podemos futuramente associar ao userId. Por enquanto salva globalmente.
+    // const authReq = req as any;
+    // const userId = authReq.user?.id;
+
+    const duplicatas = ad.duplicatas || 1;
+    const deliveryStartTime = ad.deliveryStartTime ? new Date(ad.deliveryStartTime) : new Date();
+    const isActive = ad.isActive !== false;
+
+    const escala = calcEscala({ duplicatas, deliveryStartTime, isActive });
+
+    const data = {
+      pageName: ad.pageName || null,
+      pageProfilePic: ad.pageProfilePic || null,
+      adCopy: ad.adCopy || null,
+      adHeadline: ad.adHeadline || null,
+      adSnapshotUrl: ad.adSnapshotUrl || null,
+      destinationUrl: ad.destinationUrl || null,
+      deliveryStartTime,
+      duplicatas,
+      isActive,
+      escala,
+      checkout: detectCheckoutFromUrl(ad.destinationUrl),
+      scraperLastRun: new Date(),
+    };
+
+    const existing = await prisma.anuncioFacebook.findUnique({ where: { fbAdId: ad.fbAdId } });
+    
+    if (existing) {
+      await prisma.anuncioFacebook.update({ where: { fbAdId: ad.fbAdId }, data });
+    } else {
+      await prisma.anuncioFacebook.create({ data: { fbAdId: ad.fbAdId, ...data } });
+    }
+
+    res.json({ success: true, message: 'Anúncio salvo com sucesso no Scaleaki.' });
+  } catch (err: any) {
+    logger.error('[FbAds] Erro ao salvar anúncio do usuário:', err);
+    res.status(500).json({ error: 'Erro interno ao salvar anúncio.' });
+  }
+}
+
 // ─── Recalcular escala de todos os anúncios existentes ──────────────────────────
 
 export async function recalcEscalaAll(req: Request, res: Response) {
