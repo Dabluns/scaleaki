@@ -3,8 +3,8 @@ const puppeteer = require('puppeteer');
 const axios = require('axios');
 
 // Configure aqui a URL do seu backend e o Token Admin JWT que geramos antes
-const API_URL = process.env.API_URL || 'https://scaleaki-backend.onrender.com';
-const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMTA1ZTI3MC00ZmE5LTQyMDktOTFjOS0yNmI5OTVlZDhlMWEiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImZyZWl0YXNhbmRyZXkxNEBnbWFpbC5jb20iLCJpYXQiOjE3Nzk4NTExMDEsImV4cCI6MTgxMTM4NzEwMX0.yLaYGMhBtd9SRhOqK_REfYhAei-HI3CStZOQ0v-sF9c';
+const API_URL = process.env.API_URL || 'http://localhost:4000';
+const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMTA1ZTI3MC00ZmE5LTQyMDktOTFjOS0yNmI5OTVlZDhlMWEiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImZyZWl0YXNhbmRyZXkxNEBnbWFpbC5jb20iLCJpYXQiOjE3Nzk5MDMzMDcsImV4cCI6MTgxMTQzOTMwN30.Ewdtq_Lk5RZ8T6eW6j0EtesXSs66Ctn-GBmxpjSWHiQ';
 
 async function startMiner() {
   console.log('🤖 Iniciando Minerador Local Stealth do Scaleaki...');

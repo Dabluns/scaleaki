@@ -7,11 +7,13 @@
     "storage",
     "downloads",
     "activeTab",
-    "scripting"
+    "scripting",
+    "cookies"
   ],
   "host_permissions": [
     "*://*.facebook.com/*",
     "*://*.scaleaki.site/*",
+    "http://localhost:3000/*",
     "http://localhost:4000/*"
   ],
   "background": {
@@ -25,16 +27,6 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
-    }
-  },
-  "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "default_popup": "popup.html"
   }
 }

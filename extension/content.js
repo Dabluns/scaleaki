@@ -49,7 +49,7 @@ function extractAdData(cardNode) {
 
   // Extrair ID da biblioteca
   const textContent = cardNode.innerText || '';
-  const idMatch = textContent.match(/ID\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*(\d+)/i);
+  const idMatch = textContent.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*(\d+)/i);
   if (idMatch && idMatch[1]) {
     data.id = idMatch[1];
     data.libraryUrl = \`https://www.facebook.com/ads/library/?id=\${data.id}\`;
@@ -69,7 +69,7 @@ function extractAdData(cardNode) {
   // Pega os blocos de texto no meio do card
   const divs = Array.from(cardNode.querySelectorAll('div'));
   const copyDiv = divs.find(d => {
-    return d.dir === 'auto' && d.innerText && d.innerText.length > 20 && !d.innerText.includes('ID da biblioteca');
+    return d.dir === 'auto' && d.innerText && d.innerText.length > 20 && !d.innerText.includes('da biblioteca');
   });
   if (copyDiv) {
     data.adCopy = copyDiv.innerText;
@@ -249,16 +249,24 @@ function injectToolkit(cardNode) {
 
 // Observer para detectar novos cards
 const observer = new MutationObserver((mutations) => {
-  // Heurística: procurar divs que possuam "ID da biblioteca" dentro
-  const cards = document.querySelectorAll('div.x1yztbdb > div.x1n2onr6');
-  // Seletionador genérico focado na estrutura de colunas do Ad Library
-  
-  // Vamos buscar por texto
   const allDivs = document.querySelectorAll('div');
   allDivs.forEach(div => {
-    if (div.innerText && div.innerText.includes('ID da biblioteca') && div.innerText.includes('Detalhes do anúncio')) {
-      // É um card pai! Pega o elemento container
-      const card = div.closest('.xh8yej3') || div.parentElement;
+    if (div.innerText && 
+        (div.innerText.includes('ID da biblioteca') || div.innerText.includes('Identificação da biblioteca')) && 
+        (div.innerText.includes('Patrocinado') || div.innerText.includes('Veiculação iniciada'))) {
+      
+      // Procurar o container card mais próximo que faz sentido (geralmente uma div com borda ou o container principal)
+      // O Facebook usa classes minificadas, então subimos alguns níveis.
+      let card = div.closest('.xh8yej3'); 
+      if (!card) {
+        // Fallback: se não achar a classe, sobe no DOM até achar uma div que tenha a altura razoável de um card
+        let parent = div.parentElement;
+        while(parent && parent.tagName === 'DIV' && parent.clientHeight < 300) {
+          parent = parent.parentElement;
+        }
+        card = parent;
+      }
+      
       if (card && !card.dataset.scaleakiInjected) {
         injectToolkit(card);
       }
@@ -272,11 +280,22 @@ observer.observe(document.body, { childList: true, subtree: true });
 setTimeout(() => {
   const allDivs = document.querySelectorAll('div');
   allDivs.forEach(div => {
-    if (div.innerText && div.innerText.includes('ID da biblioteca') && div.innerText.includes('Detalhes do anúncio')) {
-      const card = div.closest('.xh8yej3') || div.parentElement;
+    if (div.innerText && 
+        (div.innerText.includes('ID da biblioteca') || div.innerText.includes('Identificação da biblioteca')) && 
+        (div.innerText.includes('Patrocinado') || div.innerText.includes('Veiculação iniciada'))) {
+      
+      let card = div.closest('.xh8yej3');
+      if (!card) {
+        let parent = div.parentElement;
+        while(parent && parent.tagName === 'DIV' && parent.clientHeight < 300) {
+          parent = parent.parentElement;
+        }
+        card = parent;
+      }
+      
       if (card && !card.dataset.scaleakiInjected) {
         injectToolkit(card);
       }
     }
   });
-}, 2000);
+}, 2500);

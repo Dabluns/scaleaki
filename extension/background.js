@@ -19,23 +19,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'save_to_scaleaki') {
     const adData = request.payload;
     
-    // Tentamos buscar o token do cookie da Scaleaki
-    chrome.cookies.get({ url: 'https://scaleaki.site', name: 'auth_token' }, (cookie) => {
-      const token = cookie ? cookie.value : null;
-      
-      if (!token) {
-        // Se não tiver em produção, tenta local
-        chrome.cookies.get({ url: 'http://localhost:3000', name: 'auth_token' }, (localCookie) => {
-          if (localCookie && localCookie.value) {
-            sendAdToApi(adData, localCookie.value, 'http://localhost:4000/api/fb-ads/user-save', sendResponse);
-          } else {
-            sendResponse({ success: false, error: 'Usuário não autenticado. Faça login no Scaleaki.' });
-          }
-        });
-      } else {
-        sendAdToApi(adData, token, 'https://scaleaki.site/api/fb-ads/user-save', sendResponse);
-      }
-    });
+    // Modo de Teste: ignora cookies e manda direto para o localhost sem token
+    sendAdToApi(adData, 'test-token', 'http://localhost:4000/api/fb-ads/user-save', sendResponse);
+    
     return true; // Keep message channel open
   }
 });
