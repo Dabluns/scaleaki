@@ -261,24 +261,30 @@ function injectInlineButton(cardNode) {
 
 // Observer Principal
 const observer = new MutationObserver((mutations) => {
-  const allDivs = document.querySelectorAll('div');
-  allDivs.forEach(div => {
-    if (div.innerText && 
-        (div.innerText.includes('ID da biblioteca') || div.innerText.includes('Identificação da biblioteca')) && 
-        (div.innerText.includes('Patrocinado') || div.innerText.includes('Veiculação iniciada'))) {
-      
-      let card = div.closest('.xh8yej3'); 
-      if (!card) {
-        let parent = div.parentElement;
-        while(parent && parent.tagName === 'DIV' && parent.clientHeight < 300) {
-          parent = parent.parentElement;
-        }
-        card = parent;
+  // Procura pelo nó de texto exato (folha) que contém o ID da biblioteca
+  const allLeafs = Array.from(document.querySelectorAll('span, div')).filter(el => {
+    return el.childElementCount === 0 && 
+           el.innerText && 
+           el.innerText.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*\d+/i);
+  });
+
+  allLeafs.forEach(leaf => {
+    if (leaf.dataset.scaleakiMarked) return;
+    leaf.dataset.scaleakiMarked = "true";
+    
+    // Procura o card root (container pai de todo o anúncio)
+    let card = leaf.closest('.xh8yej3'); 
+    if (!card) {
+      let parent = leaf.parentElement;
+      // Sobe na árvore até achar o container grande que engloba o anúncio
+      while(parent && parent.tagName === 'DIV' && parent.clientHeight < 400) {
+        parent = parent.parentElement;
       }
-      
-      if (card && !card.dataset.scaleakiInjected) {
-        injectInlineButton(card);
-      }
+      card = parent || leaf.parentElement;
+    }
+    
+    if (card) {
+      injectInlineButton(card);
     }
   });
 });
