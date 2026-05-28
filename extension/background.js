@@ -24,6 +24,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     return true; // Keep message channel open
   }
+
+  if (request.action === 'download_media') {
+    const url = request.url;
+    const filename = request.filename || 'scaleaki_criativo';
+    
+    chrome.downloads.download({
+      url: url,
+      filename: filename,
+      saveAs: false
+    }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ success: true, downloadId });
+      }
+    });
+
+    return true;
+  }
 });
 
 function sendAdToApi(adData, token, apiUrl, sendResponse) {

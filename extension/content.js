@@ -94,6 +94,33 @@ function openSaveModal(adData) {
   // Usamos o nome da página como sugestão pro Nome do Produto
   const defaultName = adData.pageName || '';
 
+  // Renderizar Criativos
+  let mediaHtml = '';
+  if (adData.mediaUrls && adData.mediaUrls.length > 0) {
+    const itemsHtml = adData.mediaUrls.map((m, i) => `
+      <div class="scaleaki-media-item">
+        <div class="scaleaki-media-type-badge">${m.type === 'video' ? '🎬' : '🖼️'}</div>
+        ${m.type === 'video' ? `<video src="${m.url}" muted></video>` : `<img src="${m.url}">`}
+        <div class="scaleaki-media-download" data-url="${m.url}" data-type="${m.type}" data-idx="${i}">⬇️ Baixar</div>
+      </div>
+    `).join('');
+
+    mediaHtml = `
+      <div class="scaleaki-media-section">
+        <div class="scaleaki-media-header">
+          <h4>Criativos Encontrados (${adData.mediaUrls.length})</h4>
+          <div>
+            <button id="scaleaki-btn-dl-main">Baixar Principal</button>
+            <button id="scaleaki-btn-dl-all">Baixar Todos</button>
+          </div>
+        </div>
+        <div class="scaleaki-media-grid">
+          ${itemsHtml}
+        </div>
+      </div>
+    `;
+  }
+
   overlay.innerHTML = `
     <div class="scaleaki-modal">
       <div class="scaleaki-modal-header">
@@ -120,6 +147,7 @@ function openSaveModal(adData) {
             <option value="Outros">Outros</option>
           </select>
         </div>
+        ${mediaHtml}
       </div>
       <div class="scaleaki-modal-footer">
         <button id="scaleaki-btn-confirm-save">Adicionar Oferta</button>
@@ -138,6 +166,32 @@ function openSaveModal(adData) {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeModal();
   });
+
+  // Lógica de Download
+  const triggerDownload = (url, type, index) => {
+    const ext = type === 'video' ? 'mp4' : 'jpg';
+    const filename = `scaleaki_${adData.id}_${index}.${ext}`;
+    showToast('Iniciando download...');
+    chrome.runtime.sendMessage({ action: 'download_media', url, filename });
+  };
+
+  if (adData.mediaUrls && adData.mediaUrls.length > 0) {
+    document.querySelectorAll('.scaleaki-media-download').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        triggerDownload(e.target.dataset.url, e.target.dataset.type, e.target.dataset.idx);
+      });
+    });
+
+    document.getElementById('scaleaki-btn-dl-main').addEventListener('click', () => {
+      triggerDownload(adData.mediaUrls[0].url, adData.mediaUrls[0].type, 0);
+    });
+
+    document.getElementById('scaleaki-btn-dl-all').addEventListener('click', () => {
+      adData.mediaUrls.forEach((m, i) => {
+        setTimeout(() => triggerDownload(m.url, m.type, i), i * 500); // delay para não travar
+      });
+    });
+  }
 
   confirmBtn.addEventListener('click', () => {
     const nameVal = document.getElementById('scaleaki-input-name').value;

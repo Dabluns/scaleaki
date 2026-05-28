@@ -270,3 +270,81 @@ input:checked + .scaleaki-slider:before { transform: translateX(16px); }
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ── Media Grid ── */
+.scaleaki-media-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+.scaleaki-media-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.scaleaki-media-header h4 {
+  margin: 0;
+  font-size: 13px;
+  color: #4ade80;
+}
+.scaleaki-media-header button {
+  background: transparent;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  color: #22c55e;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.scaleaki-media-header button:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+.scaleaki-media-grid {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.scaleaki-media-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  background: #111;
+}
+.scaleaki-media-item img, .scaleaki-media-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scaleaki-media-download {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  text-align: center;
+  font-size: 10px;
+  padding: 4px 0;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.scaleaki-media-download:hover {
+  background: #22c55e;
+  color: black;
+}
+.scaleaki-media-type-badge {
+  position: absolute;
+  top: 4px; right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 9px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
