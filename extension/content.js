@@ -1,6 +1,7 @@
 // Scaleaki Content Script - Layout "Minerador"
 
 let adsFoundCount = 0;
+let isFilterActive = true; // Filtrar por padrão
 
 function showToast(message, isError = false) {
   const toast = document.createElement('div');
@@ -28,15 +29,22 @@ function injectBottomBar() {
   bar.innerHTML = `
     <div class="scaleaki-bar-logo">scale<span>aki</span> Toolkit</div>
     <div class="scaleaki-bar-actions">
+      <div class="scaleaki-toggle-wrapper">
+        <label class="scaleaki-toggle">
+          <input type="checkbox" id="scaleaki-toggle-filter" checked>
+          <span class="scaleaki-slider"></span>
+        </label>
+        <span>Apenas Ofertas Escaladas</span>
+      </div>
       <button class="scaleaki-bar-btn" id="scaleaki-btn-mine">
-        <span>⚡</span> Minerar Atuais
+        <span>⚡</span> Salvar Visíveis
       </button>
       <button class="scaleaki-bar-btn" id="scaleaki-btn-top">
         <span>↑</span> Voltar ao topo
       </button>
       <div class="scaleaki-bar-counter">
         <strong id="scaleaki-counter">0</strong>
-        <span>Anúncios Encontrados</span>
+        <span>Ofertas Escaladas</span>
       </div>
     </div>
   `;
@@ -48,8 +56,12 @@ function injectBottomBar() {
   });
 
   document.getElementById('scaleaki-btn-mine').addEventListener('click', () => {
-    showToast('Minerando todos os anúncios visíveis...');
-    // Lógica para raspar todos se necessário no futuro
+    showToast('Função de salvamento em lote em breve!');
+  });
+
+  document.getElementById('scaleaki-toggle-filter').addEventListener('change', (e) => {
+    isFilterActive = e.target.checked;
+    applyFiltersToAllCards();
   });
 }
 
@@ -58,6 +70,19 @@ function updateCounter() {
   if (counterEl) {
     counterEl.innerText = adsFoundCount;
   }
+}
+
+function applyFiltersToAllCards() {
+  const cards = document.querySelectorAll('.xh8yej3');
+  cards.forEach(card => {
+    if (card.dataset.scaleakiScaled === "false") {
+      if (isFilterActive) {
+        card.classList.add('scaleaki-hidden-ad');
+      } else {
+        card.classList.remove('scaleaki-hidden-ad');
+      }
+    }
+  });
 }
 
 // Modal de Adicionar Biblioteca
@@ -136,9 +161,9 @@ function openSaveModal(adData) {
       destinationUrl: adData.destinationUrl,
       tecnologia: document.getElementById('scaleaki-input-tags').value, // Tags/Checkout
       nicho: catVal, // Campo fictício que pode ser add na DB depois
-      duplicatas: 1,
+      duplicatas: adData.duplicatas,
       isActive: true,
-      deliveryStartTime: new Date().toISOString()
+      deliveryStartTime: new Date().toISOString() // No caso, salva a data de agora como inicio do track
     };
 
     chrome.runtime.sendMessage({
@@ -175,13 +200,33 @@ function cleanFacebookUrl(fbUrl) {
 }
 
 function extractAdData(cardNode) {
-  const data = { id: '', pageName: 'Desconhecido', adCopy: '', destinationUrl: '', mediaUrls: [], libraryUrl: '' };
+  const data = { id: '', pageName: 'Desconhecido', adCopy: '', destinationUrl: '', mediaUrls: [], libraryUrl: '', duplicatas: 1, diasRodando: 0, isEscalado: false };
 
   const textContent = cardNode.innerText || '';
-  const idMatch = textContent.match(/(?:ID|Identificação)s+das+bibliotecas*(?:des*anúncios)?:s*(d+)/i);
+  
+  // Extrair ID
+  const idMatch = textContent.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*(\d+)/i);
   if (idMatch && idMatch[1]) {
     data.id = idMatch[1];
     data.libraryUrl = `https://www.facebook.com/ads/library/?id=${data.id}`;
+  }
+
+  // Extrair Duplicatas
+  const dupMatch = textContent.match(/(\d+)\s+anúncios\s+usam/i);
+  if (dupMatch && dupMatch[1]) {
+    data.duplicatas = parseInt(dupMatch[1], 10);
+  }
+
+  // Extrair Dias Rodando (aproximado)
+  const dateMatch = textContent.match(/(?:Veiculação iniciada em|Started running on)\s+(.+)/i);
+  if (dateMatch && dateMatch[1]) {
+    const rawDate = dateMatch[1].split('\n')[0]; // Pega a primeira linha
+    data.diasRodando = calcDiasDesdeString(rawDate);
+  }
+
+  // Lógica de Escala (Mesma da API do Scaleaki)
+  if (data.duplicatas >= 2 || data.diasRodando >= 4) {
+    data.isEscalado = true;
   }
 
   const pageLinks = Array.from(cardNode.querySelectorAll('a[href*="facebook.com/"], a[href*="instagram.com/"]'));
@@ -197,7 +242,7 @@ function extractAdData(cardNode) {
   if (copyDiv) data.adCopy = copyDiv.innerText;
 
   const links = Array.from(cardNode.querySelectorAll('a'));
-  const ctaLinks = links.filter(l => l.innerText && ['Saiba mais', 'Comprar', 'Baixar', 'Cadastre', 'Assinar'].some(t => l.innerText.includes(t)));
+  const ctaLinks = links.filter(l => l.innerText && ['Saiba mais', 'Comprar', 'Baixar', 'Cadastre', 'Assinar', 'Learn more'].some(t => l.innerText.includes(t)));
   if (ctaLinks.length > 0) data.destinationUrl = cleanFacebookUrl(ctaLinks[0].href);
   else {
     const extLinks = links.filter(l => l.href && l.href.includes('l.facebook.com'));
@@ -213,10 +258,49 @@ function extractAdData(cardNode) {
   return data;
 }
 
-// Injetar Botão Inline
+// Helper para dias rodando
+function calcDiasDesdeString(dateString) {
+  // Traduz meses pt pra en para o parse do JS funcionar ou usa lógica básica
+  const months = {'jan':0,'fev':1,'mar':2,'abr':3,'mai':4,'jun':5,'jul':6,'ago':7,'set':8,'out':9,'nov':10,'dez':11};
+  let d = new Date();
+  try {
+    const parts = dateString.toLowerCase().replace(' de ', ' ').split(' ');
+    if (parts.length >= 3) {
+      const day = parseInt(parts[0]);
+      let monthStr = parts[1].substring(0,3);
+      if (parts[1] === 'de') monthStr = parts[2].substring(0,3); // lida com "4 de mai"
+      
+      const month = months[monthStr] !== undefined ? months[monthStr] : new Date(Date.parse(monthStr +" 1, 2012")).getMonth();
+      const year = parseInt(parts[parts.length - 1]);
+      
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        d = new Date(year, month, day);
+      }
+    }
+  } catch(e){}
+  
+  const diffTime = Math.abs(new Date() - d);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+// Injetar Botão Inline e Filtrar
 function injectInlineButton(cardNode) {
   if (cardNode.dataset.scaleakiInjected) return;
   cardNode.dataset.scaleakiInjected = "true";
+
+  const adData = extractAdData(cardNode);
+
+  // Lógica de Ocultar Não-Escalados
+  if (!adData.isEscalado) {
+    cardNode.dataset.scaleakiScaled = "false";
+    if (isFilterActive) {
+      cardNode.classList.add('scaleaki-hidden-ad');
+    }
+    // Se não for escalado, nem insere botão e não conta no dashboard
+    return;
+  } else {
+    cardNode.dataset.scaleakiScaled = "true";
+  }
 
   adsFoundCount++;
   updateCounter();
@@ -240,7 +324,6 @@ function injectInlineButton(cardNode) {
     e.preventDefault();
     e.stopPropagation();
     
-    const adData = extractAdData(cardNode);
     adData.btnElement = btn; // pass reference
     openSaveModal(adData);
   };
