@@ -413,8 +413,11 @@ const observer = new MutationObserver((mutations) => {
     let card = leaf.closest('.xh8yej3'); 
     if (!card) {
       let parent = leaf.parentElement;
-      // Sobe na árvore até achar o container grande que engloba o anúncio
-      while(parent && parent.tagName === 'DIV' && parent.clientHeight < 400) {
+      // Sobe na árvore até achar o container grande que engloba o anúncio e o botão "Ver resumo"
+      while(parent && parent.tagName !== 'BODY') {
+        if (parent.clientHeight >= 500 || (parent.innerText && (parent.innerText.includes('Ver resumo') || parent.innerText.includes('See summary')))) {
+          break;
+        }
         parent = parent.parentElement;
       }
       card = parent || leaf.parentElement;
