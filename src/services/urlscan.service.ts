@@ -96,8 +96,13 @@ export async function scanFunnel(fbAdId: string, destinationUrl: string): Promis
     // 3. Extrair dados relevantes
     const requests: string[] = (result.data?.requests || []).map(
       (r: any) => r.request?.request?.url || ''
-    );
-    const domains: string[] = Object.keys(result.stats?.domainStats || {});
+    ).filter(Boolean);
+
+    // Extrair domínios reais do URLscan — suporta múltiplos formatos da API:
+    // - result.lists?.domains   → array de strings (mais confiável)
+    // - result.stats?.domainStats → objeto { "domain": {...} } ou array
+    // - result.data?.requests   → fallback via hostname das URLs
+    const domains: string[] = extractDomains(result, requests);
 
     const checkout = detectCheckout([...requests, ...domains]);
     const tecnologia = detectTech([...requests, ...domains]);
@@ -143,6 +148,50 @@ async function pollResult(uuid: string, maxAttempts = 12, intervalMs = 5000): Pr
   return null;
 }
 
+/**
+ * Extrai lista de domínios do resultado do URLscan normalizando os diferentes
+ * formatos que a API pode retornar (array, objeto indexado, objeto keyed, etc.)
+ */
+function extractDomains(result: any, requestUrls: string[]): string[] {
+  const domainSet = new Set<string>();
+
+  // Fonte 1 (mais confiável): result.lists.domains — array de strings puro
+  const listDomains: any = result?.lists?.domains;
+  if (Array.isArray(listDomains)) {
+    listDomains.forEach((d: any) => { if (typeof d === 'string' && d) domainSet.add(d); });
+  }
+
+  // Fonte 2: result.stats.domainStats — pode ser objeto {"domain": {}} ou array
+  const domainStats: any = result?.stats?.domainStats;
+  if (domainStats && typeof domainStats === 'object') {
+    if (Array.isArray(domainStats)) {
+      // Array de objetos: [{domain: "example.com", ...}, ...]
+      domainStats.forEach((entry: any) => {
+        const d = entry?.domain || entry?.name;
+        if (typeof d === 'string' && d) domainSet.add(d);
+      });
+    } else {
+      // Objeto keyed: {"example.com": {...}}
+      Object.keys(domainStats).forEach((key) => {
+        // Garantir que a chave é um domínio real (não índice numérico)
+        if (key && isNaN(Number(key))) domainSet.add(key);
+      });
+    }
+  }
+
+  // Fonte 3: extrair hostnames das URLs de request (fallback)
+  if (domainSet.size === 0 && requestUrls.length > 0) {
+    requestUrls.forEach((url) => {
+      try {
+        const hostname = new URL(url).hostname;
+        if (hostname) domainSet.add(hostname);
+      } catch { }
+    });
+  }
+
+  return Array.from(domainSet).filter(Boolean);
+}
+
 function detectCheckout(urls: string[]): string | null {
   for (const url of urls) {
     for (const [signature, name] of Object.entries(CHECKOUT_SIGNATURES)) {
@@ -173,9 +222,10 @@ function detectPixels(urls: string[]): string[] {
 }
 
 function extractSubdomains(domains: string[], destinationUrl: string): string[] {
-  // A pedido do usuário, agora retornamos toda a "Domain Tree" mapeada pelo URLscan,
-  // ou seja, todos os domínios externos que o site carregou (ex: i.pravatar.cc, flagcdn.com, etc)
-  return domains || [];
+  // Retorna toda a "Domain Tree" mapeada pelo URLscan:
+  // todos os domínios externos carregados pelo site, já normalizados como strings reais.
+  // Limita a 50 domínios para não sobrecarregar o banco.
+  return domains.slice(0, 50);
 }
 
 function extractExternalServices(domains: string[], destinationUrl: string): string[] {
