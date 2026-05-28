@@ -84,70 +84,101 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      
-      // Verificar se o backend está acessível antes de tentar login
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // Timeout de 10 segundos
-      
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include', // Garante que o cookie será recebido
-        signal: controller.signal,
-      });
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-      clearTimeout(timeoutId);
+    // ─── Retry automático para o cold start do Render Free ───────────────────
+    // O backend "dorme" após inatividade. Na primeira tentativa pode falhar com
+    // "Failed to fetch". Tentamos até 3 vezes silenciosamente com backoff.
+    const MAX_RETRIES = 3;
+    const RETRY_DELAYS_MS = [1500, 3000, 5000]; // 1.5s, 3s, 5s
 
-      if (response.ok) {
-        const data = await response.json();
-        const token = data?.data?.token;
-        
-        // Salvar o token como cookie no domínio do frontend (Vercel)
-        // para que o middleware consiga enxergá-lo
-        if (token) {
-          nookies.set(null, 'auth_token', token, {
-            path: '/',
-            maxAge: 60 * 60 * 24 * 7, // 7 dias
-            secure: true,
-            sameSite: 'lax',
-          });
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        // Timeout maior nas tentativas seguintes (servidor pode estar acordando)
+        const timeoutMs = attempt === 1 ? 10000 : 15000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          credentials: 'include',
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // ── Resposta recebida (servidor está up) ──
+        if (response.ok) {
+          const data = await response.json();
+          const token = data?.data?.token;
+
+          if (token) {
+            nookies.set(null, 'auth_token', token, {
+              path: '/',
+              maxAge: 60 * 60 * 24 * 7, // 7 dias
+              secure: true,
+              sameSite: 'lax',
+            });
+          }
+
+          await checkAuth();
+          return { success: true };
         }
-        
-        await checkAuth();
-        return { success: true };
-      } else {
+
+        // ── Erro de credenciais (401, 403) — não retenta ──
+        if (response.status === 401 || response.status === 403 || response.status === 400) {
+          const error = await response.json().catch(() => ({ error: 'Credenciais inválidas' }));
+          return { success: false, error: error.error || 'Email ou senha incorretos' };
+        }
+
+        // ── Erro do servidor (5xx) — retenta ──
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[attempt - 1]));
+          continue;
+        }
+
         const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
         return { success: false, error: error.error || 'Erro ao fazer login' };
-      }
-    } catch (error) {
-      console.error('Erro no login:', error);
-      
-      // Mensagens de erro mais específicas
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        return { 
-          success: false, 
-          error: 'Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 4000.' 
+
+      } catch (error) {
+        const isNetworkError = (
+          error instanceof TypeError && (
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('fetch') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('network')
+          )
+        );
+        const isTimeout = error instanceof Error && error.name === 'AbortError';
+
+        // ── Erro de rede ou timeout: retenta silenciosamente ──
+        if ((isNetworkError || isTimeout) && attempt < MAX_RETRIES) {
+          // Não mostrar erro — simplesmente aguardar e tentar de novo
+          await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[attempt - 1]));
+          continue;
+        }
+
+        // ── Esgotou todas as tentativas ──
+        if (isNetworkError || isTimeout) {
+          return {
+            success: false,
+            error: 'Servidor indisponível no momento. Tente novamente em alguns segundos.',
+          };
+        }
+
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro ao fazer login',
         };
       }
-      
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { 
-          success: false, 
-          error: 'Tempo de espera esgotado. O servidor não respondeu a tempo.' 
-        };
-      }
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Erro ao fazer login' 
-      };
     }
+
+    // Fallback de segurança (nunca deve chegar aqui)
+    return { success: false, error: 'Erro inesperado. Tente novamente.' };
   }, [checkAuth]);
+
 
   const logout = useCallback(async () => {
     try {

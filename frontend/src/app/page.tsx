@@ -55,7 +55,23 @@ function AuthPageContent() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [loginStatus, setLoginStatus] = useState(''); // Mensagem de status durante retries
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // ─── Warm-up do Render Free ───────────────────────────────────────────────
+  // Dispara um ping silencioso ao /health quando a página de login carrega.
+  // Isso faz o servidor acordar ANTES do usuário clicar em "Iniciar Sessão",
+  // eliminando o cold start na primeira tentativa real.
+  useEffect(() => {
+    if (!isLogin) return; // Só faz o ping quando o formulário de login está visível
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const controller = new AbortController();
+    fetch(`${API_URL}/health`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    }).catch(() => { /* silencioso */ });
+    return () => controller.abort();
+  }, [isLogin]);
 
   // Estados de registro
   const [registerName, setRegisterName] = useState('');
@@ -80,10 +96,18 @@ function AuthPageContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+    setLoginStatus('');
     setLoginLoading(true);
+
+    // Mostra mensagem informativa após 3s (provável cold start)
+    const statusTimer = setTimeout(() => {
+      setLoginStatus('Conectando ao servidor...');
+    }, 3000);
 
     try {
       const result = await login(loginEmail, loginPassword);
+      clearTimeout(statusTimer);
+      setLoginStatus('');
       if (result.success) {
         await checkAuth();
         router.push('/dashboard');
@@ -95,6 +119,8 @@ function AuthPageContent() {
         }
       }
     } catch (err: any) {
+      clearTimeout(statusTimer);
+      setLoginStatus('');
       setLoginError(err.message || 'Erro ao fazer login');
     } finally {
       setLoginLoading(false);
@@ -277,9 +303,17 @@ function AuthPageContent() {
                     </div>
                   </div>
 
+                  {/* Erro e status de conexão */}
+                  {loginStatus && !loginError && (
+                    <div className="text-white/40 text-[10px] font-black uppercase tracking-widest text-center py-2 flex items-center justify-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                      {loginStatus}
+                    </div>
+                  )}
+
                   {loginError && (
                     <div className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center py-2 bg-red-500/5 rounded-xl border border-red-500/10">
-                      ❌ ERROR: {loginError}
+                      ❌ {loginError}
                     </div>
                   )}
 
