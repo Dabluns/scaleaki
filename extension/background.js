@@ -19,8 +19,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'save_to_scaleaki') {
     const adData = request.payload;
     
-    // Modo de Teste: ignora cookies e manda direto para o localhost sem token
-    sendAdToApi(adData, 'test-token', 'http://localhost:4000/api/fb-ads/user-save', sendResponse);
+    // Modo de Teste: ignora cookies e manda direto para a API em live sem token
+    sendAdToApi(adData, 'test-token', 'http://scaleaki.site:4000/api/fb-ads/user-save', sendResponse);
     
     return true; // Keep message channel open
   }
