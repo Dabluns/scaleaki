@@ -16,67 +16,71 @@ interface FacebookAdsFiltersProps {
 
 const CheckoutIcons: Record<string, React.ReactNode> = {
   Shopify: (
-    <svg viewBox="0 0 109.5 124.5" className="w-4 h-4" fill="none">
-      <path d="M74.7 14.8s-.3.2-.8.3c-.5-1.6-1.4-3.1-2.5-4.2-1.4-1.5-3.1-2.2-5-2.2v.3s-1.8 0-3.6 1.2c-.2.1-.4.3-.6.4-1.4-1.8-3.3-2.8-5.5-2.8-6.3 0-9.4 7.9-10.4 11.9-2.4.7-4.2 1.3-4.2 1.3l-.1.1C40.8 22 40.6 23 39.5 51L55 55.5l16-4.3C74.6 19 74.7 14.8 74.7 14.8zm-13.9-4.9c1.4 0 2.6.6 3.6 1.7.6.7 1.1 1.6 1.4 2.6-1.8.6-3.7 1.1-5.6 1.7-.7-2.8-1.9-5.1-3.4-6.5 1-.3 2.3-.5 4-.5zm-5.3 1.1c1.7 1.4 3 3.8 3.7 6.9l-7.6 2.3c1.1-3.7 3-7.2 3.9-9.2zm-3.9.9c-.1.2-.1.3-.2.5-1 2.2-2.3 5.9-3.3 9.8l-5.1 1.6c1.1-4.6 4.2-10.9 8.6-11.9z" fill="#96bf48"/>
-      <path d="M74.7 14.8l-.7 2.4s-.8-.5-2.4-.5c-4.6 0-6.8 3.2-6.8 3.2s-2.3-1.5-5.9-.3c0 0-2.4-6.2-8.4-5.3L48.3 21s-3.6 1.1-7.5 2.3C40 24.7 39.7 26 39.4 28L38 49.7l17.1 4.6 16.9-4.5-4-21.1s-1.3-.8-3.2-1l.4-2.2c3.5-.2 5.5.7 5.5.7v-11.4z" fill="#5e8e3e"/>
-      <path d="M55.1 55.3l-16-4.3.3 4.3z" fill="#f4f4f4"/>
-      <path d="M71.1 50.9l-16 4.4.3-4.4z" fill="#e4e4e4"/>
-      <path d="M55.1 55.3l-.3-4.3-1.7 4.3z" fill="#d4d4d4"/>
-      <path d="M55.1 55.3l1.7-4.3-.3 4.4z" fill="#c4c4c4"/>
+    // Logo Shopify — path do Simple Icons adaptado para 40x40
+    <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
+      <rect width="40" height="40" rx="8" fill="#96BF48"/>
+      <path
+        d="M26.8 12.3c-.1 0-.3.1-.5.1-.3-.9-.8-1.8-1.4-2.4-.8-.9-1.8-1.3-2.9-1.3-1.3 0-2.1.7-2.7 1.4-.8-1-1.9-1.6-3.2-1.6-3.7 0-5.5 4.6-6.1 6.9l-2.4.7v.1C7.4 16.6 7.3 17 6.7 29.7L16 32l9.4-2.5L23 11.5l1.7.3v-.3c2-.1 3.2.4 3.2.4v-6.6l.9 7.3.5-.3a.12.12 0 00-.5-.5zm-8.1-2.9c.8 0 1.5.4 2.1 1-.6.2-1.3.4-1.9.6-.4-1.1-1-2-1.7-2.5l1.5-.1zM18 10.3c.7.6 1.2 1.6 1.5 2.8l-3.1.9c.5-1.6 1.3-3 1.6-3.7zm-1.6.4-.1.3c-.4.9-1 2.4-1.4 4l-2.1.7c.5-2 2-5.1 3.6-5.3v.3zM16 31l-8.4-2.3 1.5-9.9 9.5-2.9 1.7 9.7L16 31zm9.4-2.5l-8.4 2.3 3.3-5.3.5-6.7 6.2-1.9-1.6 11.6z"
+        fill="white"
+      />
     </svg>
   ),
   Kiwify: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
       <rect width="40" height="40" rx="8" fill="#00B37E"/>
-      <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="18" fontWeight="900" fontFamily="sans-serif">K</text>
+      <path d="M12 10h4v7.5l6.5-7.5H27l-7 8.5 7.5 12H23l-5.5-9.5-1.5 1.8V30h-4V10z" fill="white"/>
     </svg>
   ),
   Hotmart: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
       <rect width="40" height="40" rx="8" fill="#F04E23"/>
-      <path d="M20 8C13.4 8 8 13.4 8 20s5.4 12 12 12 12-5.4 12-12S26.6 8 20 8zm0 20c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm0-13c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5z" fill="white"/>
+      {/* Chama do Hotmart */}
+      <path d="M20 6c-1 3.5-1.5 7-1.5 10 0 0-3-2.5-3-6.5C12 13 11 17 11 20a9 9 0 0018 0c0-4-2.5-8.5-3.5-10-1 2.5-1.5 4-3.5 5 1-3 .5-6-2-9z" fill="white" opacity="0.92"/>
+      <path d="M20 22c-.5 1-1.5 2-1.5 3.5a1.5 1.5 0 003 0c0-.9-.5-1.6-1.5-3.5z" fill="white" opacity="0.65"/>
     </svg>
   ),
   Yampi: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
-      <rect width="40" height="40" rx="8" fill="#7C3AED"/>
-      <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="18" fontWeight="900" fontFamily="sans-serif">Y</text>
+      <rect width="40" height="40" rx="8" fill="#6D28D9"/>
+      <path d="M9 11h5.5l5.5 9.5 5.5-9.5H31L21.5 25v4.5h-3V25L9 11z" fill="white"/>
     </svg>
   ),
   CartPanda: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
-      <rect width="40" height="40" rx="8" fill="#FF6B35"/>
-      <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" fontFamily="sans-serif">CP</text>
+      <rect width="40" height="40" rx="8" fill="#FF5A1F"/>
+      <path d="M7 11h3.5l3.8 13h14.2l2.5-9H14" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="17" cy="28" r="2.2" fill="white"/>
+      <circle cx="27" cy="28" r="2.2" fill="white"/>
     </svg>
   ),
   PerfectPay: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
       <rect width="40" height="40" rx="8" fill="#0EA5E9"/>
-      <path d="M12 20l6 6 10-12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M9 21l8 8 14-16" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
   Eduzz: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
-      <rect width="40" height="40" rx="8" fill="#FF4D00"/>
-      <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="16" fontWeight="900" fontFamily="sans-serif">E</text>
+      <rect width="40" height="40" rx="8" fill="#FF3D00"/>
+      <path d="M11 11h18v3.5H15v5h12v3.5H15v6.5h14V33H11V11z" fill="white"/>
     </svg>
   ),
   Monetizze: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
       <rect width="40" height="40" rx="8" fill="#1E40AF"/>
-      <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" fontFamily="sans-serif">M</text>
+      <path d="M7 29V11h4.5l8.5 13 8.5-13H33v18h-4V19l-8.5 11.5L12 19v10H7z" fill="white"/>
     </svg>
   ),
   HeroSpark: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
       <rect width="40" height="40" rx="8" fill="#F59E0B"/>
-      <path d="M20 10l2.4 7.4H30l-6.2 4.5 2.4 7.4L20 25l-6.2 4.3 2.4-7.4L10 17.4h7.6z" fill="white"/>
+      <path d="M20 7l3 9h9.5l-7.5 5.5 3 9L20 26l-8 4.5 3-9L7.5 16H17z" fill="white"/>
     </svg>
   ),
   Guru: (
     <svg viewBox="0 0 40 40" className="w-4 h-4" fill="none">
       <rect width="40" height="40" rx="8" fill="#10B981"/>
-      <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" fontFamily="sans-serif">G</text>
+      <path d="M28 15.5a10 10 0 100 9H21v-3h9.5v7A13 13 0 1120.5 7v3.5a10 10 0 017.5 5z" fill="white"/>
     </svg>
   ),
 };

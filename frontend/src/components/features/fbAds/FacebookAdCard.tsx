@@ -201,7 +201,7 @@ export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardPro
               className="flex-1 py-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 font-black text-[10px] uppercase tracking-widest hover:bg-green-500 hover:text-black transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(34,197,94,0.05)] hover:shadow-[0_0_25px_rgba(34,197,94,0.25)]"
               onClick={(e) => { e.stopPropagation(); onView(anuncio); }}
             >
-              [ Ver Dossiê ]
+              [ Ver Oferta ]
             </motion.button>
 
             {/* Acessar landing page diretamente */}
