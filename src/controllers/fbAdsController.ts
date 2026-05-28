@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
-import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify, liveSearchFromApify, calcEscala } from '../services/fbAdLibrary.service';
+import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify, liveSearchFromApify, calcEscala, detectCheckoutFromUrl } from '../services/fbAdLibrary.service';
 import { scanFunnel } from '../services/urlscan.service';
 import logger from '../config/logger';
 
@@ -100,6 +100,7 @@ export async function syncExtension(req: Request, res: Response) {
         duplicatas,
         isActive,
         escala,
+        checkout: detectCheckoutFromUrl(item.destinationUrl),
         scraperLastRun: new Date(),
       };
 
@@ -144,6 +145,34 @@ export async function recalcEscalaAll(req: Request, res: Response) {
   } catch (err: any) {
     logger.error('[FbAds] Erro ao recalcular escala:', err);
     res.status(500).json({ error: 'Erro ao recalcular escala' });
+  }
+}
+
+// ─── Atualizar Checkout de todos os anúncios existentes ───────────────────────
+
+export async function backfillCheckouts(req: Request, res: Response) {
+  try {
+    const todos = await prisma.anuncioFacebook.findMany({
+      where: {
+        destinationUrl: { not: null },
+        checkout: null
+      },
+      select: { id: true, destinationUrl: true },
+    });
+
+    let count = 0;
+    for (const ad of todos) {
+      const checkout = detectCheckoutFromUrl(ad.destinationUrl);
+      if (checkout) {
+        await prisma.anuncioFacebook.update({ where: { id: ad.id }, data: { checkout } });
+        count++;
+      }
+    }
+
+    res.json({ message: `Checkout detectado e atualizado em ${count} anúncios de ${todos.length} possíveis.`, count });
+  } catch (err: any) {
+    logger.error('[FbAds] Erro ao atualizar checkouts:', err);
+    res.status(500).json({ error: 'Erro ao atualizar checkouts' });
   }
 }
 
