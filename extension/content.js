@@ -1,9 +1,6 @@
-// Scaleaki Content Script
-// Injeta a toolkit nos cards da biblioteca de anúncios do Facebook
+// Scaleaki Content Script - Layout "Minerador"
 
-const STATE = {
-  processedAds: new Set()
-};
+let adsFoundCount = 0;
 
 function showToast(message, isError = false) {
   const toast = document.createElement('div');
@@ -13,17 +10,158 @@ function showToast(message, isError = false) {
   
   document.body.appendChild(toast);
   
-  // Trigger animation
   setTimeout(() => toast.classList.add('show'), 100);
-  
-  // Remove after 3 seconds
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
-// Utilitário para extrair a URL de destino real do l.facebook.com
+// Injetar a Barra Inferior Global
+function injectBottomBar() {
+  if (document.getElementById('scaleaki-bottom-bar')) return;
+
+  const bar = document.createElement('div');
+  bar.id = 'scaleaki-bottom-bar';
+  bar.className = 'scaleaki-bottom-bar';
+  
+  bar.innerHTML = \`
+    <div class="scaleaki-bar-logo">scale<span>aki</span> Toolkit</div>
+    <div class="scaleaki-bar-actions">
+      <button class="scaleaki-bar-btn" id="scaleaki-btn-mine">
+        <span>⚡</span> Minerar Atuais
+      </button>
+      <button class="scaleaki-bar-btn" id="scaleaki-btn-top">
+        <span>↑</span> Voltar ao topo
+      </button>
+      <div class="scaleaki-bar-counter">
+        <strong id="scaleaki-counter">0</strong>
+        <span>Anúncios Encontrados</span>
+      </div>
+    </div>
+  \`;
+
+  document.body.appendChild(bar);
+
+  document.getElementById('scaleaki-btn-top').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  document.getElementById('scaleaki-btn-mine').addEventListener('click', () => {
+    showToast('Minerando todos os anúncios visíveis...');
+    // Lógica para raspar todos se necessário no futuro
+  });
+}
+
+function updateCounter() {
+  const counterEl = document.getElementById('scaleaki-counter');
+  if (counterEl) {
+    counterEl.innerText = adsFoundCount;
+  }
+}
+
+// Modal de Adicionar Biblioteca
+function openSaveModal(adData) {
+  const overlay = document.createElement('div');
+  overlay.className = 'scaleaki-modal-overlay';
+  overlay.id = 'scaleaki-modal';
+
+  // Usamos o nome da página como sugestão pro Nome do Produto
+  const defaultName = adData.pageName || '';
+
+  overlay.innerHTML = \`
+    <div class="scaleaki-modal">
+      <div class="scaleaki-modal-header">
+        <h3>Adicionando anúncio ao Scaleaki</h3>
+        <button class="scaleaki-modal-close" id="scaleaki-modal-close">&times;</button>
+      </div>
+      <div class="scaleaki-modal-body">
+        <div class="scaleaki-input-group">
+          <label>Nome do Produto/Oferta *</label>
+          <input type="text" id="scaleaki-input-name" value="\${defaultName}" placeholder="Ex: Protocolo Zero Dor">
+        </div>
+        <div class="scaleaki-input-group">
+          <label>Tecnologia/Checkout (Opcional)</label>
+          <input type="text" id="scaleaki-input-tags" placeholder="Ex: Shopify, Kiwify...">
+        </div>
+        <div class="scaleaki-input-group">
+          <label>Nicho *</label>
+          <select id="scaleaki-input-category">
+            <option value="">Selecione um nicho</option>
+            <option value="Saúde">Saúde e Bem-estar</option>
+            <option value="Dinheiro">Renda Extra / Finanças</option>
+            <option value="Beleza">Beleza e Estética</option>
+            <option value="Relacionamento">Relacionamento</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+      </div>
+      <div class="scaleaki-modal-footer">
+        <button id="scaleaki-btn-confirm-save">Adicionar Oferta</button>
+      </div>
+    </div>
+  \`;
+
+  document.body.appendChild(overlay);
+
+  const closeBtn = document.getElementById('scaleaki-modal-close');
+  const confirmBtn = document.getElementById('scaleaki-btn-confirm-save');
+
+  const closeModal = () => overlay.remove();
+  
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    const nameVal = document.getElementById('scaleaki-input-name').value;
+    const catVal = document.getElementById('scaleaki-input-category').value;
+
+    if (!nameVal || !catVal) {
+      alert("Preencha o Nome e o Nicho para salvar!");
+      return;
+    }
+
+    confirmBtn.innerText = 'Salvando...';
+    confirmBtn.disabled = true;
+
+    // Enviar para o background
+    const payload = {
+      fbAdId: adData.id || \`ext_\${Date.now()}\`,
+      pageName: nameVal, // Sobrescreve com o nome escolhido
+      adCopy: adData.adCopy,
+      adHeadline: adData.pageName, 
+      adSnapshotUrl: adData.mediaUrls[0]?.url || null,
+      destinationUrl: adData.destinationUrl,
+      tecnologia: document.getElementById('scaleaki-input-tags').value, // Tags/Checkout
+      nicho: catVal, // Campo fictício que pode ser add na DB depois
+      duplicatas: 1,
+      isActive: true,
+      deliveryStartTime: new Date().toISOString()
+    };
+
+    chrome.runtime.sendMessage({
+      action: 'save_to_scaleaki',
+      payload: payload
+    }, (response) => {
+      closeModal();
+      if (response && response.success) {
+        showToast('Oferta salva com sucesso!');
+        // Atualiza o botão no card original
+        if (adData.btnElement) {
+          adData.btnElement.style.background = '#064e3b';
+          adData.btnElement.style.color = 'white';
+          adData.btnElement.innerText = '✅ Analisado e Salvo';
+        }
+      } else {
+        showToast(response?.error || 'Erro ao salvar.', true);
+      }
+    });
+  });
+}
+
+// Funções de Extração (Reaproveitadas do código anterior)
 function cleanFacebookUrl(fbUrl) {
   if (!fbUrl) return '';
   if (fbUrl.includes('l.facebook.com/l.php')) {
@@ -36,18 +174,9 @@ function cleanFacebookUrl(fbUrl) {
   return fbUrl;
 }
 
-// Extrai todos os dados possíveis de um card de anúncio
 function extractAdData(cardNode) {
-  const data = {
-    id: '',
-    pageName: 'Desconhecido',
-    adCopy: '',
-    destinationUrl: '',
-    mediaUrls: [],
-    libraryUrl: ''
-  };
+  const data = { id: '', pageName: 'Desconhecido', adCopy: '', destinationUrl: '', mediaUrls: [], libraryUrl: '' };
 
-  // Extrair ID da biblioteca
   const textContent = cardNode.innerText || '';
   const idMatch = textContent.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*(\d+)/i);
   if (idMatch && idMatch[1]) {
@@ -55,8 +184,6 @@ function extractAdData(cardNode) {
     data.libraryUrl = \`https://www.facebook.com/ads/library/?id=\${data.id}\`;
   }
 
-  // Extrair Nome da Página
-  // Geralmente é o primeiro texto forte ou span com classe de texto primário
   const pageLinks = Array.from(cardNode.querySelectorAll('a[href*="facebook.com/"], a[href*="instagram.com/"]'));
   for (const link of pageLinks) {
     if (link.innerText && link.innerText.trim().length > 1 && !link.querySelector('img')) {
@@ -65,189 +192,74 @@ function extractAdData(cardNode) {
     }
   }
 
-  // Extrair Copy
-  // Pega os blocos de texto no meio do card
   const divs = Array.from(cardNode.querySelectorAll('div'));
-  const copyDiv = divs.find(d => {
-    return d.dir === 'auto' && d.innerText && d.innerText.length > 20 && !d.innerText.includes('da biblioteca');
-  });
-  if (copyDiv) {
-    data.adCopy = copyDiv.innerText;
-  }
+  const copyDiv = divs.find(d => d.dir === 'auto' && d.innerText && d.innerText.length > 20 && !d.innerText.includes('da biblioteca'));
+  if (copyDiv) data.adCopy = copyDiv.innerText;
 
-  // Extrair URL de destino
   const links = Array.from(cardNode.querySelectorAll('a'));
-  const ctaLinks = links.filter(l => l.innerText && (
-    l.innerText.includes('Saiba mais') || 
-    l.innerText.includes('Comprar') || 
-    l.innerText.includes('Baixar') ||
-    l.innerText.includes('Cadastre') ||
-    l.innerText.includes('Assinar')
-  ));
-  
-  if (ctaLinks.length > 0) {
-    data.destinationUrl = cleanFacebookUrl(ctaLinks[0].href);
-  } else {
-    // Fallback: tentar pegar qualquer link externo
-    const externalLinks = links.filter(l => l.href && l.href.includes('l.facebook.com'));
-    if (externalLinks.length > 0) {
-      data.destinationUrl = cleanFacebookUrl(externalLinks[externalLinks.length - 1].href);
-    }
+  const ctaLinks = links.filter(l => l.innerText && ['Saiba mais', 'Comprar', 'Baixar', 'Cadastre', 'Assinar'].some(t => l.innerText.includes(t)));
+  if (ctaLinks.length > 0) data.destinationUrl = cleanFacebookUrl(ctaLinks[0].href);
+  else {
+    const extLinks = links.filter(l => l.href && l.href.includes('l.facebook.com'));
+    if (extLinks.length > 0) data.destinationUrl = cleanFacebookUrl(extLinks[extLinks.length - 1].href);
   }
 
-  // Extrair Mídias (Vídeos e Imagens)
   const videos = Array.from(cardNode.querySelectorAll('video'));
-  videos.forEach(v => {
-    if (v.src) data.mediaUrls.push({ type: 'video', url: v.src });
-  });
+  videos.forEach(v => { if (v.src) data.mediaUrls.push({ type: 'video', url: v.src }); });
 
   const images = Array.from(cardNode.querySelectorAll('img'));
-  images.forEach(img => {
-    // Ignorar imagens de perfil ou ícones pequenos
-    if (img.width > 100 && img.height > 100 && img.src) {
-      data.mediaUrls.push({ type: 'image', url: img.src });
-    }
-  });
+  images.forEach(img => { if (img.width > 100 && img.height > 100 && img.src) data.mediaUrls.push({ type: 'image', url: img.src }); });
 
   return data;
 }
 
-function injectToolkit(cardNode) {
-  if (cardNode.querySelector('.scaleaki-toolkit') || cardNode.dataset.scaleakiInjected) return;
+// Injetar Botão Inline
+function injectInlineButton(cardNode) {
+  if (cardNode.dataset.scaleakiInjected) return;
   cardNode.dataset.scaleakiInjected = "true";
 
-  const adData = extractAdData(cardNode);
-  
-  const toolkit = document.createElement('div');
-  toolkit.className = 'scaleaki-toolkit';
+  adsFoundCount++;
+  updateCounter();
 
-  // Extrair o hostname para pesquisa rápida
-  let siteDomain = 'Desconhecido';
-  if (adData.destinationUrl) {
-    try {
-      siteDomain = new URL(adData.destinationUrl).hostname.replace('www.', '');
-    } catch(e) {}
+  // Procurar o local ideal: logo abaixo de "Ver detalhes do anúncio" ou "Ver resumo"
+  // O Facebook usa spans ou divs para o botão "Ver resumo". Vamos buscar ele.
+  const allDivs = Array.from(cardNode.querySelectorAll('div, span'));
+  const summaryBtn = allDivs.find(d => 
+    (d.innerText === 'Ver resumo' || d.innerText === 'See summary details' || d.innerText === 'Detalhes do anúncio') && 
+    d.offsetHeight > 10
+  );
+
+  const container = summaryBtn ? summaryBtn.closest('div[role="button"]') || summaryBtn.parentElement : cardNode;
+
+  const btn = document.createElement('button');
+  btn.className = 'scaleaki-inline-btn';
+  btn.innerText = 'Analisar e Salvar';
+  
+  // Impede o clique de abrir o link do facebook por acidente
+  btn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const adData = extractAdData(cardNode);
+    adData.btnElement = btn; // pass reference
+    openSaveModal(adData);
+  };
+
+  // Insere logo apos o botão de resumo
+  if (container && container.parentElement) {
+    // Insere o botão em uma div wrapper
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '0 12px 12px 12px'; // Match card padding
+    wrapper.appendChild(btn);
+    
+    // Tenta inserir depois do container do "Ver resumo"
+    container.parentElement.insertBefore(wrapper, container.nextSibling);
+  } else {
+    cardNode.appendChild(btn);
   }
-
-  toolkit.innerHTML = \`
-    <div class="scaleaki-header">
-      <div class="scaleaki-logo"><span>⚡</span> Scaleaki Toolkit</div>
-    </div>
-    
-    <div class="scaleaki-actions">
-      <button class="scaleaki-btn primary" id="btn-download-\${adData.id}">
-        Baixar Criativo Principal
-      </button>
-      <button class="scaleaki-btn" id="btn-details-\${adData.id}">
-        Ver Detalhes do Anúncio
-      </button>
-      <button class="scaleaki-btn save-btn" id="btn-save-\${adData.id}">
-        Salvar Oferta no Scaleaki Dashboard
-      </button>
-    </div>
-
-    <div class="scaleaki-info-panel" id="panel-\${adData.id}">
-      <div class="scaleaki-info-row">
-        <span class="scaleaki-info-label">Anunciante:</span>
-        <span class="scaleaki-info-value" title="\${adData.pageName}">\${adData.pageName}</span>
-      </div>
-      <div class="scaleaki-info-row">
-        <span class="scaleaki-info-label">Site:</span>
-        <span class="scaleaki-info-value" title="\${adData.destinationUrl}">
-          <a href="\${adData.destinationUrl}" target="_blank">\${siteDomain}</a>
-        </span>
-      </div>
-      <div class="scaleaki-info-row">
-        <span class="scaleaki-info-label">Links:</span>
-        <div style="display:flex;gap:4px;">
-          <a href="\${adData.libraryUrl}" target="_blank" class="scaleaki-info-value">🔗 Ver Biblioteca</a>
-        </div>
-      </div>
-      <div class="scaleaki-info-row" style="margin-top:4px;">
-        <span class="scaleaki-info-label">Pesquisa Rápida:</span>
-        <div style="display:flex;gap:4px;flex-direction:column;align-items:flex-end;">
-          <a href="https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q=\${encodeURIComponent(adData.pageName)}&search_type=page" target="_blank" class="scaleaki-info-value">🔍 Buscar por Página</a>
-          <a href="https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q=\${encodeURIComponent(siteDomain)}&search_type=keyword_exact_phrase" target="_blank" class="scaleaki-info-value">🔍 Buscar por Site</a>
-        </div>
-      </div>
-    </div>
-  \`;
-
-  cardNode.appendChild(toolkit);
-
-  // Lógica dos Botões
-  
-  // Download Button
-  toolkit.querySelector(\`#btn-download-\${adData.id}\`).addEventListener('click', () => {
-    // Recaptura mídias no momento do clique, caso o vídeo tenha carregado depois
-    const freshData = extractAdData(cardNode);
-    if (freshData.mediaUrls.length === 0) {
-      showToast('Nenhum criativo (vídeo/imagem) encontrado neste anúncio.', true);
-      return;
-    }
-
-    const mainMedia = freshData.mediaUrls[0];
-    const extension = mainMedia.type === 'video' ? 'mp4' : 'jpg';
-    const filename = \`scaleaki_\${freshData.id}_\${new Date().getTime()}.\${extension}\`;
-
-    showToast('Iniciando download do criativo...');
-    
-    chrome.runtime.sendMessage({
-      action: 'download_media',
-      payload: { url: mainMedia.url, filename }
-    }, (response) => {
-      if (!response.success) showToast('Erro no download.', true);
-    });
-  });
-
-  // Details Button Toggle
-  toolkit.querySelector(\`#btn-details-\${adData.id}\`).addEventListener('click', () => {
-    const panel = toolkit.querySelector(\`#panel-\${adData.id}\`);
-    panel.classList.toggle('active');
-  });
-
-  // Save to Dashboard Button
-  toolkit.querySelector(\`#btn-save-\${adData.id}\`).addEventListener('click', (e) => {
-    const btn = e.target;
-    const originalText = btn.innerText;
-    btn.innerText = 'Salvando...';
-    btn.disabled = true;
-
-    // Recalcula dados frescos
-    const payload = extractAdData(cardNode);
-    
-    // Formata pro backend esperar
-    const backendData = {
-      fbAdId: payload.id || \`ext_\${Date.now()}\`,
-      pageName: payload.pageName,
-      adCopy: payload.adCopy,
-      adHeadline: payload.pageName, // Fallback
-      adSnapshotUrl: payload.mediaUrls[0]?.url || null,
-      destinationUrl: payload.destinationUrl,
-      duplicatas: 1,
-      isActive: true,
-      deliveryStartTime: new Date().toISOString()
-    };
-
-    chrome.runtime.sendMessage({
-      action: 'save_to_scaleaki',
-      payload: backendData
-    }, (response) => {
-      btn.innerText = originalText;
-      btn.disabled = false;
-      
-      if (response && response.success) {
-        showToast('Oferta salva no seu Dashboard!');
-        btn.style.background = '#064e3b';
-        btn.innerText = '✅ SALVO';
-      } else {
-        showToast(response?.error || 'Erro ao salvar. Verifique se você está logado no Scaleaki.', true);
-      }
-    });
-  });
 }
 
-// Observer para detectar novos cards
+// Observer Principal
 const observer = new MutationObserver((mutations) => {
   const allDivs = document.querySelectorAll('div');
   allDivs.forEach(div => {
@@ -255,11 +267,8 @@ const observer = new MutationObserver((mutations) => {
         (div.innerText.includes('ID da biblioteca') || div.innerText.includes('Identificação da biblioteca')) && 
         (div.innerText.includes('Patrocinado') || div.innerText.includes('Veiculação iniciada'))) {
       
-      // Procurar o container card mais próximo que faz sentido (geralmente uma div com borda ou o container principal)
-      // O Facebook usa classes minificadas, então subimos alguns níveis.
       let card = div.closest('.xh8yej3'); 
       if (!card) {
-        // Fallback: se não achar a classe, sobe no DOM até achar uma div que tenha a altura razoável de um card
         let parent = div.parentElement;
         while(parent && parent.tagName === 'DIV' && parent.clientHeight < 300) {
           parent = parent.parentElement;
@@ -268,34 +277,14 @@ const observer = new MutationObserver((mutations) => {
       }
       
       if (card && !card.dataset.scaleakiInjected) {
-        injectToolkit(card);
+        injectInlineButton(card);
       }
     }
   });
 });
 
-observer.observe(document.body, { childList: true, subtree: true });
-
-// Primeira checagem
+// Boot
 setTimeout(() => {
-  const allDivs = document.querySelectorAll('div');
-  allDivs.forEach(div => {
-    if (div.innerText && 
-        (div.innerText.includes('ID da biblioteca') || div.innerText.includes('Identificação da biblioteca')) && 
-        (div.innerText.includes('Patrocinado') || div.innerText.includes('Veiculação iniciada'))) {
-      
-      let card = div.closest('.xh8yej3');
-      if (!card) {
-        let parent = div.parentElement;
-        while(parent && parent.tagName === 'DIV' && parent.clientHeight < 300) {
-          parent = parent.parentElement;
-        }
-        card = parent;
-      }
-      
-      if (card && !card.dataset.scaleakiInjected) {
-        injectToolkit(card);
-      }
-    }
-  });
-}, 2500);
+  injectBottomBar();
+  observer.observe(document.body, { childList: true, subtree: true });
+}, 1500);
