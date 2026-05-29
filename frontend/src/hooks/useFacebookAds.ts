@@ -45,6 +45,7 @@ export interface FbAdsMeta {
 export interface FbAdsFilters {
   search?: string;
   checkout?: string;
+  player?: string;
   escalaMin?: number;
   duplicatasMin?: number;
   status?: 'active' | 'inactive' | 'all';
@@ -70,6 +71,7 @@ export function useFacebookAds() {
     params.set('limit', '24');
     if (f.search) params.set('search', f.search);
     if (f.checkout) params.set('checkout', f.checkout);
+    if (f.player) params.set('player', f.player);
     if (f.escalaMin !== undefined) params.set('escalaMin', String(f.escalaMin));
     if (f.duplicatasMin !== undefined) params.set('duplicatasMin', String(f.duplicatasMin));
     if (f.status && f.status !== 'all') params.set('status', f.status);
