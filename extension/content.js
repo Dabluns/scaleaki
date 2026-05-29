@@ -1,452 +1,611 @@
-// Scaleaki Content Script - Layout "Minerador"
+// ═══════════════════════════════════════════════════════════
+//  Scaleaki Toolkit — Content Script v3.0
+//  Inspirado no layout "Swipe Offers Spy"
+// ═══════════════════════════════════════════════════════════
 
-let adsFoundCount = 0;
-let isFilterActive = true; // Filtrar por padrão
+'use strict';
 
-function showToast(message, isError = false) {
-  const toast = document.createElement('div');
-  toast.className = 'scaleaki-toast';
-  toast.style.borderColor = isError ? '#ef4444' : '#22c55e';
-  toast.innerHTML = `<span style="color: ${isError ? '#ef4444' : '#22c55e'}">${isError ? '❌' : '✅'}</span> ${message}`;
-  
-  document.body.appendChild(toast);
-  
-  setTimeout(() => toast.classList.add('show'), 100);
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+// ── Estado Global ────────────────────────────────────────────
+let state = {
+  isActive: false,       // Spy ativo?
+  autoScroll: false,     // Auto-scroll ativo?
+  minDuplicatas: 2,      // Mínimo de duplicatas
+  minDias: 0,            // Mínimo de dias ativo
+  apenasAtivos: true,
+  apenasVideos: false,
+  totalProcessed: 0,
+  totalVisible: 0,
+  totalHidden: 0,
+  selectedAds: new Set(), // IDs selecionados para download
+  autoScrollTimer: null,
+};
+
+// ── Utilitários ───────────────────────────────────────────────
+function calcDias(startText) {
+  const months = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11,
+                  jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  try {
+    const clean = startText.toLowerCase().replace(/de\s/g, '').trim();
+    const parts = clean.split(/\s+/);
+    const day = parseInt(parts[0]);
+    const month = months[parts[1]?.substring(0,3)] ?? 0;
+    const year = parseInt(parts[parts.length - 1]);
+    if (isNaN(day) || isNaN(year)) return 0;
+    const date = new Date(year, month, day);
+    return Math.floor((Date.now() - date.getTime()) / 86400000);
+  } catch { return 0; }
 }
 
-// Injetar a Barra Inferior Global
-function injectBottomBar() {
-  if (document.getElementById('scaleaki-bottom-bar')) return;
+function extractCard(cardNode) {
+  const text = cardNode.innerText || '';
+  const idMatch = text.match(/(?:Identificação|ID)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*(\d+)/i);
+  const dupMatch = text.match(/(\d+)\s+anúncios?\s+usam/i);
+  const dateMatch = text.match(/(?:Veiculação iniciada em|Started running on)\s+(.+)/i);
+  const hasVideo = !!cardNode.querySelector('video');
+
+  const id = idMatch?.[1] || `ext_${Date.now()}`;
+  const duplicatas = dupMatch ? parseInt(dupMatch[1]) : 1;
+  const dias = dateMatch ? calcDias(dateMatch[1].split('\n')[0]) : 0;
+  const isActive = !text.toLowerCase().includes('encerrado') && !text.toLowerCase().includes('inactive');
+
+  let pageName = 'Desconhecido';
+  const pageLinks = cardNode.querySelectorAll('a[href*="facebook.com/"], a[href*="instagram.com/"]');
+  for (const link of pageLinks) {
+    if (link.innerText?.trim().length > 1 && !link.querySelector('img')) {
+      pageName = link.innerText.trim();
+      break;
+    }
+  }
+
+  return { id, duplicatas, dias, isActive, hasVideo, pageName };
+}
+
+function passesFilter(data) {
+  if (state.apenasAtivos && !data.isActive) return false;
+  if (state.apenasVideos && !data.hasVideo) return false;
+  if (data.duplicatas < state.minDuplicatas) return false;
+  if (state.minDias > 0 && data.dias < state.minDias) return false;
+  return true;
+}
+
+function showToast(msg, isError = false) {
+  let t = document.getElementById('sk-toast');
+  if (!t) { t = document.createElement('div'); t.id = 'sk-toast'; document.body.appendChild(t); }
+  t.className = `sk-toast ${isError ? 'sk-toast-error' : ''}`;
+  t.textContent = msg;
+  t.classList.add('sk-toast-show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('sk-toast-show'), 3000);
+}
+
+// ── Injetar Barra no Card ─────────────────────────────────────
+function injectCardBar(cardNode, data) {
+  if (cardNode.querySelector('.sk-card-bar')) return;
 
   const bar = document.createElement('div');
-  bar.id = 'scaleaki-bottom-bar';
-  bar.className = 'scaleaki-bottom-bar';
-  
+  bar.className = 'sk-card-bar';
+  bar.dataset.adId = data.id;
+
+  const isSelected = state.selectedAds.has(data.id);
+
   bar.innerHTML = `
-    <div class="scaleaki-bar-logo">scale<span>aki</span> Toolkit</div>
-    <div class="scaleaki-bar-actions">
-      <div class="scaleaki-toggle-wrapper">
-        <label class="scaleaki-toggle">
-          <input type="checkbox" id="scaleaki-toggle-filter" checked>
-          <span class="scaleaki-slider"></span>
-        </label>
-        <span>Apenas Ofertas Escaladas</span>
-      </div>
-      <button class="scaleaki-bar-btn" id="scaleaki-btn-mine">
-        <span>⚡</span> Salvar Visíveis
-      </button>
-      <button class="scaleaki-bar-btn" id="scaleaki-btn-top">
-        <span>↑</span> Voltar ao topo
-      </button>
-      <div class="scaleaki-bar-counter">
-        <strong id="scaleaki-counter">0</strong>
-        <span>Ofertas Escaladas</span>
-      </div>
+    <div class="sk-card-bar-left">
+      <div class="sk-checkbox ${isSelected ? 'sk-checkbox-active' : ''}" data-id="${data.id}" title="Selecionar"></div>
+      <span class="sk-lib-id">ID: ${data.id}</span>
+    </div>
+    <div class="sk-card-bar-right">
+      <span class="sk-dias-badge">${data.dias > 0 ? `${data.dias} dias ativos` : 'Novo'}</span>
+      <span class="sk-dup-badge" title="Duplicatas">${data.duplicatas}x</span>
+      <button class="sk-icon-btn sk-btn-dl" data-id="${data.id}" title="Baixar criativo">⬇</button>
+      <button class="sk-icon-btn sk-btn-save" data-id="${data.id}" title="Salvar no Scaleaki">★</button>
     </div>
   `;
 
+  // Inserir no topo do card
+  cardNode.style.position = 'relative';
+  cardNode.insertBefore(bar, cardNode.firstChild);
+
+  // Checkbox toggle
+  bar.querySelector('.sk-checkbox').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    if (state.selectedAds.has(id)) {
+      state.selectedAds.delete(id);
+      e.currentTarget.classList.remove('sk-checkbox-active');
+    } else {
+      state.selectedAds.add(id);
+      e.currentTarget.classList.add('sk-checkbox-active');
+    }
+    updateBottomBar();
+  });
+
+  // Download individual
+  bar.querySelector('.sk-btn-dl').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const adData = extractCard(cardNode);
+    openDownloadModal([{ cardNode, data: adData }]);
+  });
+
+  // Salvar no Scaleaki
+  bar.querySelector('.sk-btn-save').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const adData = extractCard(cardNode);
+    openSaveModal(adData, cardNode);
+  });
+}
+
+// ── Aplicar filtro visual no card ─────────────────────────────
+function applyCardFilter(cardNode, data) {
+  const passes = passesFilter(data);
+
+  if (state.isActive) {
+    if (passes) {
+      cardNode.style.removeProperty('display');
+      cardNode.classList.add('sk-card-highlight');
+      state.totalVisible++;
+    } else {
+      cardNode.style.display = 'none';
+      cardNode.classList.remove('sk-card-highlight');
+      state.totalHidden++;
+    }
+  } else {
+    cardNode.style.removeProperty('display');
+    cardNode.classList.remove('sk-card-highlight');
+  }
+}
+
+// ── Processar todos os cards ──────────────────────────────────
+function processAllCards() {
+  if (state.isActive) {
+    state.totalProcessed = 0;
+    state.totalVisible = 0;
+    state.totalHidden = 0;
+  }
+
+  const leaves = Array.from(document.querySelectorAll('span, div')).filter(el => {
+    return el.childElementCount === 0 &&
+      el.innerText &&
+      el.innerText.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*\d+/i);
+  });
+
+  leaves.forEach(leaf => {
+    if (leaf.dataset.skMarked) return;
+    leaf.dataset.skMarked = 'true';
+
+    let card = leaf.parentElement;
+    while (card && card.tagName !== 'BODY') {
+      const text = card.innerText || '';
+      if (text.includes('Patrocinado') && (text.includes('Ver resumo') || text.includes('Ver detalhes') || text.includes('See summary'))) break;
+      card = card.parentElement;
+    }
+    if (!card || card.tagName === 'BODY') return;
+    if (card.dataset.skProcessed) return;
+    card.dataset.skProcessed = 'true';
+
+    const data = extractCard(card);
+    state.totalProcessed++;
+
+    injectCardBar(card, data);
+    applyCardFilter(card, data);
+  });
+
+  updateStatsPanel();
+  updateBottomBar();
+}
+
+// ── Painel Lateral Direito ────────────────────────────────────
+function injectSidePanel() {
+  if (document.getElementById('sk-panel')) return;
+
+  const panel = document.createElement('div');
+  panel.id = 'sk-panel';
+  panel.className = 'sk-panel';
+
+  panel.innerHTML = `
+    <div class="sk-panel-header">
+      <div class="sk-panel-logo">scale<span>aki</span></div>
+      <div class="sk-panel-subtitle">Ad Spy Toolkit</div>
+    </div>
+
+    <div class="sk-panel-body">
+      <!-- Filtros numéricos -->
+      <div class="sk-filter-group">
+        <label class="sk-filter-label">Número de Anúncios (mín.)</label>
+        <div class="sk-counter">
+          <button class="sk-counter-btn" id="sk-dup-minus">−</button>
+          <span class="sk-counter-val" id="sk-dup-val">${state.minDuplicatas}</span>
+          <button class="sk-counter-btn" id="sk-dup-plus">+</button>
+        </div>
+      </div>
+
+      <div class="sk-filter-group">
+        <label class="sk-filter-label">Tempo de Ativo (dias)</label>
+        <div class="sk-counter">
+          <button class="sk-counter-btn" id="sk-days-minus">−</button>
+          <span class="sk-counter-val" id="sk-days-val">${state.minDias}</span>
+          <button class="sk-counter-btn" id="sk-days-plus">+</button>
+        </div>
+      </div>
+
+      <!-- Toggles -->
+      <div class="sk-toggle-row">
+        <span class="sk-toggle-label">Apenas Ativos</span>
+        <label class="sk-toggle"><input type="checkbox" id="sk-tog-active" ${state.apenasAtivos ? 'checked' : ''}><span class="sk-toggle-slider"></span></label>
+      </div>
+      <div class="sk-toggle-row">
+        <span class="sk-toggle-label">Apenas Vídeos</span>
+        <label class="sk-toggle"><input type="checkbox" id="sk-tog-videos" ${state.apenasVideos ? 'checked' : ''}><span class="sk-toggle-slider"></span></label>
+      </div>
+      <div class="sk-toggle-row">
+        <span class="sk-toggle-label">Auto-Scroll</span>
+        <label class="sk-toggle"><input type="checkbox" id="sk-tog-scroll"><span class="sk-toggle-slider"></span></label>
+      </div>
+
+      <!-- Botão principal -->
+      <button class="sk-btn-spy" id="sk-btn-spy">▶ Iniciar Spy</button>
+
+      <!-- Stats -->
+      <div class="sk-stats" id="sk-stats" style="display:none">
+        <div class="sk-stat sk-stat-green"><span id="sk-stat-processed">0</span><small>Processados</small></div>
+        <div class="sk-stat sk-stat-emerald"><span id="sk-stat-visible">0</span><small>Visíveis</small></div>
+        <div class="sk-stat sk-stat-red"><span id="sk-stat-hidden">0</span><small>Ocultos</small></div>
+      </div>
+
+      <!-- Atalhos -->
+      <button class="sk-btn-shortcuts" id="sk-btn-shortcuts">🔍 Mostrar Atalhos</button>
+    </div>
+  `;
+
+  document.body.appendChild(panel);
+  bindPanelEvents();
+}
+
+function bindPanelEvents() {
+  // Contadores
+  document.getElementById('sk-dup-minus').onclick = () => {
+    state.minDuplicatas = Math.max(1, state.minDuplicatas - 1);
+    document.getElementById('sk-dup-val').textContent = state.minDuplicatas;
+  };
+  document.getElementById('sk-dup-plus').onclick = () => {
+    state.minDuplicatas++;
+    document.getElementById('sk-dup-val').textContent = state.minDuplicatas;
+  };
+  document.getElementById('sk-days-minus').onclick = () => {
+    state.minDias = Math.max(0, state.minDias - 1);
+    document.getElementById('sk-days-val').textContent = state.minDias;
+  };
+  document.getElementById('sk-days-plus').onclick = () => {
+    state.minDias++;
+    document.getElementById('sk-days-val').textContent = state.minDias;
+  };
+
+  // Toggles
+  document.getElementById('sk-tog-active').onchange = (e) => { state.apenasAtivos = e.target.checked; };
+  document.getElementById('sk-tog-videos').onchange = (e) => { state.apenasVideos = e.target.checked; };
+  document.getElementById('sk-tog-scroll').onchange = (e) => { toggleAutoScroll(e.target.checked); };
+
+  // Spy Button
+  document.getElementById('sk-btn-spy').onclick = toggleSpy;
+
+  // Atalhos
+  document.getElementById('sk-btn-shortcuts').onclick = openShortcutsModal;
+}
+
+function updateStatsPanel() {
+  const statsEl = document.getElementById('sk-stats');
+  if (!statsEl) return;
+  if (state.isActive) {
+    statsEl.style.display = 'flex';
+    document.getElementById('sk-stat-processed').textContent = state.totalProcessed;
+    document.getElementById('sk-stat-visible').textContent = state.totalVisible;
+    document.getElementById('sk-stat-hidden').textContent = state.totalHidden;
+  } else {
+    statsEl.style.display = 'none';
+  }
+}
+
+function toggleSpy() {
+  state.isActive = !state.isActive;
+  const btn = document.getElementById('sk-btn-spy');
+  if (!btn) return;
+
+  if (state.isActive) {
+    btn.textContent = '⏹ Parar Spy';
+    btn.classList.add('sk-btn-spy-active');
+    // Re-processar todos os cards com novos filtros
+    document.querySelectorAll('[data-sk-processed]').forEach(c => {
+      delete c.dataset.skProcessed;
+      const bar = c.querySelector('.sk-card-bar');
+      if (bar) bar.remove();
+    });
+    document.querySelectorAll('[data-sk-marked]').forEach(l => delete l.dataset.skMarked);
+    processAllCards();
+  } else {
+    btn.textContent = '▶ Iniciar Spy';
+    btn.classList.remove('sk-btn-spy-active');
+    // Mostrar todos os cards novamente
+    document.querySelectorAll('[data-sk-processed]').forEach(c => {
+      c.style.removeProperty('display');
+      c.classList.remove('sk-card-highlight');
+    });
+    updateStatsPanel();
+  }
+}
+
+// ── Auto Scroll ───────────────────────────────────────────────
+function toggleAutoScroll(active) {
+  state.autoScroll = active;
+  if (active) {
+    state.autoScrollTimer = setInterval(() => {
+      window.scrollBy({ top: 600, behavior: 'smooth' });
+    }, 1800);
+    showToast('Auto-scroll ativado!');
+  } else {
+    clearInterval(state.autoScrollTimer);
+    showToast('Auto-scroll pausado.');
+  }
+}
+
+// ── Bottom Bar de Seleção ─────────────────────────────────────
+function injectBottomBar() {
+  if (document.getElementById('sk-bottom-bar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'sk-bottom-bar';
+  bar.className = 'sk-bottom-bar';
+  bar.innerHTML = `
+    <div class="sk-bottom-left">
+      <span class="sk-bottom-logo">scale<span>aki</span></span>
+      <button class="sk-bottom-btn-outline" id="sk-btn-top">↑ Topo</button>
+    </div>
+    <div class="sk-bottom-right" id="sk-selection-area" style="display:none">
+      <span id="sk-selected-count">0 anúncios selecionados</span>
+      <button class="sk-btn-download-all" id="sk-btn-download-all">⬇ Baixar Todos</button>
+    </div>
+  `;
   document.body.appendChild(bar);
 
-  document.getElementById('scaleaki-btn-top').addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
-  document.getElementById('scaleaki-btn-mine').addEventListener('click', () => {
-    showToast('Função de salvamento em lote em breve!');
-  });
-
-  document.getElementById('scaleaki-toggle-filter').addEventListener('change', (e) => {
-    isFilterActive = e.target.checked;
-    applyFiltersToAllCards();
-  });
+  document.getElementById('sk-btn-top').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('sk-btn-download-all').onclick = () => {
+    const selected = Array.from(state.selectedAds);
+    if (!selected.length) return;
+    const items = selected.map(id => {
+      const bar = document.querySelector(`.sk-card-bar[data-ad-id="${id}"]`);
+      const card = bar?.parentElement;
+      return card ? { cardNode: card, data: extractCard(card) } : null;
+    }).filter(Boolean);
+    openDownloadModal(items);
+  };
 }
 
-function updateCounter() {
-  const counterEl = document.getElementById('scaleaki-counter');
-  if (counterEl) {
-    counterEl.innerText = adsFoundCount;
+function updateBottomBar() {
+  const area = document.getElementById('sk-selection-area');
+  const count = document.getElementById('sk-selected-count');
+  if (!area || !count) return;
+  if (state.selectedAds.size > 0) {
+    area.style.display = 'flex';
+    count.textContent = `${state.selectedAds.size} anúncio(s) selecionado(s)`;
+  } else {
+    area.style.display = 'none';
   }
 }
 
-function applyFiltersToAllCards() {
-  const cards = document.querySelectorAll('.xh8yej3');
-  cards.forEach(card => {
-    if (card.dataset.scaleakiScaled === "false") {
-      if (isFilterActive) {
-        card.classList.add('scaleaki-hidden-ad');
-      } else {
-        card.classList.remove('scaleaki-hidden-ad');
-      }
-    }
-  });
-}
+// ── Modal de Download ─────────────────────────────────────────
+function openDownloadModal(items) {
+  const existing = document.getElementById('sk-dl-modal');
+  if (existing) existing.remove();
 
-// Modal de Adicionar Biblioteca
-function openSaveModal(adData) {
   const overlay = document.createElement('div');
-  overlay.className = 'scaleaki-modal-overlay';
-  overlay.id = 'scaleaki-modal';
-
-  // Usamos o nome da página como sugestão pro Nome do Produto
-  const defaultName = adData.pageName || '';
-
-  // Renderizar Criativos
-  let mediaHtml = '';
-  if (adData.mediaUrls && adData.mediaUrls.length > 0) {
-    const itemsHtml = adData.mediaUrls.map((m, i) => `
-      <div class="scaleaki-media-item">
-        <div class="scaleaki-media-type-badge">${m.type === 'video' ? '🎬' : '🖼️'}</div>
-        ${m.type === 'video' ? `<video src="${m.url}" muted></video>` : `<img src="${m.url}">`}
-        <div class="scaleaki-media-download" data-url="${m.url}" data-type="${m.type}" data-idx="${i}">⬇️ Baixar</div>
-      </div>
-    `).join('');
-
-    mediaHtml = `
-      <div class="scaleaki-media-section">
-        <div class="scaleaki-media-header">
-          <h4>Criativos Encontrados (${adData.mediaUrls.length})</h4>
-          <div>
-            <button id="scaleaki-btn-dl-main">Baixar Principal</button>
-            <button id="scaleaki-btn-dl-all">Baixar Todos</button>
-          </div>
-        </div>
-        <div class="scaleaki-media-grid">
-          ${itemsHtml}
-        </div>
-      </div>
-    `;
-  }
+  overlay.id = 'sk-dl-modal';
+  overlay.className = 'sk-modal-overlay';
 
   overlay.innerHTML = `
-    <div class="scaleaki-modal">
-      <div class="scaleaki-modal-header">
-        <h3>Adicionando anúncio ao Scaleaki</h3>
-        <button class="scaleaki-modal-close" id="scaleaki-modal-close">&times;</button>
+    <div class="sk-modal">
+      <div class="sk-modal-header">
+        <h3>Download em Lote</h3>
+        <button class="sk-modal-close" id="sk-dl-close">&times;</button>
       </div>
-      <div class="scaleaki-modal-body">
-        <div class="scaleaki-input-group">
-          <label>Nome do Produto/Oferta *</label>
-          <input type="text" id="scaleaki-input-name" value="${defaultName}" placeholder="Ex: Protocolo Zero Dor">
-        </div>
-        <div class="scaleaki-input-group">
-          <label>Tecnologia/Checkout (Opcional)</label>
-          <input type="text" id="scaleaki-input-tags" placeholder="Ex: Shopify, Kiwify...">
-        </div>
-        <div class="scaleaki-input-group">
-          <label>Nicho *</label>
-          <select id="scaleaki-input-category">
-            <option value="">Selecione um nicho</option>
-            <option value="Saúde">Saúde e Bem-estar</option>
-            <option value="Dinheiro">Renda Extra / Finanças</option>
-            <option value="Beleza">Beleza e Estética</option>
-            <option value="Relacionamento">Relacionamento</option>
-            <option value="Outros">Outros</option>
-          </select>
-        </div>
-        ${mediaHtml}
+      <div class="sk-modal-body">
+        <p class="sk-modal-sub">${items.length} anúncio(s) selecionado(s)</p>
+        <label class="sk-check-option">
+          <input type="checkbox" id="sk-dl-media" checked>
+          <span>Mídia do anúncio (vídeo/imagem)</span>
+        </label>
+        <label class="sk-check-option">
+          <input type="checkbox" id="sk-dl-zip">
+          <span>Compactar em ZIP</span>
+        </label>
       </div>
-      <div class="scaleaki-modal-footer">
-        <button id="scaleaki-btn-confirm-save">Adicionar Oferta</button>
+      <div class="sk-modal-footer">
+        <button class="sk-btn-confirm" id="sk-dl-confirm">⬇ Iniciar Download</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(overlay);
+  overlay.querySelector('#sk-dl-close').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-  const closeBtn = document.getElementById('scaleaki-modal-close');
-  const confirmBtn = document.getElementById('scaleaki-btn-confirm-save');
-
-  const closeModal = () => overlay.remove();
-  
-  closeBtn.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal();
-  });
-
-  // Lógica de Download
-  const triggerDownload = (url, type, index) => {
-    const ext = type === 'video' ? 'mp4' : 'jpg';
-    const filename = `scaleaki_${adData.id}_${index}.${ext}`;
-    showToast('Iniciando download...');
-    chrome.runtime.sendMessage({ action: 'download_media', url, filename }, (response) => {
-      if (chrome.runtime.lastError) {
-        showToast('Erro interno de extensão. Atualize a página.', true);
-      } else if (response && response.error) {
-        showToast('Erro no download: ' + response.error, true);
-      }
+  overlay.querySelector('#sk-dl-confirm').onclick = () => {
+    overlay.remove();
+    items.forEach((item, i) => {
+      const imgs = Array.from(item.cardNode.querySelectorAll('img')).filter(img => img.width > 100);
+      const vids = Array.from(item.cardNode.querySelectorAll('video'));
+      const medias = [...vids.map(v => ({ url: v.src, type: 'video' })), ...imgs.map(img => ({ url: img.src, type: 'image' }))];
+      medias.forEach((m, j) => {
+        const ext = m.type === 'video' ? 'mp4' : 'jpg';
+        const filename = `scaleaki_${item.data.id}_${j}.${ext}`;
+        setTimeout(() => {
+          if (m.url) chrome.runtime.sendMessage({ action: 'download_media', url: m.url, filename });
+        }, (i * medias.length + j) * 600);
+      });
     });
+    showToast(`Download iniciado para ${items.length} anúncio(s)!`);
   };
+}
 
-  if (adData.mediaUrls && adData.mediaUrls.length > 0) {
-    document.querySelectorAll('.scaleaki-media-download').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        triggerDownload(e.target.dataset.url, e.target.dataset.type, e.target.dataset.idx);
-      });
-    });
+// ── Modal de Salvar ───────────────────────────────────────────
+function openSaveModal(adData, cardNode) {
+  const existing = document.getElementById('sk-save-modal');
+  if (existing) existing.remove();
 
-    document.getElementById('scaleaki-btn-dl-main').addEventListener('click', () => {
-      triggerDownload(adData.mediaUrls[0].url, adData.mediaUrls[0].type, 0);
-    });
+  const overlay = document.createElement('div');
+  overlay.id = 'sk-save-modal';
+  overlay.className = 'sk-modal-overlay';
 
-    document.getElementById('scaleaki-btn-dl-all').addEventListener('click', () => {
-      adData.mediaUrls.forEach((m, i) => {
-        setTimeout(() => triggerDownload(m.url, m.type, i), i * 500); // delay para não travar
-      });
-    });
-  }
+  overlay.innerHTML = `
+    <div class="sk-modal">
+      <div class="sk-modal-header">
+        <h3>Salvar no Scaleaki</h3>
+        <button class="sk-modal-close" id="sk-save-close">&times;</button>
+      </div>
+      <div class="sk-modal-body">
+        <div class="sk-input-group">
+          <label>Nome da Oferta *</label>
+          <input type="text" id="sk-save-name" value="${adData.pageName}" placeholder="Ex: Protocolo Zero Dor">
+        </div>
+        <div class="sk-input-group">
+          <label>Nicho *</label>
+          <select id="sk-save-niche">
+            <option value="">Selecione</option>
+            <option>Saúde e Bem-estar</option>
+            <option>Renda Extra / Finanças</option>
+            <option>Beleza e Estética</option>
+            <option>Relacionamento</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div class="sk-input-group">
+          <label>Tecnologia/Checkout</label>
+          <input type="text" id="sk-save-tech" placeholder="Ex: Kiwify, Shopify...">
+        </div>
+      </div>
+      <div class="sk-modal-footer">
+        <button class="sk-btn-confirm" id="sk-save-confirm">Adicionar Oferta</button>
+      </div>
+    </div>
+  `;
 
-  confirmBtn.addEventListener('click', () => {
-    const nameVal = document.getElementById('scaleaki-input-name').value;
-    const catVal = document.getElementById('scaleaki-input-category').value;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#sk-save-close').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-    if (!nameVal || !catVal) {
-      alert("Preencha o Nome e o Nicho para salvar!");
-      return;
-    }
+  overlay.querySelector('#sk-save-confirm').onclick = () => {
+    const name = document.getElementById('sk-save-name').value;
+    const niche = document.getElementById('sk-save-niche').value;
+    if (!name || !niche) { showToast('Preencha nome e nicho!', true); return; }
 
-    confirmBtn.innerText = 'Salvando...';
-    confirmBtn.disabled = true;
-
-    // Enviar para o background
-    const payload = {
-      fbAdId: adData.id || `ext_${Date.now()}`,
-      pageName: nameVal, // Sobrescreve com o nome escolhido
-      adCopy: adData.adCopy,
-      adHeadline: adData.pageName, 
-      adSnapshotUrl: adData.mediaUrls[0]?.url || null,
-      destinationUrl: adData.destinationUrl,
-      tecnologia: document.getElementById('scaleaki-input-tags').value, // Tags/Checkout
-      nicho: catVal, // Campo fictício que pode ser add na DB depois
-      duplicatas: adData.duplicatas,
-      isActive: true,
-      deliveryStartTime: new Date().toISOString() // No caso, salva a data de agora como inicio do track
-    };
+    const btn = overlay.querySelector('#sk-save-confirm');
+    btn.textContent = 'Salvando...';
+    btn.disabled = true;
 
     chrome.runtime.sendMessage({
       action: 'save_to_scaleaki',
-      payload: payload
+      payload: {
+        fbAdId: adData.id,
+        pageName: name,
+        adCopy: adData.adCopy || '',
+        destinationUrl: adData.destinationUrl || '',
+        duplicatas: adData.duplicatas,
+        isActive: adData.isActive,
+        tecnologia: document.getElementById('sk-save-tech').value,
+        deliveryStartTime: new Date().toISOString(),
+      }
     }, (response) => {
-      closeModal();
-      if (response && response.success) {
-        showToast('Oferta salva com sucesso!');
-        // Atualiza o botão no card original
-        if (adData.btnElement) {
-          adData.btnElement.style.background = '#064e3b';
-          adData.btnElement.style.color = 'white';
-          adData.btnElement.innerText = '✅ Analisado e Salvo';
-        }
+      overlay.remove();
+      if (response?.success) {
+        showToast('✅ Oferta salva com sucesso!');
+        const bar = cardNode?.querySelector('.sk-card-bar');
+        if (bar) bar.classList.add('sk-card-bar-saved');
       } else {
-        showToast(response?.error || 'Erro ao salvar.', true);
+        showToast('❌ ' + (response?.error || 'Erro ao salvar.'), true);
       }
     });
-  });
-}
-
-// Funções de Extração (Reaproveitadas do código anterior)
-function cleanFacebookUrl(fbUrl) {
-  if (!fbUrl) return '';
-  if (fbUrl.includes('l.facebook.com/l.php')) {
-    try {
-      const urlObj = new URL(fbUrl);
-      const uParam = urlObj.searchParams.get('u');
-      if (uParam) return decodeURIComponent(uParam);
-    } catch(e) {}
-  }
-  return fbUrl;
-}
-
-function extractAdData(cardNode) {
-  const data = { id: '', pageName: 'Desconhecido', adCopy: '', destinationUrl: '', mediaUrls: [], libraryUrl: '', duplicatas: 1, diasRodando: 0, isEscalado: false };
-
-  const textContent = cardNode.innerText || '';
-  
-  // Extrair ID
-  const idMatch = textContent.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*(\d+)/i);
-  if (idMatch && idMatch[1]) {
-    data.id = idMatch[1];
-    data.libraryUrl = `https://www.facebook.com/ads/library/?id=${data.id}`;
-  }
-
-  // Extrair Duplicatas
-  const dupMatch = textContent.match(/(\d+)\s+anúncios\s+usam/i);
-  if (dupMatch && dupMatch[1]) {
-    data.duplicatas = parseInt(dupMatch[1], 10);
-  }
-
-  // Extrair Dias Rodando (aproximado)
-  const dateMatch = textContent.match(/(?:Veiculação iniciada em|Started running on)\s+(.+)/i);
-  if (dateMatch && dateMatch[1]) {
-    const rawDate = dateMatch[1].split('\n')[0]; // Pega a primeira linha
-    data.diasRodando = calcDiasDesdeString(rawDate);
-  }
-
-  // Lógica de Escala (Mesma da API do Scaleaki)
-  if (data.duplicatas >= 2 || data.diasRodando >= 4) {
-    data.isEscalado = true;
-  }
-
-  const pageLinks = Array.from(cardNode.querySelectorAll('a[href*="facebook.com/"], a[href*="instagram.com/"]'));
-  for (const link of pageLinks) {
-    if (link.innerText && link.innerText.trim().length > 1 && !link.querySelector('img')) {
-      data.pageName = link.innerText.trim();
-      break;
-    }
-  }
-
-  const divs = Array.from(cardNode.querySelectorAll('div'));
-  const copyDiv = divs.find(d => d.dir === 'auto' && d.innerText && d.innerText.length > 20 && !d.innerText.includes('da biblioteca'));
-  if (copyDiv) data.adCopy = copyDiv.innerText;
-
-  const links = Array.from(cardNode.querySelectorAll('a'));
-  const ctaLinks = links.filter(l => l.innerText && ['Saiba mais', 'Comprar', 'Baixar', 'Cadastre', 'Assinar', 'Learn more'].some(t => l.innerText.includes(t)));
-  if (ctaLinks.length > 0) data.destinationUrl = cleanFacebookUrl(ctaLinks[0].href);
-  else {
-    const extLinks = links.filter(l => l.href && l.href.includes('l.facebook.com'));
-    if (extLinks.length > 0) data.destinationUrl = cleanFacebookUrl(extLinks[extLinks.length - 1].href);
-  }
-
-  const videos = Array.from(cardNode.querySelectorAll('video'));
-  videos.forEach(v => { if (v.src) data.mediaUrls.push({ type: 'video', url: v.src }); });
-
-  const images = Array.from(cardNode.querySelectorAll('img'));
-  images.forEach(img => { if (img.width > 100 && img.height > 100 && img.src) data.mediaUrls.push({ type: 'image', url: img.src }); });
-
-  return data;
-}
-
-// Helper para dias rodando
-function calcDiasDesdeString(dateString) {
-  // Traduz meses pt pra en para o parse do JS funcionar ou usa lógica básica
-  const months = {'jan':0,'fev':1,'mar':2,'abr':3,'mai':4,'jun':5,'jul':6,'ago':7,'set':8,'out':9,'nov':10,'dez':11};
-  let d = new Date();
-  try {
-    const parts = dateString.toLowerCase().replace(' de ', ' ').split(' ');
-    if (parts.length >= 3) {
-      const day = parseInt(parts[0]);
-      let monthStr = parts[1].substring(0,3);
-      if (parts[1] === 'de') monthStr = parts[2].substring(0,3); // lida com "4 de mai"
-      
-      const month = months[monthStr] !== undefined ? months[monthStr] : new Date(Date.parse(monthStr +" 1, 2012")).getMonth();
-      const year = parseInt(parts[parts.length - 1]);
-      
-      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        d = new Date(year, month, day);
-      }
-    }
-  } catch(e){}
-  
-  const diffTime = Math.abs(new Date() - d);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
-
-// Injetar Botão Inline e Filtrar
-function injectInlineButton(cardNode) {
-  if (cardNode.dataset.scaleakiInjected) return;
-  cardNode.dataset.scaleakiInjected = "true";
-
-  const adData = extractAdData(cardNode);
-
-  // Lógica de Ocultar Não-Escalados
-  if (!adData.isEscalado) {
-    cardNode.dataset.scaleakiScaled = "false";
-    if (isFilterActive) {
-      cardNode.classList.add('scaleaki-hidden-ad');
-    }
-    // Se não for escalado, nem insere botão e não conta no dashboard
-    return;
-  } else {
-    cardNode.dataset.scaleakiScaled = "true";
-  }
-
-  adsFoundCount++;
-  updateCounter();
-
-  // Procurar o local ideal: logo abaixo de "Ver detalhes do anúncio" ou "Ver resumo"
-  const allDivs = Array.from(cardNode.querySelectorAll('div, span'));
-  const summaryBtn = allDivs.find(d => {
-    const text = d.innerText ? d.innerText.trim() : '';
-    return (text === 'Ver resumo' || text === 'See summary details' || text === 'Ver detalhes do anúncio') && d.offsetHeight > 10;
-  });
-
-  const container = summaryBtn ? summaryBtn.closest('div[role="button"]') || summaryBtn.parentElement : cardNode;
-
-  const btn = document.createElement('button');
-  btn.className = 'scaleaki-inline-btn';
-  btn.innerText = 'Analisar e Salvar';
-  
-  // Impede o clique de abrir o link do facebook por acidente
-  btn.onclick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    adData.btnElement = btn; // pass reference
-    openSaveModal(adData);
   };
-
-  // Insere logo apos o botão de resumo
-  if (container && container.parentElement && summaryBtn) {
-    // Insere o botão em uma div wrapper
-    const wrapper = document.createElement('div');
-    wrapper.style.padding = '0 12px 12px 12px'; // Match card padding
-    wrapper.appendChild(btn);
-    
-    // Tenta inserir depois do container do "Ver resumo"
-    container.parentElement.insertBefore(wrapper, container.nextSibling);
-  } else {
-    // Fallback: se não achar o botão, coloca no fim do card
-    cardNode.appendChild(btn);
-  }
 }
 
-// Observer Principal
-const observer = new MutationObserver((mutations) => {
-  // Procura pelo nó de texto exato (folha) que contém o ID da biblioteca
-  const allLeafs = Array.from(document.querySelectorAll('span, div')).filter(el => {
-    return el.childElementCount === 0 && 
-           el.innerText && 
-           el.innerText.match(/(?:ID|Identificação)\s+da\s+biblioteca\s*(?:de\s*anúncios)?:\s*\d+/i);
-  });
+// ── Modal de Atalhos ──────────────────────────────────────────
+const SHORTCUTS = {
+  'Saúde': ['emagrecer', 'diabetes', 'dor nas costas', 'pressão alta', 'colesterol', 'memória', 'visão', 'sono'],
+  'Dinheiro': ['renda extra', 'trabalhar em casa', 'investir', 'bitcoin', 'dropshipping', 'freelancer'],
+  'Beleza': ['pele', 'cabelo', 'rugas', 'estrias', 'celulite', 'manchas', 'unhas'],
+  'Relacionamento': ['reconquistar', 'ciúmes', 'ex', 'casamento', 'sedução', 'timidez'],
+  'Drop': ['produto viral', 'tendência', 'frete grátis', 'kit', 'brinde'],
+};
 
-  allLeafs.forEach(leaf => {
-    if (leaf.dataset.scaleakiMarked) return;
-    leaf.dataset.scaleakiMarked = "true";
-    
-    // Sobe na árvore até achar o container grande que engloba tanto o topo (Patrocinado) quanto o rodapé (Ver resumo/detalhes)
-    let card = leaf.parentElement;
-    let found = false;
-    
-    while(card && card.tagName !== 'BODY') {
-      const text = card.innerText || '';
-      if (text.includes('Patrocinado') && (text.includes('Ver resumo') || text.includes('Ver detalhes') || text.includes('See summary'))) {
-        found = true;
-        break;
-      }
-      card = card.parentElement;
-    }
-    
-    // Se não encontrou pela heurística de texto duplo, usa fallback de altura (min 450px)
-    if (!found) {
-      card = leaf.parentElement;
-      while(card && card.tagName !== 'BODY') {
-        if (card.clientHeight >= 450) {
-          break;
-        }
-        card = card.parentElement;
-      }
-    }
-    
-    if (card) {
-      injectInlineButton(card);
-    }
-  });
-});
+function openShortcutsModal() {
+  const existing = document.getElementById('sk-shortcuts-modal');
+  if (existing) { existing.remove(); return; }
 
-// Boot
+  const overlay = document.createElement('div');
+  overlay.id = 'sk-shortcuts-modal';
+  overlay.className = 'sk-modal-overlay';
+
+  const tabsHtml = Object.keys(SHORTCUTS).map(cat =>
+    `<button class="sk-tab" data-cat="${cat}">${cat}</button>`
+  ).join('');
+
+  const allKeywords = Object.entries(SHORTCUTS).map(([cat, kws]) => `
+    <div class="sk-shortcut-group" data-group="${cat}">
+      ${kws.map(kw => `<button class="sk-shortcut-kw" data-kw="${kw}">${kw}</button>`).join('')}
+    </div>
+  `).join('');
+
+  overlay.innerHTML = `
+    <div class="sk-modal sk-modal-wide">
+      <div class="sk-modal-header">
+        <h3>🔍 Atalhos de Pesquisa</h3>
+        <button class="sk-modal-close" id="sk-sh-close">&times;</button>
+      </div>
+      <div class="sk-modal-body">
+        <div class="sk-tabs">${tabsHtml}</div>
+        <div class="sk-shortcut-groups">${allKeywords}</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  overlay.querySelector('#sk-sh-close').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  // Tabs
+  const tabs = overlay.querySelectorAll('.sk-tab');
+  const groups = overlay.querySelectorAll('.sk-shortcut-group');
+  tabs[0]?.classList.add('sk-tab-active');
+
+  const showGroup = (cat) => {
+    tabs.forEach(t => t.classList.toggle('sk-tab-active', t.dataset.cat === cat));
+    groups.forEach(g => g.style.display = g.dataset.group === cat ? 'flex' : 'none');
+  };
+  showGroup(Object.keys(SHORTCUTS)[0]);
+
+  tabs.forEach(t => t.onclick = () => showGroup(t.dataset.cat));
+
+  // Keywords — cola no search input do Facebook
+  overlay.querySelectorAll('.sk-shortcut-kw').forEach(btn => {
+    btn.onclick = () => {
+      const kw = btn.dataset.kw;
+      const fbInput = document.querySelector('input[placeholder*="Pesquisar"], input[type="search"]');
+      if (fbInput) {
+        fbInput.focus();
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        nativeInputValueSetter.call(fbInput, kw);
+        fbInput.dispatchEvent(new Event('input', { bubbles: true }));
+        overlay.remove();
+        showToast(`Pesquisando: "${kw}"`);
+      } else {
+        navigator.clipboard.writeText(kw).then(() => showToast(`"${kw}" copiado!`));
+      }
+    };
+  });
+}
+
+// ── Observer Principal ────────────────────────────────────────
+const observer = new MutationObserver(() => processAllCards());
+
+// ── Boot ──────────────────────────────────────────────────────
 setTimeout(() => {
+  injectSidePanel();
   injectBottomBar();
   observer.observe(document.body, { childList: true, subtree: true });
+  processAllCards();
 }, 1500);

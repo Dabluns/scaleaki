@@ -1,350 +1,635 @@
-/* Premium Dark/Emerald Theme for Scaleaki Injected Tools */
+/* ═══════════════════════════════════════════════════════════
+   Scaleaki Toolkit — Style v3.0
+   Dark Emerald · Inspirado no Swipe Offers Spy
+════════════════════════════════════════════════════════════ */
 
-/* ── Global Bottom Bar ── */
-.scaleaki-bottom-bar {
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+:root {
+  --sk-green: #22c55e;
+  --sk-green-dark: #16a34a;
+  --sk-green-glow: rgba(34,197,94,0.25);
+  --sk-bg: #0a0a0a;
+  --sk-surface: #111111;
+  --sk-border: rgba(255,255,255,0.08);
+  --sk-text: #f1f5f9;
+  --sk-muted: rgba(255,255,255,0.35);
+  --sk-radius: 12px;
+  --sk-font: 'Inter', system-ui, sans-serif;
+}
+
+/* ── Painel Lateral (Direita) ─────────────────────────────── */
+#sk-panel {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 60px;
-  background: #0d0d0d;
-  border-top: 1px solid rgba(34, 197, 94, 0.3);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 24px;
-  box-sizing: border-box;
-  z-index: 999999;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: white;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
-}
-
-.scaleaki-bar-logo {
-  font-size: 18px;
-  font-weight: 900;
-  text-transform: uppercase;
-  font-style: italic;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.scaleaki-bar-logo span { color: #22c55e; }
-
-.scaleaki-bar-actions {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-/* ── Toggle Switch ── */
-.scaleaki-toggle-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #4ade80;
-  margin-right: 16px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  padding-right: 16px;
-}
-
-.scaleaki-toggle {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
-}
-.scaleaki-toggle input { opacity: 0; width: 0; height: 0; }
-.scaleaki-slider {
-  position: absolute; cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(255, 255, 255, 0.2);
-  transition: .4s; border-radius: 20px;
-}
-.scaleaki-slider:before {
-  position: absolute; content: "";
-  height: 14px; width: 14px; left: 3px; bottom: 3px;
-  background-color: white; transition: .4s; border-radius: 50%;
-}
-input:checked + .scaleaki-slider { background-color: #22c55e; }
-input:checked + .scaleaki-slider:before { transform: translateX(16px); }
-
-.scaleaki-hidden-ad {
-  display: none !important;
-}
-
-.scaleaki-bar-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.scaleaki-bar-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.scaleaki-bar-counter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  padding: 4px 12px;
-  border-radius: 8px;
-  color: #4ade80;
-}
-.scaleaki-bar-counter strong {
-  font-size: 16px;
-  font-weight: 900;
-}
-.scaleaki-bar-counter span {
-  font-size: 10px;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-/* ── Inline Button in Ad Card ── */
-.scaleaki-inline-btn {
-  width: 100%;
-  margin-top: 8px;
-  background: #22c55e;
-  color: black;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 800;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
-}
-
-.scaleaki-inline-btn:hover {
-  background: #4ade80;
-  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
-  transform: translateY(-1px);
-}
-
-/* ── Modal ── */
-.scaleaki-modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 9999999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-.scaleaki-modal {
-  background: #0d0d0d;
-  width: 400px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+  top: 80px;
+  right: 0;
+  width: 220px;
+  background: var(--sk-bg);
+  border: 1px solid var(--sk-border);
+  border-right: none;
+  border-radius: var(--sk-radius) 0 0 var(--sk-radius);
+  z-index: 99999;
+  font-family: var(--sk-font);
+  box-shadow: -8px 0 40px rgba(0,0,0,0.6);
   overflow: hidden;
-  color: white;
-  animation: scaleaki-slide-up 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes scaleaki-slide-up {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+.sk-panel-header {
+  background: linear-gradient(135deg, #0d1f14, #0a1a0f);
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(34,197,94,0.15);
 }
 
-.scaleaki-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.sk-panel-logo {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--sk-text);
+  letter-spacing: -0.5px;
 }
-.scaleaki-modal-header h3 {
-  margin: 0;
-  font-size: 16px;
+
+.sk-panel-logo span { color: var(--sk-green); }
+
+.sk-panel-subtitle {
+  font-size: 9px;
   font-weight: 700;
+  color: var(--sk-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 2px;
 }
-.scaleaki-modal-close {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 20px;
-  cursor: pointer;
-}
-.scaleaki-modal-close:hover { color: white; }
 
-.scaleaki-modal-body {
-  padding: 20px;
+.sk-panel-body {
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
-.scaleaki-input-group {
+/* ── Grupos de Filtro ─────────────────────────────────────── */
+.sk-filter-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-.scaleaki-input-group label {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-}
-.scaleaki-input-group input, .scaleaki-input-group select {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 10px 12px;
-  border-radius: 6px;
-  color: white;
-  font-size: 13px;
-  outline: none;
-}
-.scaleaki-input-group input:focus, .scaleaki-input-group select:focus {
-  border-color: #22c55e;
-}
 
-.scaleaki-modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: flex-end;
-}
-.scaleaki-modal-footer button {
-  background: #22c55e;
-  color: black;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.scaleaki-modal-footer button:hover {
-  background: #4ade80;
-}
-.scaleaki-modal-footer button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Toast ── */
-.scaleaki-toast {
-  position: fixed;
-  bottom: 80px; /* Acima da barra */
-  right: 20px;
-  background: #0d0d0d;
-  border: 1px solid #22c55e;
-  color: white;
-  padding: 16px 24px;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 12px;
+.sk-filter-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--sk-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(34, 197, 94, 0.2);
-  z-index: 999999;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.scaleaki-toast.show {
-  opacity: 1;
-  transform: translateY(0);
+.sk-counter {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--sk-border);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-/* ── Media Grid ── */
-.scaleaki-media-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 16px;
-  margin-top: 8px;
-}
-.scaleaki-media-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-.scaleaki-media-header h4 {
-  margin: 0;
-  font-size: 13px;
-  color: #4ade80;
-}
-.scaleaki-media-header button {
+.sk-counter-btn {
+  width: 32px;
+  height: 32px;
   background: transparent;
-  border: 1px solid rgba(34, 197, 94, 0.5);
-  color: #22c55e;
-  padding: 4px 10px;
-  border-radius: 4px;
+  border: none;
+  color: var(--sk-green);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sk-counter-btn:hover { background: rgba(34,197,94,0.1); }
+
+.sk-counter-val {
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--sk-text);
+}
+
+/* ── Toggles ─────────────────────────────────────────────── */
+.sk-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sk-toggle-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sk-text);
+}
+
+.sk-toggle {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sk-toggle input { opacity: 0; width: 0; height: 0; }
+
+.sk-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: rgba(255,255,255,0.15);
+  border-radius: 18px;
+  transition: 0.3s;
+}
+
+.sk-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  left: 3px;
+  top: 3px;
+  transition: 0.3s;
+}
+
+.sk-toggle input:checked + .sk-toggle-slider { background: var(--sk-green); }
+.sk-toggle input:checked + .sk-toggle-slider::before { transform: translateX(16px); }
+
+/* ── Botão Spy ────────────────────────────────────────────── */
+.sk-btn-spy {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--sk-green);
+  color: #000;
   font-size: 11px;
-  font-weight: bold;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.2s;
 }
-.scaleaki-media-header button:hover {
-  background: rgba(34, 197, 94, 0.1);
-}
-.scaleaki-media-grid {
+
+.sk-btn-spy:hover { background: #16a34a; transform: translateY(-1px); }
+.sk-btn-spy-active { background: #ef4444 !important; color: white !important; }
+.sk-btn-spy-active:hover { background: #dc2626 !important; }
+
+/* ── Stats ────────────────────────────────────────────────── */
+.sk-stats {
   display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 8px;
+  gap: 6px;
 }
-.scaleaki-media-item {
-  position: relative;
-  width: 80px;
-  height: 80px;
+
+.sk-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
   border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.1);
-  flex-shrink: 0;
-  background: #111;
+  border: 1px solid;
 }
-.scaleaki-media-item img, .scaleaki-media-item video {
+
+.sk-stat span {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--sk-text);
+}
+
+.sk-stat small {
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--sk-muted);
+}
+
+.sk-stat-green  { border-color: rgba(34,197,94,0.3);  background: rgba(34,197,94,0.06); }
+.sk-stat-emerald{ border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.06); }
+.sk-stat-red    { border-color: rgba(239,68,68,0.3);  background: rgba(239,68,68,0.06); }
+
+/* ── Botão Atalhos ───────────────────────────────────────── */
+.sk-btn-shortcuts {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.scaleaki-media-download {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: rgba(0,0,0,0.8);
-  color: white;
-  text-align: center;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--sk-border);
+  border-radius: 8px;
+  color: var(--sk-muted);
   font-size: 10px;
-  padding: 4px 0;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
-.scaleaki-media-download:hover {
-  background: #22c55e;
-  color: black;
+
+.sk-btn-shortcuts:hover {
+  border-color: var(--sk-green);
+  color: var(--sk-green);
+  background: rgba(34,197,94,0.05);
 }
-.scaleaki-media-type-badge {
-  position: absolute;
-  top: 4px; right: 4px;
-  background: rgba(0,0,0,0.6);
-  color: white;
+
+/* ── Barra do Card (Injetada no Facebook) ─────────────────── */
+.sk-card-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: linear-gradient(90deg, #0d1a0f, #0a1a0f);
+  border-bottom: 1px solid rgba(34,197,94,0.2);
+  font-family: var(--sk-font);
+  gap: 8px;
+  position: relative;
+  z-index: 10;
+}
+
+.sk-card-bar-saved {
+  border-color: rgba(34,197,94,0.7) !important;
+  background: linear-gradient(90deg, #0d2a15, #091a0f) !important;
+}
+
+.sk-card-bar-left,
+.sk-card-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sk-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(34,197,94,0.5);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.sk-checkbox-active {
+  background: var(--sk-green);
+  border-color: var(--sk-green);
+  box-shadow: 0 0 8px var(--sk-green-glow);
+}
+
+.sk-lib-id {
   font-size: 9px;
-  padding: 2px 4px;
-  border-radius: 4px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.3);
+  font-family: monospace;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.sk-dias-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(34,197,94,0.15);
+  color: var(--sk-green);
+  border: 1px solid rgba(34,197,94,0.25);
+  white-space: nowrap;
+}
+
+.sk-dup-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.sk-icon-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sk-icon-btn:hover {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.4);
+  color: var(--sk-green);
+}
+
+.sk-btn-save:hover { color: #facc15 !important; border-color: rgba(250,204,21,0.4) !important; }
+
+/* ── Card Highlight quando filtro ativo ───────────────────── */
+.sk-card-highlight {
+  outline: 2px solid rgba(34,197,94,0.4) !important;
+  outline-offset: 2px;
+}
+
+/* ── Bottom Bar ──────────────────────────────────────────── */
+.sk-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: rgba(10,10,10,0.97);
+  border-top: 1px solid rgba(34,197,94,0.15);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 99998;
+  font-family: var(--sk-font);
+}
+
+.sk-bottom-left,
+.sk-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sk-bottom-logo {
+  font-size: 14px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.3px;
+}
+
+.sk-bottom-logo span { color: var(--sk-green); }
+
+#sk-selected-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+}
+
+.sk-bottom-btn-outline {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--sk-font);
+  transition: all 0.2s;
+}
+
+.sk-bottom-btn-outline:hover {
+  border-color: var(--sk-green);
+  color: var(--sk-green);
+}
+
+.sk-btn-download-all {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: var(--sk-green);
+  color: #000;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: var(--sk-font);
+  transition: all 0.2s;
+}
+
+.sk-btn-download-all:hover { background: #16a34a; }
+
+/* ── Modais ───────────────────────────────────────────────── */
+.sk-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  font-family: var(--sk-font);
+}
+
+.sk-modal {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  width: 380px;
+  max-width: 95vw;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+  overflow: hidden;
+}
+
+.sk-modal-wide { width: 520px; }
+
+.sk-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.sk-modal-header h3 {
+  font-size: 13px;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+}
+
+.sk-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  font-size: 18px;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.sk-modal-close:hover { background: rgba(255,255,255,0.06); color: white; }
+
+.sk-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sk-modal-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin: 0;
+}
+
+.sk-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sk-input-group label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sk-input-group input,
+.sk-input-group select {
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: white;
+  font-size: 12px;
+  font-family: var(--sk-font);
+  outline: none;
+  transition: border 0.2s;
+}
+
+.sk-input-group input:focus,
+.sk-input-group select:focus { border-color: rgba(34,197,94,0.4); }
+
+.sk-input-group select option { background: #111; }
+
+.sk-check-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+}
+
+.sk-check-option input[type="checkbox"] {
+  accent-color: var(--sk-green);
+  width: 14px;
+  height: 14px;
+}
+
+.sk-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.sk-btn-confirm {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--sk-green);
+  color: #000;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: var(--sk-font);
+  transition: all 0.2s;
+}
+
+.sk-btn-confirm:hover { background: #16a34a; transform: translateY(-1px); }
+.sk-btn-confirm:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); cursor: not-allowed; transform: none; }
+
+/* ── Shortcuts Modal ─────────────────────────────────────── */
+.sk-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sk-tab {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--sk-font);
+  transition: all 0.15s;
+}
+
+.sk-tab-active,
+.sk-tab:hover {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.4);
+  color: var(--sk-green);
+}
+
+.sk-shortcut-groups { margin-top: 12px; }
+
+.sk-shortcut-group {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sk-shortcut-kw {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.7);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--sk-font);
+  transition: all 0.15s;
+}
+
+.sk-shortcut-kw:hover {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.4);
+  color: var(--sk-green);
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+#sk-toast {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #111;
+  border: 1px solid rgba(34,197,94,0.4);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--sk-font);
+  z-index: 9999999;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.sk-toast-show {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+.sk-toast-error { border-color: rgba(239,68,68,0.5) !important; }
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+.sk-panel-body::-webkit-scrollbar { width: 3px; }
+.sk-panel-body::-webkit-scrollbar-track { background: transparent; }
+.sk-panel-body::-webkit-scrollbar-thumb { background: rgba(34,197,94,0.3); border-radius: 3px; }
