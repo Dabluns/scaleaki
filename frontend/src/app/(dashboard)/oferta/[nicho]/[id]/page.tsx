@@ -17,7 +17,6 @@ import { TrustSignals } from '@/components/features/ofertas/TrustSignals';
 import { Card3D } from '@/components/ui/Card3D';
 import { useGamification } from '@/context/GamificationContext';
 import JSZip from 'jszip';
-import html2canvas from 'html2canvas';
 
 function downloadFile(filename: string, content: string, type: string) {
   const blob = new Blob([content], { type });
@@ -285,6 +284,7 @@ export default function DetalheOfertaPage() {
           if (cardWithSvg) chartElement = cardWithSvg;
         }
         if (chartElement) {
+          const { default: html2canvas } = await import('html2canvas');
           const canvas = await html2canvas(chartElement, { backgroundColor: '#0a0a0a', scale: 2, logging: false, useCORS: true, allowTaint: true });
           const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(b => resolve(b), 'image/png', 0.95));
           if (blob) assetsFolder.file('grafico_criativos.png', blob);

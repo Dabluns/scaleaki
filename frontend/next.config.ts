@@ -28,7 +28,6 @@ const nextConfig = {
       },
     ],
   },
-  transpilePackages: ['@splinetool/react-spline', '@splinetool/runtime'],
   webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (!isServer) {
       config.resolve.fallback = {

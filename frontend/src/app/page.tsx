@@ -22,8 +22,17 @@ import {
   Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FallingPattern } from '@/components/ui/falling-pattern';
-import { Spotlight } from '@/components/ui/Spotlight';
+import dynamic from 'next/dynamic';
+
+// Background decorativo (pointer-events-none) — lazy, fora do caminho do first paint
+const FallingPattern = dynamic(
+  () => import('@/components/ui/falling-pattern').then((m) => m.FallingPattern),
+  { ssr: false },
+);
+const Spotlight = dynamic(
+  () => import('@/components/ui/Spotlight').then((m) => m.Spotlight),
+  { ssr: false },
+);
 
 // ─────────────────────────────────────────────────────────────────
 // @ux-design-expert (Uma) · Premium Master Unified Auth v3.1
