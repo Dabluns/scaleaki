@@ -2,6 +2,9 @@
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/context/AuthContext';
+import { GamificationProvider } from '@/context/GamificationContext';
+import { NichoProvider } from '@/context/NichoContext';
+import { OfertaProvider } from '@/context/OfertaContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { FullPageLoader } from '@/components/ui/FullPageLoader';
@@ -24,5 +27,13 @@ export default function DashboardLayoutWrapper({ children }: { children: React.R
     return <FullPageLoader message="Acesso Restrito" submessage="Redirecionando para autenticação..." />;
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return (
+    <GamificationProvider>
+      <NichoProvider>
+        <OfertaProvider>
+          <DashboardLayout>{children}</DashboardLayout>
+        </OfertaProvider>
+      </NichoProvider>
+    </GamificationProvider>
+  );
 }

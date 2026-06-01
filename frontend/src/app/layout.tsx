@@ -2,13 +2,10 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { AuthProvider } from '@/context/AuthContext';
-import { NichoProvider } from '@/context/NichoContext';
-import { OfertaProvider } from '@/context/OfertaContext';
 import { SearchProvider } from '@/context/SearchContext';
 import { ToastProvider } from '@/components/ui/Toast';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { SettingsProvider } from '@/context/SettingsContext';
-import { GamificationProvider } from '@/context/GamificationContext';
 import { ThemeInitializer } from '@/components/gamification/ThemeInitializer';
 import '@/lib/migrateStorage'; // Executa migração automaticamente
 
@@ -80,17 +77,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <SettingsProvider>
             <AuthProvider>
-              <GamificationProvider>
-                <ToastProvider>
-                  <NichoProvider>
-                    <OfertaProvider>
-                      <SearchProvider>
-                        {children}
-                      </SearchProvider>
-                    </OfertaProvider>
-                  </NichoProvider>
-                </ToastProvider>
-              </GamificationProvider>
+              <ToastProvider>
+                <SearchProvider>
+                  {children}
+                </SearchProvider>
+              </ToastProvider>
             </AuthProvider>
           </SettingsProvider>
         </ThemeProvider>
