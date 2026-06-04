@@ -1,0 +1,46 @@
+name: Scrape Ad Library (diário)
+
+on:
+  schedule:
+    - cron: '0 12 * * *'   # 12:00 UTC = 09:00 BRT
+  workflow_dispatch:
+    inputs:
+      niche:
+        description: 'Nicho específico (vazio = todos). Ex: Diabetes'
+        required: false
+        default: ''
+      max_scrolls:
+        description: 'Scrolls por keyword'
+        required: false
+        default: '20'
+
+concurrency:
+  group: scrape-ad-library
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Chrome for Puppeteer
+        run: npx puppeteer browsers install chrome
+
+      - name: Run scraper
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node scraper-auto.js --headless \
+            --max-scrolls=${{ github.event.inputs.max_scrolls || '20' }} \
+            ${{ github.event.inputs.niche && format('--niche={0}', github.event.inputs.niche) || '' }}

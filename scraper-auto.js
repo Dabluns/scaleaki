@@ -1,0 +1,228 @@
+/**
+ * Scraper autônomo da Meta Ad Library — R$0, sem API externa.
+ * Abre Chrome (Puppeteer), busca cada nicho, auto-scroll, extrai anúncios
+ * e grava direto no Supabase via Prisma. Roda diário via Task Scheduler (9h).
+ *
+ * Uso: node scraper-auto.js [--keywords="emagrecimento,calvicie"] [--max-scrolls=25] [--headless]
+ */
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const puppeteer = require('puppeteer');
+const { createClient } = require('@supabase/supabase-js');
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('❌ Falta NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY'); process.exit(1); }
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+const TABLE = 'AnuncioFacebook';
+
+// ───────── Config ─────────
+const args = process.argv.slice(2);
+const getArg = (k, d) => { const a = args.find(x => x.startsWith(`--${k}=`)); return a ? a.split('=')[1] : d; };
+const COUNTRY = getArg('country', 'BR');
+const MAX_SCROLLS = parseInt(getArg('max-scrolls', '25'), 10);
+const SCROLL_WAIT = parseInt(getArg('scroll-wait', '2500'), 10);
+const HEADLESS = args.includes('--headless');
+const CLI_KEYWORDS = getArg('keywords', '');
+const NICHE = getArg('niche', '');
+const KEYWORDS_FILE = path.join(__dirname, 'keywords.json');
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// ───────── Checkout signatures (espelho do service) ─────────
+const SIG = [
+  [/hotmart\.com|pay\.hotmart\.com|go\.hotmart\.com|hotm\.art/i, 'Hotmart'],
+  [/kiwify\.com\.br|pay\.kiwify\.com\.br/i, 'Kiwify'],
+  [/myshopify\.com|checkout\.shopify\.com|shopify\.com/i, 'Shopify'],
+  [/yampi\.com\.br|checkout\.yampi\.com\.br/i, 'Yampi'],
+  [/cartpanda\.com|pay\.cartpanda\.com/i, 'CartPanda'],
+  [/perfectpay\.com\.br|pay\.perfectpay\.com\.br/i, 'PerfectPay'],
+  [/eduzz\.com|pay\.eduzz\.com|nutror\.com/i, 'Eduzz'],
+  [/monetizze\.com\.br|ev\.monetizze\.com\.br/i, 'Monetizze'],
+  [/herospark\.com|pay\.herospark\.com/i, 'HeroSpark'],
+  [/guru\.com\.br|checkout\.guru\.com\.br/i, 'Guru'],
+  [/braip\.com|checkout\.braip\.com/i, 'Braip'],
+  [/ticto\.com\.br|pay\.ticto\.com\.br/i, 'Ticto'],
+  [/lastlink\.com/i, 'Lastlink'], [/doppus\.com/i, 'Doppus'], [/pepper\.com\.br/i, 'Pepper'],
+  [/appmax\.com\.br/i, 'Appmax'], [/payt\.com\.br/i, 'Payt'], [/tribopay\.com\.br/i, 'TriboPay'],
+  [/intellipay\.com\.br/i, 'IntelliPay'], [/mercadopago\.com/i, 'Mercado Pago'],
+  [/buy\.stripe\.com|checkout\.stripe\.com/i, 'Stripe'],
+];
+const detectCheckout = (url) => { if (!url) return null; for (const [re, n] of SIG) if (re.test(url)) return n; return null; };
+const calcEscala = ({ duplicatas, deliveryStartTime, isActive }) => {
+  const dup = Math.min(Math.log(1 + duplicatas) / Math.log(21), 1) * 50;
+  let dias = 0;
+  if (deliveryStartTime) { const s = new Date(deliveryStartTime).getTime(); if (!isNaN(s)) dias = Math.min(Math.max(0, (Date.now() - s) / 86400000) / 90, 1) * 30; }
+  return Math.round(dup + dias + (isActive ? 20 : 0));
+};
+
+// ───────── Extração do DOM (roda no contexto da página) ─────────
+function extractAdsInPage() {
+  const PT_MONTHS = { jan:0, fev:1, mar:2, abr:3, mai:4, jun:5, jul:6, ago:7, set:8, out:9, nov:10, dez:11,
+    janeiro:0, fevereiro:1, março:2, marco:2, abril:3, maio:4, junho:5, julho:6, agosto:7, setembro:8, outubro:9, novembro:10, dezembro:11 };
+  function parseStart(text) {
+    const m = text.match(/Veicula[çc][ãa]o iniciada em\s+(\d{1,2})\s+de\s+([a-zç]+)\.?\s+de\s+(\d{4})/i);
+    if (!m) return null;
+    const d = parseInt(m[1], 10); const mo = PT_MONTHS[m[2].toLowerCase()]; const y = parseInt(m[3], 10);
+    if (mo === undefined) return null;
+    return new Date(Date.UTC(y, mo, d)).toISOString();
+  }
+  const ads = [];
+  const els = document.querySelectorAll('span, div');
+  els.forEach(el => {
+    const text = el.innerText;
+    if (!text || text.length > 80 || !text.includes('Identificação da biblioteca:')) return;
+    if (el.children.length > 1) return;
+    const fbAdId = text.replace(/[^\d]/g, '');
+    if (!fbAdId) return;
+    let container = el, found = false;
+    for (let i = 0; i < 15; i++) {
+      if (!container.parentElement) break;
+      container = container.parentElement;
+      if (container.innerText.includes('Ver detalhes do anúncio') || container.innerText.includes('Veiculação iniciada')) {
+        if (container.innerText.length < 5000) { found = true; break; }
+      }
+    }
+    if (!found) return;
+    const allText = container.innerText;
+    let pageName = 'Desconhecido';
+    const links = container.querySelectorAll('a[href*="facebook.com/"]');
+    for (const link of links) {
+      if (link.innerText && !link.href.includes('/ads/library') && link.innerText.length > 2) { pageName = link.innerText.trim(); break; }
+    }
+    if (pageName === 'Desconhecido') {
+      const lines = allText.split('\n');
+      for (let i = 0; i < lines.length; i++) { if (lines[i].includes('Patrocinado') && i > 0) { pageName = lines[i - 1].trim(); break; } }
+    }
+    const isActive = !allText.includes('Inativo');
+    let duplicatas = 1;
+    const dup = allText.match(/(\d+)\s+an[úu]ncios?\s+usam\s+esse/i);
+    if (dup) duplicatas = parseInt(dup[1], 10);
+    let adCopy = '';
+    const paras = container.querySelectorAll('span[dir="auto"], div[dir="auto"]');
+    for (const p of paras) {
+      const t = p.innerText.trim();
+      if (t.length > 20 && !t.includes('Identificação da biblioteca') && !t.includes('Ver detalhes') && !t.includes('Patrocinado') && p.children.length === 0) adCopy += t + '\n\n';
+    }
+    let adSnapshotUrl = null;
+    const imgs = Array.from(container.querySelectorAll('img'));
+    for (let i = imgs.length - 1; i >= 0; i--) { if (imgs[i].src && imgs[i].src.includes('scontent')) { adSnapshotUrl = imgs[i].src; break; } }
+    if (!adSnapshotUrl) { const v = container.querySelector('video'); if (v && v.poster) adSnapshotUrl = v.poster; }
+    let destinationUrl = null;
+    const ext = container.querySelector('a[href*="l.facebook.com/l.php"], a[href^="http"]:not([href*="facebook.com"])');
+    if (ext) {
+      try { const u = new URL(ext.href); destinationUrl = u.searchParams.get('u') ? decodeURIComponent(u.searchParams.get('u')) : ext.href; } catch { destinationUrl = ext.href; }
+    }
+    ads.push({ fbAdId, pageName: pageName.substring(0, 100), adCopy: adCopy.trim().substring(0, 4000), adSnapshotUrl, destinationUrl, isActive, duplicatas, deliveryStartTime: parseStart(allText) });
+  });
+  return ads;
+}
+
+async function scrapeKeyword(page, kw) {
+  const url = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${COUNTRY}&q=${encodeURIComponent(kw)}&media_type=all&search_type=keyword_unordered`;
+  console.log(`\n🔎 "${kw}" → ${url}`);
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 }).catch(() => {});
+  await sleep(4000);
+  const seen = new Map();
+  let stale = 0;
+  for (let i = 0; i < MAX_SCROLLS; i++) {
+    let batch = [];
+    try { batch = await page.evaluate(extractAdsInPage); } catch {}
+    let novos = 0;
+    for (const ad of batch) { if (!seen.has(ad.fbAdId)) { seen.set(ad.fbAdId, ad); novos++; } else { const prev = seen.get(ad.fbAdId); if ((ad.duplicatas || 0) > (prev.duplicatas || 0)) seen.set(ad.fbAdId, ad); } }
+    process.stdout.write(`  scroll ${i + 1}/${MAX_SCROLLS} +${novos} (total ${seen.size})\r`);
+    stale = novos === 0 ? stale + 1 : 0;
+    if (stale >= 4) break;
+    await page.evaluate(() => window.scrollBy(0, document.body.scrollHeight));
+    await sleep(SCROLL_WAIT);
+  }
+  console.log(`\n  ✓ "${kw}": ${seen.size} anúncios coletados`);
+  return [...seen.values()];
+}
+
+async function countAds(filter) {
+  let q = supabase.from(TABLE).select('*', { count: 'exact', head: true });
+  if (filter === 'e30') q = q.gte('escala', 30);
+  const { count } = await q;
+  return count || 0;
+}
+
+// Grava via Supabase REST (IPv4 — funciona local e no GitHub Actions).
+// id nao tem default no DB (Prisma gera client-side) -> geramos uuid pra inserts.
+async function upsertAds(ads) {
+  let created = 0, updated = 0;
+  const ids = ads.map(a => a.fbAdId);
+  const existing = new Set();
+  for (let i = 0; i < ids.length; i += 300) {
+    const { data } = await supabase.from(TABLE).select('fbAdId').in('fbAdId', ids.slice(i, i + 300));
+    (data || []).forEach(r => existing.add(r.fbAdId));
+  }
+  const mapData = (ad) => ({
+    pageName: ad.pageName || null,
+    adCopy: ad.adCopy || null,
+    adSnapshotUrl: ad.adSnapshotUrl || null,
+    destinationUrl: ad.destinationUrl || null,
+    deliveryStartTime: ad.deliveryStartTime ? new Date(ad.deliveryStartTime).toISOString() : null,
+    duplicatas: ad.duplicatas || 0,
+    isActive: ad.isActive !== false,
+    escala: calcEscala({ duplicatas: ad.duplicatas || 0, deliveryStartTime: ad.deliveryStartTime, isActive: ad.isActive !== false }),
+    checkout: detectCheckout(ad.destinationUrl),
+    scraperLastRun: new Date().toISOString(),
+  });
+
+  const novos = ads.filter(a => !existing.has(a.fbAdId)).map(a => ({
+    id: crypto.randomUUID(), fbAdId: a.fbAdId, ...mapData(a),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  }));
+  for (let i = 0; i < novos.length; i += 200) {
+    const { error } = await supabase.from(TABLE).insert(novos.slice(i, i + 200));
+    if (error) console.error('  insert err:', error.message); else created += novos.slice(i, i + 200).length;
+  }
+
+  const antigos = ads.filter(a => existing.has(a.fbAdId));
+  for (const a of antigos) {
+    const { error } = await supabase.from(TABLE).update({ ...mapData(a), updatedAt: new Date().toISOString() }).eq('fbAdId', a.fbAdId);
+    if (!error) updated++;
+  }
+  return { created, updated };
+}
+
+(async () => {
+  const t0 = Date.now();
+  let keywords;
+  if (CLI_KEYWORDS) {
+    keywords = CLI_KEYWORDS.split(',').map(s => s.trim()).filter(Boolean);
+  } else {
+    const bank = JSON.parse(fs.readFileSync(KEYWORDS_FILE, 'utf-8'));
+    if (NICHE) {
+      const key = Object.keys(bank).find(k => k.toLowerCase() === NICHE.toLowerCase());
+      keywords = key ? bank[key] : [];
+    } else {
+      keywords = Object.values(bank).flat();
+    }
+  }
+  keywords = [...new Set(keywords)];
+  console.log(`🤖 Scraper Ad Library — país=${COUNTRY} headless=${HEADLESS} keywords=[${keywords.join(', ')}]`);
+
+  const browser = await puppeteer.launch({ headless: HEADLESS ? 'new' : false, defaultViewport: null, args: ['--start-maximized', '--no-sandbox'] });
+  const page = (await browser.pages())[0] || await browser.newPage();
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36');
+
+  let allCreated = 0, allUpdated = 0, allCollected = 0;
+  for (const kw of keywords) {
+    try {
+      const ads = await scrapeKeyword(page, kw);
+      allCollected += ads.length;
+      const { created, updated } = await upsertAds(ads);
+      allCreated += created; allUpdated += updated;
+      console.log(`  💾 "${kw}": ${created} novos, ${updated} atualizados`);
+    } catch (e) { console.error(`  ❌ "${kw}": ${e.message}`); }
+  }
+
+  await browser.close();
+  const total = await countAds();
+  const e30 = await countAds('e30');
+  console.log(`\n✅ FIM em ${Math.round((Date.now() - t0) / 1000)}s — coletados=${allCollected} criados=${allCreated} atualizados=${allUpdated} | banco total=${total} escala>=30=${e30}`);
+})().catch(e => { console.error('❌ Fatal:', e.message); process.exit(1); });
