@@ -19,7 +19,8 @@ async function createFirstAdmin() {
     const adminData = {
       name: 'Administrador Principal',
       email: 'admin@scaleaki.com',
-      password: 'AdminScaleaki!2024'
+      password: 'AdminScaleaki!2024',
+      role: 'admin' as const
     };
 
     console.log('🚀 Criando primeiro administrador...');
