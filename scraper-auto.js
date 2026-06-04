@@ -9,7 +9,11 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const puppeteer = require('puppeteer');
+let puppeteer;
+try {
+  puppeteer = require('puppeteer-extra');
+  puppeteer.use(require('puppeteer-extra-plugin-stealth')());
+} catch { puppeteer = require('puppeteer'); }
 const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -69,11 +73,13 @@ function extractAdsInPage() {
     if (mo === undefined) return null;
     return new Date(Date.UTC(y, mo, d)).toISOString();
   }
+  const LIB_RE = /(?:Identifica[çc][ãa]o da biblioteca|Library ID|Identificador de la biblioteca)\s*[:：]/i;
+  const DETAIL_RE = /(Ver detalhes do an[úu]ncio|See ad details|Ver detalles del anuncio|Veicula[çc][ãa]o iniciada|Started running|Empez[óo] a publicarse)/i;
   const ads = [];
   const els = document.querySelectorAll('span, div');
   els.forEach(el => {
     const text = el.innerText;
-    if (!text || text.length > 80 || !text.includes('Identificação da biblioteca:')) return;
+    if (!text || text.length > 80 || !LIB_RE.test(text)) return;
     if (el.children.length > 1) return;
     const fbAdId = text.replace(/[^\d]/g, '');
     if (!fbAdId) return;
@@ -81,7 +87,7 @@ function extractAdsInPage() {
     for (let i = 0; i < 15; i++) {
       if (!container.parentElement) break;
       container = container.parentElement;
-      if (container.innerText.includes('Ver detalhes do anúncio') || container.innerText.includes('Veiculação iniciada')) {
+      if (DETAIL_RE.test(container.innerText)) {
         if (container.innerText.length < 5000) { found = true; break; }
       }
     }
@@ -94,11 +100,11 @@ function extractAdsInPage() {
     }
     if (pageName === 'Desconhecido') {
       const lines = allText.split('\n');
-      for (let i = 0; i < lines.length; i++) { if (lines[i].includes('Patrocinado') && i > 0) { pageName = lines[i - 1].trim(); break; } }
+      for (let i = 0; i < lines.length; i++) { if (/Patrocinado|Sponsored|Patrocinad/.test(lines[i]) && i > 0) { pageName = lines[i - 1].trim(); break; } }
     }
-    const isActive = !allText.includes('Inativo');
+    const isActive = !/\bInativo\b|\bInactive\b|\bInactivo\b/.test(allText);
     let duplicatas = 1;
-    const dup = allText.match(/(\d+)\s+an[úu]ncios?\s+usam\s+esse/i);
+    const dup = allText.match(/(\d+)\s+(?:an[úu]ncios?\s+usam|ads?\s+use|anuncios?\s+usan)/i);
     if (dup) duplicatas = parseInt(dup[1], 10);
     let adCopy = '';
     const paras = container.querySelectorAll('span[dir="auto"], div[dir="auto"]');
@@ -139,6 +145,21 @@ async function scrapeKeyword(page, kw) {
     await sleep(SCROLL_WAIT);
   }
   console.log(`\n  ✓ "${kw}": ${seen.size} anúncios coletados`);
+  if (seen.size === 0) {
+    const diag = await page.evaluate(() => {
+      const b = document.body ? document.body.innerText : '';
+      return {
+        title: document.title,
+        url: location.href,
+        loginWall: /Entrar no Facebook|Log in to Facebook|Iniciar sesión|You must log in|Conecte-se/i.test(b),
+        libHits: (b.match(/biblioteca|Library ID/gi) || []).length,
+        noResults: /Nenhum resultado|No results|0 resultados|Sem resultados/i.test(b),
+        bodyLen: b.length,
+        sample: b.slice(0, 200).replace(/\n/g, ' '),
+      };
+    }).catch(() => ({}));
+    console.log(`  🔬 diag: ${JSON.stringify(diag)}`);
+  }
   return [...seen.values()];
 }
 
@@ -209,6 +230,8 @@ async function upsertAds(ads) {
   const browser = await puppeteer.launch({ headless: HEADLESS ? 'new' : false, defaultViewport: null, args: ['--start-maximized', '--no-sandbox'] });
   const page = (await browser.pages())[0] || await browser.newPage();
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36');
+  await page.setExtraHTTPHeaders({ 'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8' });
+  await page.evaluateOnNewDocument(() => { Object.defineProperty(navigator, 'language', { get: () => 'pt-BR' }); Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en'] }); });
 
   let allCreated = 0, allUpdated = 0, allCollected = 0;
   for (const kw of keywords) {
