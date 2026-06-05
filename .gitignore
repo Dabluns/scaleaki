@@ -13,3 +13,6 @@ tmp/
 .vscode/
 .idea/
 *.swp
+
+google-credentials.json
+*-credentials.json
