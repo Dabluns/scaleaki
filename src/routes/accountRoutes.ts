@@ -13,6 +13,7 @@ router.use(validateOwnership('user'));
 router.use(sanitizeInput);
 router.use(userRateLimiter);
 
+router.get('/access', accountController.getAccess);
 router.post('/delete', securityLogger('account_deletion_request'), accountController.requestAccountDeletion);
 router.post('/delete/cancel', securityLogger('account_deletion_cancel'), accountController.cancelAccountDeletion);
 
