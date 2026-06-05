@@ -104,31 +104,13 @@ export async function login(data: LoginInput, clientIp?: string): Promise<AuthPa
     // O projeto é pago, logo o bloqueio por e-mail não confirmado foi removido
     // if (!user.emailConfirmed) throw new Error('E-mail não confirmado. Verifique sua caixa de entrada.');
 
-    // Verificar IP do primeiro login
-    if (clientIp) {
-      // Se já existe um IP registrado e é diferente do atual, bloquear
-      if (user.firstLoginIp && user.firstLoginIp !== clientIp) {
-        logger.warn('Login bloqueado: IP diferente do primeiro login', {
-          userId: user.id,
-          email: user.email,
-          firstLoginIp: user.firstLoginIp,
-          attemptedIp: clientIp
-        });
-        throw new Error('Login bloqueado: Este usuário só pode fazer login do IP original. Entre em contato com o suporte se precisar alterar o IP autorizado.');
-      }
-
-      // Se não existe IP registrado, armazenar o IP do primeiro login
-      if (!user.firstLoginIp) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { firstLoginIp: clientIp },
-        });
-        logger.info('IP do primeiro login registrado', {
-          userId: user.id,
-          email: user.email,
-          firstLoginIp: clientIp
-        });
-      }
+    // Registrar IP do primeiro login apenas para auditoria.
+    // Trava de IP REMOVIDA: clientes em 4G/wifi trocam de IP e ficariam presos.
+    if (clientIp && !user.firstLoginIp) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { firstLoginIp: clientIp },
+      });
     }
 
     // Atualizar último login
