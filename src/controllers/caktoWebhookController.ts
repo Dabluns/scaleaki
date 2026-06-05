@@ -466,7 +466,7 @@ async function handleSubscriptionCanceled(event: CaktoWebhookEvent) {
     // Rebaixar plano do usuário para free
     await prisma.user.update({
       where: { id: subscriptionRecord.userId },
-      data: { plan: 'mensal' },
+      data: { plan: 'free' },
     });
 
     logger.info('Subscription cancelled from webhook', {
@@ -1146,7 +1146,7 @@ async function handlePurchaseRefused(event: CaktoWebhookEvent) {
         // Rebaixar plano do usuário
         await prisma.user.update({
           where: { id: user.id },
-          data: { plan: 'mensal' },
+          data: { plan: 'free' },
         });
       }
 
@@ -1239,7 +1239,7 @@ async function handleRefund(event: CaktoWebhookEvent) {
         // Rebaixar plano do usuário
         await prisma.user.update({
           where: { id: user.id },
-          data: { plan: 'mensal' },
+          data: { plan: 'free' },
         });
       }
 
@@ -1333,7 +1333,7 @@ async function handleChargeback(event: CaktoWebhookEvent) {
         // Rebaixar plano do usuário
         await prisma.user.update({
           where: { id: user.id },
-          data: { plan: 'mensal' },
+          data: { plan: 'free' },
         });
       }
 
