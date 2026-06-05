@@ -4,6 +4,7 @@ import logger from '../config/logger';
 // Atualizado para novo sistema de planos: mensal, trimestral, anual
 
 const PLAN_PERIOD: Record<UserPlan, number> = {
+  free: 0,
   mensal: 1,
   trimestral: 3,
   anual: 12,
