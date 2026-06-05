@@ -114,9 +114,12 @@ function extractAdsInPage() {
       adCopy = best;
     }
     adCopy = adCopy.split(/\n(?:Ver detalhes|See ad details|Saiba mais|Learn more|Comprar agora|Shop now|Enviar mensagem|Send message|Cadastre-se|Sign up|Abrir menu)/i)[0].trim();
-    let adSnapshotUrl = null;
-    const imgs = Array.from(container.querySelectorAll('img'));
-    for (let i = imgs.length - 1; i >= 0; i--) { if (imgs[i].src && imgs[i].src.includes('scontent')) { adSnapshotUrl = imgs[i].src; break; } }
+    // criativo = maior imagem fbcdn (exclui avatar 60x60); fallback video poster
+    let adSnapshotUrl = null, bestW = 0;
+    container.querySelectorAll('img').forEach(im => {
+      const w = im.naturalWidth || im.clientWidth || 0;
+      if (im.src && im.src.includes('fbcdn') && w >= 120 && w > bestW) { bestW = w; adSnapshotUrl = im.src; }
+    });
     if (!adSnapshotUrl) { const v = container.querySelector('video'); if (v && v.poster) adSnapshotUrl = v.poster; }
     let destinationUrl = null;
     const ext = container.querySelector('a[href*="l.facebook.com/l.php"], a[href^="http"]:not([href*="facebook.com"])');
@@ -172,20 +175,42 @@ async function countAds(filter) {
   return count || 0;
 }
 
+const BUCKET = 'ad-creatives';
+const STORE_PREFIX = `/storage/v1/object/public/${BUCKET}/`;
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+
+// Baixa o criativo do FB CDN (URL expira) e salva no Supabase Storage -> URL persistente.
+async function storeImage(fbAdId, url) {
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': UA, 'Referer': 'https://www.facebook.com/' } });
+    if (!r.ok) return null;
+    const ct = r.headers.get('content-type') || 'image/jpeg';
+    if (!ct.startsWith('image/')) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length < 1500) return null; // descarta placeholder/erro
+    const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
+    const path = `${fbAdId}.${ext}`;
+    const { error } = await supabase.storage.from(BUCKET).upload(path, buf, { contentType: ct, upsert: true });
+    if (error) return null;
+    return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  } catch { return null; }
+}
+
 // Grava via Supabase REST (IPv4 — funciona local e no GitHub Actions).
 // id nao tem default no DB (Prisma gera client-side) -> geramos uuid pra inserts.
 async function upsertAds(ads) {
-  let created = 0, updated = 0;
+  let created = 0, updated = 0, imgs = 0;
   const ids = ads.map(a => a.fbAdId);
-  const existing = new Set();
+  const existing = new Map(); // fbAdId -> adSnapshotUrl atual
   for (let i = 0; i < ids.length; i += 300) {
-    const { data } = await supabase.from(TABLE).select('fbAdId').in('fbAdId', ids.slice(i, i + 300));
-    (data || []).forEach(r => existing.add(r.fbAdId));
+    const { data } = await supabase.from(TABLE).select('fbAdId,adSnapshotUrl').in('fbAdId', ids.slice(i, i + 300));
+    (data || []).forEach(r => existing.set(r.fbAdId, r.adSnapshotUrl));
   }
-  const mapData = (ad) => ({
+
+  const mapData = (ad, storedImg) => ({
     pageName: ad.pageName || null,
     adCopy: ad.adCopy || null,
-    adSnapshotUrl: ad.adSnapshotUrl || null,
+    adSnapshotUrl: storedImg || null,
     destinationUrl: ad.destinationUrl || null,
     libraryUrl: ad.libraryUrl || null,
     deliveryStartTime: ad.deliveryStartTime ? new Date(ad.deliveryStartTime).toISOString() : null,
@@ -196,21 +221,25 @@ async function upsertAds(ads) {
     scraperLastRun: new Date().toISOString(),
   });
 
-  const novos = ads.filter(a => !existing.has(a.fbAdId)).map(a => ({
-    id: crypto.randomUUID(), fbAdId: a.fbAdId, ...mapData(a),
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-  }));
-  for (let i = 0; i < novos.length; i += 200) {
-    const { error } = await supabase.from(TABLE).insert(novos.slice(i, i + 200));
-    if (error) console.error('  insert err:', error.message); else created += novos.slice(i, i + 200).length;
+  for (const a of ads) {
+    const isNew = !existing.has(a.fbAdId);
+    const cur = existing.get(a.fbAdId);
+    const alreadyStored = cur && cur.includes(STORE_PREFIX);
+    // baixa criativo se: tem url raw do FB e ainda nao salvamos esse anuncio
+    let storedImg = alreadyStored ? cur : null;
+    if (!storedImg && a.adSnapshotUrl && a.adSnapshotUrl.includes('fbcdn')) {
+      storedImg = await storeImage(a.fbAdId, a.adSnapshotUrl);
+      if (storedImg) imgs++;
+    }
+    if (isNew) {
+      const { error } = await supabase.from(TABLE).insert({ id: crypto.randomUUID(), fbAdId: a.fbAdId, ...mapData(a, storedImg), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      if (!error) created++; else console.error('  insert err:', error.message);
+    } else {
+      const { error } = await supabase.from(TABLE).update({ ...mapData(a, storedImg), updatedAt: new Date().toISOString() }).eq('fbAdId', a.fbAdId);
+      if (!error) updated++;
+    }
   }
-
-  const antigos = ads.filter(a => existing.has(a.fbAdId));
-  for (const a of antigos) {
-    const { error } = await supabase.from(TABLE).update({ ...mapData(a), updatedAt: new Date().toISOString() }).eq('fbAdId', a.fbAdId);
-    if (!error) updated++;
-  }
-  return { created, updated };
+  return { created, updated, imgs };
 }
 
 (async () => {
@@ -241,9 +270,9 @@ async function upsertAds(ads) {
     try {
       const ads = await scrapeKeyword(page, kw);
       allCollected += ads.length;
-      const { created, updated } = await upsertAds(ads);
+      const { created, updated, imgs } = await upsertAds(ads);
       allCreated += created; allUpdated += updated;
-      console.log(`  💾 "${kw}": ${created} novos, ${updated} atualizados`);
+      console.log(`  💾 "${kw}": ${created} novos, ${updated} atualizados, ${imgs} imgs`);
     } catch (e) { console.error(`  ❌ "${kw}": ${e.message}`); }
   }
 
