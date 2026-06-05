@@ -3,8 +3,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ReelPlayer } from './ReelPlayer';
 import { ParticleSystem } from './ParticleSystem';
-import { useReels } from '@/hooks/useReels';
 import clsx from 'clsx';
+
+// Recebe o estado de reels via props (instância única do useReels mora no page,
+// evitando double-fetch + desync que travava a animação).
+interface ReelsContainerProps {
+  reels: any[];
+  currentIndex: number;
+  nextReel: () => void;
+  prevReel: () => void;
+  loadMore: () => void;
+  loading: boolean;
+  goToReel: (index: number) => void;
+}
 
 // ─────────────────────────────────────────────────────────────────
 // @ux-design-expert (Uma) · ReelsContainer v2.0
@@ -12,8 +23,7 @@ import clsx from 'clsx';
 // Industrial Progress Matrix, Tactical Loading HUB.
 // ─────────────────────────────────────────────────────────────────
 
-export function ReelsContainer() {
-  const { reels, currentIndex, nextReel, prevReel, loadMore, loading, goToReel } = useReels();
+export function ReelsContainer({ reels, currentIndex, nextReel, prevReel, loadMore, loading, goToReel }: ReelsContainerProps) {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [particleTrigger, setParticleTrigger] = useState(false);
@@ -21,6 +31,7 @@ export function ReelsContainer() {
   const [swipeDirection, setSwipeDirection] = useState<'up' | 'down' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isProgrammaticScroll = useRef(false); // trava a briga observer <-> scrollIntoView
   const minSwipeDistance = 50;
 
   const registerView = useCallback(async (ofertaId: string) => {
@@ -44,6 +55,7 @@ export function ReelsContainer() {
     };
 
     const observer = new IntersectionObserver((entries) => {
+      if (isProgrammaticScroll.current) return; // ignora enquanto scrollIntoView roda
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const index = Number(entry.target.getAttribute('data-index'));
@@ -121,7 +133,9 @@ export function ReelsContainer() {
         // Only scroll if not already there to avoid fight with intersection observer
         const rect = reelElement.getBoundingClientRect();
         if (Math.abs(rect.top) > 10) {
+          isProgrammaticScroll.current = true;
           reelElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setTimeout(() => { isProgrammaticScroll.current = false; }, 700);
         }
       }
     }

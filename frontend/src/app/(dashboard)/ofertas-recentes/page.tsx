@@ -28,9 +28,21 @@ export default function OfertasRecentesPage() {
   const [mesSelecionado, setMesSelecionado] = useState<number>(new Date().getMonth() + 1);
   const [diaSelecionado, setDiaSelecionado] = useState<number>(new Date().getDate());
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [filtroNicho, setFiltroNicho] = useState<string>('');
+  const [filtroPlataforma, setFiltroPlataforma] = useState<string>('');
+  const [busca, setBusca] = useState<string>('');
 
   const ofertasFiltradas = useMemo(() => {
     let filtradas = ofertas || [];
+
+    if (filtroNicho) filtradas = filtradas.filter((o: any) => o.nichoId === filtroNicho);
+    if (filtroPlataforma) filtradas = filtradas.filter((o: any) => o.plataforma === filtroPlataforma);
+    if (busca.trim()) {
+      const q = busca.trim().toLowerCase();
+      filtradas = filtradas.filter((o: any) =>
+        (o.titulo || '').toLowerCase().includes(q) || (o.texto || '').toLowerCase().includes(q)
+      );
+    }
 
     if (filtroPeriodo !== 'todos') {
       const agora = new Date();
@@ -65,7 +77,7 @@ export default function OfertasRecentesPage() {
       const dateB = new Date(b.updatedAt).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-  }, [ofertas, filtroPeriodo, anoSelecionado, mesSelecionado, diaSelecionado, sortOrder]);
+  }, [ofertas, filtroPeriodo, anoSelecionado, mesSelecionado, diaSelecionado, sortOrder, filtroNicho, filtroPlataforma, busca]);
 
   const totalCount = useCounter(ofertasFiltradas.length, { duration: 1500 });
 
@@ -105,6 +117,43 @@ export default function OfertasRecentesPage() {
 
         {/* Tactical Controls */}
         <div className="flex flex-wrap gap-4">
+          {/* Busca */}
+          <div className="flex items-center gap-2 bg-white/[0.03] border border-white/5 rounded-2xl px-4">
+            <Search size={14} className="text-white/30" />
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="BUSCAR OFERTA..."
+              className="bg-transparent py-2 text-[10px] font-black text-white uppercase tracking-widest placeholder:text-white/20 outline-none w-40"
+            />
+          </div>
+
+          {/* Nicho */}
+          <select
+            value={filtroNicho}
+            onChange={(e) => setFiltroNicho(e.target.value)}
+            className="bg-white/[0.03] border border-white/5 rounded-2xl px-4 py-2 text-[10px] font-black text-white uppercase tracking-widest outline-none cursor-pointer hover:bg-white/5 transition-all [&>option]:bg-black [&>option]:text-white"
+          >
+            <option value="">TODOS OS NICHOS</option>
+            {nichos.map((n) => (
+              <option key={n.id} value={n.id}>{n.nome}</option>
+            ))}
+          </select>
+
+          {/* Plataforma */}
+          <select
+            value={filtroPlataforma}
+            onChange={(e) => setFiltroPlataforma(e.target.value)}
+            className="bg-white/[0.03] border border-white/5 rounded-2xl px-4 py-2 text-[10px] font-black text-white uppercase tracking-widest outline-none cursor-pointer hover:bg-white/5 transition-all [&>option]:bg-black [&>option]:text-white"
+          >
+            <option value="">TODAS PLATAFORMAS</option>
+            <option value="facebook_ads">FACEBOOK</option>
+            <option value="instagram_ads">INSTAGRAM</option>
+            <option value="tiktok_ads">TIKTOK</option>
+            <option value="google_ads">GOOGLE</option>
+            <option value="youtube_ads">YOUTUBE</option>
+          </select>
+
           <div className="flex bg-white/[0.03] border border-white/5 rounded-2xl p-1.5">
             {['todos', 'ano', 'mes', 'dia'].map((p) => (
               <button

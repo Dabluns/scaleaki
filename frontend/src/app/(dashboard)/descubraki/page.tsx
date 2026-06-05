@@ -18,7 +18,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ─────────────────────────────────────────────────────────────────
 
 export default function DescubrakiPage() {
-  const { reels, loading, error, refresh } = useReels();
+  const reelsState = useReels();
+  const { reels, loading, error, refresh } = reelsState;
   const [showPortal, setShowPortal] = useState(true);
   const [particleTrigger, setParticleTrigger] = useState(false);
 
@@ -102,7 +103,7 @@ export default function DescubrakiPage() {
       <ParticleSystem trigger={particleTrigger} />
 
       <main className="flex-1 relative">
-        <ReelsContainer />
+        <ReelsContainer {...reelsState} />
       </main>
 
       {/* Tactical Bottom Info */}
