@@ -3,6 +3,13 @@ import prisma from '../config/database';
 import { syncAdsFromLibrary, enrichPageData, syncAdsFromApify, liveSearchFromApify, calcEscala, detectCheckoutFromUrl } from '../services/fbAdLibrary.service';
 import { scanFunnel } from '../services/urlscan.service';
 import logger from '../config/logger';
+import { applyFreemium } from '../utils/freemium';
+import { hasPaidAccess } from '../utils/access';
+
+/** Carrega user + subscription pra decisão de entitlement. */
+async function loadFreemiumUser(userId: string) {
+  return prisma.user.findUnique({ where: { id: userId }, include: { subscription: true } });
+}
 
 // ─── Busca ao vivo na Ad Library via Apify ────────────────────────────────────
 
@@ -55,12 +62,16 @@ export async function liveSearch(req: Request, res: Response) {
       miningStarted = true;
     }
 
+    const searchUser = await loadFreemiumUser((req as any).user.userId);
+    const searchData = await applyFreemium(dbResults as any, searchUser as any);
+
     res.json({
-      data: dbResults,
+      data: searchData,
       total,
       query,
       source: 'database',
       miningStarted,
+      paid: hasPaidAccess(searchUser as any),
     });
   } catch (err: any) {
     logger.error('[FbAds] Erro na busca ao vivo:', err);
@@ -301,9 +312,13 @@ export async function listAnuncios(req: Request, res: Response) {
       prisma.anuncioFacebook.count({ where }),
     ]);
 
+    const listUser = await loadFreemiumUser(authReq.user.userId);
+    const listData = await applyFreemium(anuncios as any, listUser as any);
+
     res.json({
-      data: anuncios,
+      data: listData,
       meta: { total, page: Number(page), limit: take, pages: Math.ceil(total / take) },
+      paid: hasPaidAccess(listUser as any),
     });
   } catch (err: any) {
     logger.error('[FbAds] Erro ao listar anúncios:', err);
@@ -323,7 +338,10 @@ export async function getAnuncio(req: Request, res: Response) {
 
     if (!anuncio) return res.status(404).json({ error: 'Anúncio não encontrado' });
 
-    res.json(anuncio);
+    const detailUser = await loadFreemiumUser((req as any).user.userId);
+    const [detailData] = await applyFreemium([anuncio as any], detailUser as any);
+
+    res.json(detailData);
   } catch (err: any) {
     logger.error('[FbAds] Erro ao buscar anúncio:', err);
     res.status(500).json({ error: 'Erro ao buscar anúncio' });

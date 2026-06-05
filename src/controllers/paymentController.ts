@@ -8,6 +8,7 @@ import { getBillingHealth as fetchBillingHealth } from '../services/billingServi
 
 // Mapeamento de planos para valores (em centavos)
 const PLAN_PRICES: Record<UserPlan, number> = {
+  free: 0, // Tier gratuito - sem cobrança
   mensal: 9700, // R$ 97,00 - Plano Mensal
   trimestral: 27100, // R$ 271,00 - Plano Trimestral
   anual: 97400, // R$ 974,00 - Plano Anual
