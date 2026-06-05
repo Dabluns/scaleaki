@@ -33,6 +33,7 @@ router.get('/metricas', searchRateLimiter, ofertaController.getOfertasComMetrica
 router.get('/destaque', ofertasRateLimiter, ofertaController.getOfertasDestaque);
 router.get('/estatisticas', ofertasRateLimiter, ofertaController.getEstatisticasOfertas);
 router.get('/reels', ofertasRateLimiter, ofertaController.getOfertasComVSL);
+router.get('/recentes', ofertasRateLimiter, ofertaController.getOfertasRecentes);
 
 // Rota com parâmetro ID (deve ser a última)
 router.get('/:id', ofertasRateLimiter, ofertaController.getOfertaById);

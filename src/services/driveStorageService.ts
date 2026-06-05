@@ -9,31 +9,37 @@ import logger from '../config/logger';
 // Usa Google Drive API para upload, download e serving de arquivos
 // ─────────────────────────────────────────────────────────────────
 
-const CREDENTIALS_FILE = 'google-credentials.json';
+const CREDENTIALS_FILE = path.join(process.cwd(), 'google-credentials.json');
 
-// Inicializar Google Drive com escopo completo (leitura + escrita)
+// Inicializar Google Drive com escopo completo (leitura + escrita).
+// Passa credentials como OBJETO (não keyFile) → sem dependência de cwd/disco read-only.
+// Corrige \n escapado no private_key (comum quando o JSON vem de env/secret).
 let drive: drive_v3.Drive | null = null;
 
 try {
-    // Se tiver Base64 na env var, escrever o arquivo no disco
+    let credsJson: string | undefined;
     if (process.env.GOOGLE_CREDENTIALS_BASE64) {
-        const decoded = Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64').toString('utf-8');
-        fs.writeFileSync(CREDENTIALS_FILE, decoded, 'utf-8');
-        logger.info('DriveStorage: credenciais criadas a partir de GOOGLE_CREDENTIALS_BASE64');
+        credsJson = Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64').toString('utf-8');
     } else if (process.env.GOOGLE_CREDENTIALS_JSON) {
-        fs.writeFileSync(CREDENTIALS_FILE, process.env.GOOGLE_CREDENTIALS_JSON, 'utf-8');
-        logger.info('DriveStorage: credenciais criadas a partir de GOOGLE_CREDENTIALS_JSON');
+        credsJson = process.env.GOOGLE_CREDENTIALS_JSON;
+    } else if (fs.existsSync(CREDENTIALS_FILE)) {
+        credsJson = fs.readFileSync(CREDENTIALS_FILE, 'utf-8');
     }
+    if (!credsJson) throw new Error('GOOGLE_CREDENTIALS_JSON / _BASE64 ausente e arquivo não existe');
+
+    const creds = JSON.parse(credsJson); // valida JSON na inicialização
+    if (creds.private_key) creds.private_key = String(creds.private_key).replace(/\\n/g, '\n');
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: CREDENTIALS_FILE,
-        scopes: ['https://www.googleapis.com/auth/drive'], // Escopo completo (leitura + escrita)
+        credentials: creds,
+        scopes: ['https://www.googleapis.com/auth/drive'],
     });
 
     drive = google.drive({ version: 'v3', auth });
     logger.info('DriveStorage: Google Drive auth OK ✅');
 } catch (err) {
-    logger.warn('DriveStorage: Google Drive auth failed', err);
+    drive = null;
+    logger.error('DriveStorage: Google Drive auth FAILED — bot ciclo abortará', err);
 }
 
 // Pasta raiz do bot de ofertas (já existente)
@@ -47,11 +53,13 @@ const folderIdCache = new Map<string, string>();
 // ─────────────────────────────────────────────────────────────────
 
 /**
- * Gera URL pública de visualização de imagem
- * Usa o endpoint do Google Content que serve imagens diretamente
+ * Gera URL pública de visualização de imagem.
+ * Usa o endpoint /thumbnail do Drive (estável, não expira, funciona em <img>
+ * para arquivos anyone:reader). O antigo lh3.googleusercontent.com/d/ redirecionava
+ * pra URL assinada temporária (drive-storage) que quebrava no browser.
  */
 function getPublicImageUrl(fileId: string): string {
-    return `https://lh3.googleusercontent.com/d/${fileId}`;
+    return getThumbnailUrl(fileId, 1600);
 }
 
 /**
