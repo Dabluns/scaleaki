@@ -99,13 +99,26 @@ export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardPro
             }
             
             return (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#111] to-black">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center">
-                    <ExternalLink size={20} className="text-white/10" />
+              <div className="relative z-20 w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#111] to-black p-5 text-center">
+                {anuncio.adCopy ? (
+                  <p className="text-[11px] text-white/45 leading-relaxed line-clamp-5 font-medium">{anuncio.adCopy}</p>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center">
+                      <ExternalLink size={18} className="text-white/10" />
+                    </div>
+                    <span className="text-[9px] font-black text-white/15 uppercase tracking-[0.3em]">Sem Preview</span>
                   </div>
-                  <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.3em]">Sem Preview</span>
-                </div>
+                )}
+                <a
+                  href={`https://www.facebook.com/ads/library/?id=${anuncio.fbAdId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-3 py-1.5 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-300 text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all flex items-center gap-1.5"
+                >
+                  <ExternalLink size={10} /> Abrir no FB
+                </a>
               </div>
             );
           })()}

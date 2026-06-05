@@ -152,25 +152,13 @@ function AnunciosFbContent() {
 
 
 
+  // Mineração roda automaticamente via cron diário (GitHub Actions, 09h BRT).
+  // Botão apenas recarrega os anúncios já minerados do banco.
   const handleSync = async () => {
-    const cookies = nookies.get(null);
-    const token = cookies['auth_token'] || null;
     setSyncing(true);
     setSyncError(null);
     try {
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token && token !== 'undefined' && token !== 'null') {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const res = await fetch(`${API_BASE}/fb-ads/sync`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ adActiveStatus: 'ACTIVE', countries: ['BR'], limit: 50 }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.details || data.error || 'Erro desconhecido ao sincronizar');
-      refetch();
+      await refetch();
     } catch (err: any) {
       setSyncError(err.message);
     } finally {
@@ -213,9 +201,9 @@ function AnunciosFbContent() {
           <div className="flex flex-wrap gap-3">
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               onClick={handleSync} disabled={syncing}
-              title="Sincroniza novos anúncios e atualiza a página"
+              title="Recarrega anúncios minerados (mineração roda automática 09h)"
               className="flex items-center gap-2 px-5 py-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl text-[10px] font-black text-blue-400 uppercase tracking-widest hover:bg-blue-500 hover:text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-              {syncing ? <><Loader2 size={14} className="animate-spin" /> Sincronizando...</> : <><RefreshCw size={14} /> Sincronizar & Atualizar</>}
+              {syncing ? <><Loader2 size={14} className="animate-spin" /> Atualizando...</> : <><RefreshCw size={14} /> Atualizar</>}
             </motion.button>
           </div>
         )}
