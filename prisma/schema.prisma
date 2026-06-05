@@ -9,6 +9,7 @@ datasource db {
 }
 
 enum UserPlan {
+  free
   mensal
   trimestral
   anual
@@ -28,7 +29,7 @@ model User {
   password                 String
   name                     String
   role                     UserRole      @default(user)
-  plan                     UserPlan      @default(mensal)
+  plan                     UserPlan      @default(free)
   isActive                 Boolean       @default(true)
   lastLoginAt              DateTime?
   createdAt                DateTime      @default(now())
