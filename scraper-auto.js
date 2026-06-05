@@ -84,12 +84,11 @@ function extractAdsInPage() {
     const fbAdId = text.replace(/[^\d]/g, '');
     if (!fbAdId) return;
     let container = el, found = false;
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 18; i++) {
       if (!container.parentElement) break;
       container = container.parentElement;
-      if (DETAIL_RE.test(container.innerText)) {
-        if (container.innerText.length < 5000) { found = true; break; }
-      }
+      const t = container.innerText || '';
+      if (DETAIL_RE.test(t) && t.length > 250 && t.length < 6000) { found = true; break; }
     }
     if (!found) return;
     const allText = container.innerText;
@@ -107,11 +106,14 @@ function extractAdsInPage() {
     const dup = allText.match(/(\d+)\s+(?:an[úu]ncios?\s+usam|ads?\s+use|anuncios?\s+usan)/i);
     if (dup) duplicatas = parseInt(dup[1], 10);
     let adCopy = '';
-    const paras = container.querySelectorAll('span[dir="auto"], div[dir="auto"]');
-    for (const p of paras) {
-      const t = p.innerText.trim();
-      if (t.length > 20 && !t.includes('Identificação da biblioteca') && !t.includes('Ver detalhes') && !t.includes('Patrocinado') && p.children.length === 0) adCopy += t + '\n\n';
+    const spIdx = allText.search(/\b(Patrocinado|Sponsored|Patrocinad\w*)\b/);
+    if (spIdx >= 0) adCopy = allText.slice(spIdx).replace(/^\S+\s*/, '').trim();
+    if (adCopy.length < 20) {
+      let best = '';
+      container.querySelectorAll('div[dir="auto"], span[dir="auto"]').forEach(p => { const t = (p.innerText || '').trim(); if (t.length > best.length && !LIB_RE.test(t)) best = t; });
+      adCopy = best;
     }
+    adCopy = adCopy.split(/\n(?:Ver detalhes|See ad details|Saiba mais|Learn more|Comprar agora|Shop now|Enviar mensagem|Send message|Cadastre-se|Sign up|Abrir menu)/i)[0].trim();
     let adSnapshotUrl = null;
     const imgs = Array.from(container.querySelectorAll('img'));
     for (let i = imgs.length - 1; i >= 0; i--) { if (imgs[i].src && imgs[i].src.includes('scontent')) { adSnapshotUrl = imgs[i].src; break; } }
@@ -121,7 +123,7 @@ function extractAdsInPage() {
     if (ext) {
       try { const u = new URL(ext.href); destinationUrl = u.searchParams.get('u') ? decodeURIComponent(u.searchParams.get('u')) : ext.href; } catch { destinationUrl = ext.href; }
     }
-    ads.push({ fbAdId, pageName: pageName.substring(0, 100), adCopy: adCopy.trim().substring(0, 4000), adSnapshotUrl, destinationUrl, isActive, duplicatas, deliveryStartTime: parseStart(allText) });
+    ads.push({ fbAdId, pageName: pageName.substring(0, 100), adCopy: adCopy.trim().substring(0, 4000), adSnapshotUrl, destinationUrl, libraryUrl: 'https://www.facebook.com/ads/library/?id=' + fbAdId, isActive, duplicatas, deliveryStartTime: parseStart(allText) });
   });
   return ads;
 }
@@ -185,6 +187,7 @@ async function upsertAds(ads) {
     adCopy: ad.adCopy || null,
     adSnapshotUrl: ad.adSnapshotUrl || null,
     destinationUrl: ad.destinationUrl || null,
+    libraryUrl: ad.libraryUrl || null,
     deliveryStartTime: ad.deliveryStartTime ? new Date(ad.deliveryStartTime).toISOString() : null,
     duplicatas: ad.duplicatas || 0,
     isActive: ad.isActive !== false,

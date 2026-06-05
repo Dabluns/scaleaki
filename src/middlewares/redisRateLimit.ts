@@ -17,6 +17,11 @@ export function createRedisRateLimiter(config: RateLimitConfig) {
 
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Em desenvolvimento, desabilitar rate limiting para facilitar testes
+      if (process.env.NODE_ENV === 'development') {
+        return next();
+      }
+
       // Admins são isentos de rate limiting
       const authReq = req as any;
       if (authReq.user?.role === 'admin') {
