@@ -47,19 +47,38 @@ export async function getAllOfertas(req: Request, res: Response) {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Máximo 100 por página
     const offset = (page - 1) * limit;
-    const search = req.query.search as string;
-    
-    if (search) {
-      // Se há termo de busca, usar busca específica
-      const ofertas = await ofertaService.getAllOfertas(limit, offset, { search });
-      res.json({ success: true, data: ofertas });
-    } else {
-      // Busca normal sem filtros
-      const ofertas = await ofertaService.getAllOfertas(limit, offset);
-      res.json({ success: true, data: ofertas });
-    }
+
+    // Filtros estilo "explorar" (todos opcionais) → forward pro service
+    const filters: any = {};
+    if (req.query.search) filters.search = req.query.search as string;
+    if (req.query.plataforma) filters.plataforma = req.query.plataforma as string;
+    if (req.query.tipoOferta) filters.tipoOferta = req.query.tipoOferta as string;
+    if (req.query.nichoId) filters.nichoId = req.query.nichoId as string;
+    if (req.query.linguagem) filters.linguagem = req.query.linguagem as string;
+    if (req.query.status) filters.status = req.query.status as string;
+
+    // Ordenação
+    const allowedSort = ['createdAt', 'updatedAt', 'titulo', 'receita'];
+    const sortBy = req.query.sortBy as string;
+    const sortOptions = allowedSort.includes(sortBy)
+      ? { field: sortBy, order: (req.query.sortOrder === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc' }
+      : undefined;
+
+    const ofertas = await ofertaService.getAllOfertas(limit, offset, filters, sortOptions as any);
+    res.json({ success: true, data: ofertas });
   } catch (error) {
     logger.error('Error in getAllOfertas controller', { error: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+}
+
+export async function getOfertasRecentes(req: Request, res: Response) {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+    const ofertas = await ofertaService.getAllOfertas(limit, 0, {}, { field: 'createdAt', order: 'desc' } as any);
+    res.json({ success: true, data: ofertas });
+  } catch (error) {
+    logger.error('Error in getOfertasRecentes controller', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 }
