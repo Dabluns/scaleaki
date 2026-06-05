@@ -34,7 +34,7 @@ export async function register(data: RegisterInput, autoConfirm: boolean = false
         email: data.email,
         password: hashedPassword,
         name: data.name,
-        plan: data.plan || 'mensal',
+        plan: 'free', // signup sempre nasce free; acesso pago só via webhook Cakto (ignora data.plan)
         role: 'user',
         isActive: true,
         emailConfirmed: autoConfirm, // Confirmar automaticamente se for checkout
