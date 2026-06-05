@@ -41,6 +41,7 @@ model User {
   apiKeys                  ApiKey[]
   favoritos                Favorito[]
   ofertaViews              OfertaView[]
+  anuncioViews             AnuncioView[]
   payments                 Payment[]
   subscription             Subscription?
   profile                  UserProfile?
@@ -150,6 +151,17 @@ model OfertaView {
   @@index([userId])
   @@index([ofertaId])
   @@index([viewedAt])
+}
+
+model AnuncioView {
+  id        String   @id @default(uuid())
+  userId    String
+  anuncioId String
+  viewedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, anuncioId])
+  @@index([userId, viewedAt])
 }
 
 model UserSettings {
