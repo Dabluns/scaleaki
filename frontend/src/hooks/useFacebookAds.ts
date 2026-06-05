@@ -23,6 +23,9 @@ export interface AnuncioFacebook {
   landingScreenshot: string | null;
   isActive: boolean;
   createdAt: string;
+  // Freemium (backend): item travado p/ free + flag de limite diário
+  locked?: boolean;
+  limitReached?: boolean;
   // Detalhes (apenas no endpoint /:id)
   libraryUrl?: string | null;
   urlscanUuid?: string | null;

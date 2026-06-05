@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Megaphone, ExternalLink, ArrowUpRight, Clock, Heart } from 'lucide-react';
+import { Flame, Megaphone, ExternalLink, ArrowUpRight, Clock, Heart, Lock } from 'lucide-react';
 import { Card3D } from '@/components/ui/Card3D';
 import { AnuncioFacebook, calcDaysOnAir, formatLikes } from '@/hooks/useFacebookAds';
 
@@ -20,6 +20,36 @@ export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardPro
   const platforms: string[] = (() => {
     try { return JSON.parse(anuncio.publisherPlatforms || '[]'); } catch { return []; }
   })();
+
+  // FREE estourou o limite diário → tile de upgrade (item vem só com {id, locked, limitReached})
+  if (anuncio.limitReached) {
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.04, duration: 0.35 }}
+        className="h-full"
+      >
+        <div className="group relative h-full min-h-[420px] overflow-hidden rounded-3xl border border-green-500/20 bg-black/40 flex flex-col items-center justify-center gap-4 p-8 text-center">
+          <div className="absolute inset-0 opacity-40 blur-2xl bg-[radial-gradient(circle_at_50%_40%,rgba(34,197,94,0.18),transparent_60%)] pointer-events-none" />
+          <div className="relative z-10 w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center">
+            <Lock size={26} className="text-green-400" />
+          </div>
+          <div className="relative z-10 space-y-1">
+            <p className="text-sm font-black text-white uppercase tracking-wide">Limite diário atingido</p>
+            <p className="text-[11px] text-white/40 leading-relaxed max-w-[220px]">Você viu seus anúncios grátis de hoje. Desbloqueie acesso ilimitado aos criativos.</p>
+          </div>
+          <a
+            href="/configuracoes/plano"
+            className="relative z-10 px-5 py-3 rounded-xl bg-green-500 text-black font-black text-[11px] uppercase tracking-widest hover:bg-green-400 transition-all shadow-[0_0_25px_rgba(34,197,94,0.3)]"
+          >
+            Desbloquear acesso
+          </a>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -83,21 +113,40 @@ export function FacebookAdCard({ anuncio, onView, index = 0 }: FacebookAdCardPro
         <div className="relative h-64 w-full overflow-hidden bg-black">
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10" />
 
-          {(() => {
+          {anuncio.locked ? (
+            /* FREE: criativo bloqueado — blur + cadeado + CTA upgrade */
+            <div className="relative z-20 w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#0d0d0d] to-black p-5 text-center">
+              <div className="absolute inset-0 opacity-30 blur-2xl bg-[radial-gradient(circle_at_50%_40%,rgba(34,197,94,0.22),transparent_60%)] pointer-events-none" />
+              <div className="relative z-10 w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
+                <Lock size={20} className="text-white/45" />
+              </div>
+              <span className="relative z-10 text-[9px] font-black text-white/40 uppercase tracking-[0.3em]">Criativo bloqueado</span>
+              <a
+                href="/configuracoes/plano"
+                onClick={(e) => e.stopPropagation()}
+                className="relative z-10 px-3 py-1.5 rounded-lg bg-green-500/15 border border-green-500/40 text-green-300 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition-all flex items-center gap-1.5"
+              >
+                <Lock size={10} /> Desbloquear
+              </a>
+            </div>
+          ) : (() => {
+            // O criativo REAL é o adSnapshotUrl (imagem do anúncio no Storage). Prioriza ele;
+            // landingScreenshot é fallback. Ignora URLs que são link da biblioteca (não imagem).
             const hasValidSnapshot = anuncio.adSnapshotUrl && !anuncio.adSnapshotUrl.includes('/ads/library/?id=');
-            const previewImage = anuncio.landingScreenshot || (hasValidSnapshot ? anuncio.adSnapshotUrl : null);
-            
+            const previewImage = (hasValidSnapshot ? anuncio.adSnapshotUrl : null) || anuncio.landingScreenshot;
+
             if (previewImage && !imgError) {
               return (
                 <img
                   src={previewImage}
-                  alt="Preview da Oferta"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  alt="Criativo do anúncio"
+                  loading="lazy"
+                  className="w-full h-full object-contain bg-black transition-transform duration-700 group-hover:scale-105"
                   onError={() => setImgError(true)}
                 />
               );
             }
-            
+
             return (
               <div className="relative z-20 w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#111] to-black p-5 text-center">
                 {anuncio.adCopy ? (

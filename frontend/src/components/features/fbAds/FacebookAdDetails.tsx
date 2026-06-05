@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, ExternalLink, Copy, Check, Flame, Megaphone, Clock,
-  Heart, Calendar, Globe, TrendingUp, Loader2
+  Heart, Calendar, Globe, TrendingUp, Loader2, Lock
 } from 'lucide-react';
 import { AnuncioFacebook, calcDaysOnAir, formatLikes } from '@/hooks/useFacebookAds';
 import { FunnelAnalysisTab } from './FunnelAnalysisTab';
@@ -23,9 +23,11 @@ export function FacebookAdDetails({ anuncioId, onClose, onFunnelScan, fetchById 
   const [anuncio, setAnuncio] = useState<AnuncioFacebook | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setImgError(false);
     fetchById(anuncioId).then(data => {
       setAnuncio(data);
       setLoading(false);
@@ -134,20 +136,32 @@ export function FacebookAdDetails({ anuncioId, onClose, onFunnelScan, fetchById 
                     exit={{ opacity: 0, x: 20 }}
                     className="grid grid-cols-1 md:grid-cols-2 gap-0"
                   >
-                    {/* Embed do criativo */}
+                    {/* Embed do criativo — adSnapshotUrl (imagem real do anúncio) primeiro */}
                     <div className="relative min-h-[420px] bg-black border-r border-white/5 flex items-center justify-center overflow-hidden">
-                      {anuncio.landingScreenshot ? (
-                        <img
-                          src={anuncio.landingScreenshot}
-                          alt="Landing"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-3 text-white/10">
-                          <Globe size={40} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Sem Preview</span>
+                      {anuncio.locked ? (
+                        <div className="relative w-full h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
+                          <div className="absolute inset-0 opacity-30 blur-2xl bg-[radial-gradient(circle_at_50%_40%,rgba(34,197,94,0.2),transparent_60%)]" />
+                          <div className="relative z-10 w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
+                            <Lock size={26} className="text-white/45" />
+                          </div>
+                          <span className="relative z-10 text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Criativo bloqueado</span>
+                          <a href="/configuracoes/plano" className="relative z-10 px-5 py-3 rounded-xl bg-green-500 text-black font-black text-[11px] uppercase tracking-widest hover:bg-green-400 transition-all shadow-[0_0_25px_rgba(34,197,94,0.3)]">
+                            Desbloquear acesso
+                          </a>
                         </div>
-                      )}
+                      ) : (() => {
+                        const hasValidSnapshot = anuncio.adSnapshotUrl && !anuncio.adSnapshotUrl.includes('/ads/library/?id=');
+                        const img = (hasValidSnapshot ? anuncio.adSnapshotUrl : null) || anuncio.landingScreenshot;
+                        if (img && !imgError) {
+                          return <img src={img} alt="Criativo do anúncio" className="w-full h-full object-contain bg-black" onError={() => setImgError(true)} />;
+                        }
+                        return (
+                          <div className="flex flex-col items-center gap-3 text-white/10">
+                            <Globe size={40} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Sem Preview</span>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Info da página + copy */}
@@ -213,9 +227,9 @@ export function FacebookAdDetails({ anuncioId, onClose, onFunnelScan, fetchById 
                             <ExternalLink size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                           </a>
                         )}
-                        {anuncio.adSnapshotUrl && (
+                        {!anuncio.locked && (
                           <a
-                            href={anuncio.adSnapshotUrl}
+                            href={anuncio.libraryUrl || `https://www.facebook.com/ads/library/?id=${anuncio.fbAdId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 text-blue-400/60 hover:text-blue-400 transition-all group"
