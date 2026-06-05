@@ -17,6 +17,31 @@ import driveStorageService from './driveStorageService';
 // --- CONFIGURAÇÕES ---
 const GOOGLE_DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID || '';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
+// LLM unificado: prefere Groq (free, rápido), cai pra Gemini se Groq falhar.
+async function llmComplete(prompt: string): Promise<string> {
+    if (GROQ_API_KEY) {
+        const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+            body: JSON.stringify({ model: GROQ_MODEL, messages: [{ role: 'user', content: prompt }], temperature: 0.2, max_tokens: 200 }),
+        });
+        if (r.ok) {
+            const j: any = await r.json();
+            const out = j?.choices?.[0]?.message?.content;
+            if (out) return out;
+        }
+        // Groq falhou -> tenta Gemini abaixo
+    }
+    if (genAI) {
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        const result = await model.generateContent(prompt);
+        return (await result.response).text();
+    }
+    throw new Error('Nenhum LLM disponivel (Groq+Gemini falharam)');
+}
 
 // Pausas para economizar RAM (Render Free = 512MB)
 const PAUSE_BETWEEN_FILES_MS = 2000;  // 2s entre cada arquivo
@@ -231,18 +256,12 @@ async function deleteFileFromUrl(url: string) {
 type NicheClassification = { id: string; newNicheName?: undefined } | { newNicheName: string; id?: undefined } | null;
 
 async function analyzeOfferWithGemini(title: string, text: string, availableNiches: { id: string, nome: string }[]): Promise<NicheClassification> {
-    if (!genAI) {
-        await logBot('warning', `Gemini desabilitado — usando classificador local para "${title}"`);
+    if (!genAI && !GROQ_API_KEY) {
+        await logBot('warning', `LLM desabilitado — usando classificador local para "${title}"`);
         return classifyByKeywords(title, text, availableNiches);
     }
 
     const geminiResult = await withRetry(async () => {
-        // Rate Limiting (Pausa de 2s para evitar 429)
-        await new Promise(r => setTimeout(r, 2000));
-
-        // Modelo atualizado — gemini-pro foi descontinuado
-        // gemini-flash-latest aponta sempre para o modelo mais recente e estável
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
         const nichesList = availableNiches.map(n => `- "${n.nome}" (ID: ${n.id})`).join('\n');
 
         const prompt = `Você é um classificador de ofertas de marketing digital.
@@ -265,9 +284,7 @@ FORMATO:
 Se existente: {"nicheId": "ID_AQUI"}
 Se novo: {"newNiche": "Nome Do Nicho"}`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let output = response.text().trim();
+        let output = (await llmComplete(prompt)).trim();
 
         // Limpar markdown/código que o Gemini às vezes adiciona
         output = output.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
