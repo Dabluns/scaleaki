@@ -19,7 +19,8 @@ $lines = Get-Content ".env" | Where-Object {
 }
 $payload = foreach ($l in $lines) {
   $parts = $l -split "=",2
-  $key = $parts[0].Trim()
+  # nomes de secret sao so [A-Z0-9_]; remove BOM e qualquer lixo nao-ASCII
+  $key = ($parts[0] -replace '[^A-Za-z0-9_]','')
   if ($DENY -contains $key) { continue }
   $val = $parts[1]
   # strip aspas externas (" ou ') que o .env usa mas o fly guardaria literal
@@ -29,12 +30,12 @@ $payload = foreach ($l in $lines) {
 }
 
 Write-Host "Importando $($payload.Count) secrets para $APP..." -ForegroundColor Cyan
-$payload -join "`n" | flyctl secrets import --app $APP --stage
-
-# BACKEND_URL/APP_URL prod (dominio fixo Fly). FRONTEND_URL fica pendente ate Vercel.
-flyctl secrets set --app $APP --stage `
-  BACKEND_URL="https://$APP.fly.dev" `
-  APP_URL="https://$APP.fly.dev"
+# Usar `secrets set` com args (NAO pipe-stdin): PS5.1 prefixa BOM no stdin de exe nativo,
+# corrompendo a 1a key (﻿DATABASE_URL). Args evitam o stdin.
+$payload += "BACKEND_URL=https://$APP.fly.dev"
+$payload += "APP_URL=https://$APP.fly.dev"
+$setArgs = @("secrets","set","--app",$APP,"--stage") + $payload
+& flyctl @setArgs
 
 Write-Host "Secrets staged. Deployando..." -ForegroundColor Cyan
 flyctl deploy --app $APP
