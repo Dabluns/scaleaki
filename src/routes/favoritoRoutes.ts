@@ -4,6 +4,7 @@ import { authenticateJWT } from '../middlewares/authMiddleware';
 import { validateOwnership } from '../middlewares/ownershipMiddleware';
 import { sanitizeInput, validateUUID } from '../middlewares/inputSanitizationMiddleware';
 import { userRateLimiter } from '../middlewares/redisRateLimit';
+import { requirePaid } from '../middlewares/requirePaid';
 
 const router = Router();
 
@@ -13,8 +14,8 @@ router.use(validateOwnership('favorito'));
 router.use(sanitizeInput);
 router.use(userRateLimiter);
 
-// Adicionar oferta aos favoritos
-router.post('/', favoritoController.addFavorito);
+// Adicionar oferta aos favoritos (paywall: free não favorita)
+router.post('/', requirePaid, favoritoController.addFavorito);
 
 // Remover oferta dos favoritos
 router.delete('/:ofertaId', validateUUID('ofertaId'), favoritoController.removeFavorito);
