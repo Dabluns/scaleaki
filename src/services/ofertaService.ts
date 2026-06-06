@@ -124,7 +124,7 @@ export async function getAllOfertas(limit = 10, offset = 0, filters: any = {}, s
     }
 
     // Construir where clause baseado nos filtros
-    const where: any = { isActive: true };
+    const where: any = { isActive: true, imagem: { not: null } };
 
     if (filters.plataforma) {
       const plat = (filters.plataforma as unknown as string);
@@ -664,7 +664,7 @@ export async function deactivateOferta(id: string): Promise<Oferta> {
 
 export async function getOfertasByPlataforma(plataforma: PlataformaAnuncio | 'meta_ads'): Promise<Oferta[]> {
   try {
-    const where: any = { isActive: true };
+    const where: any = { isActive: true, imagem: { not: null } };
     if ((plataforma as any) === 'meta_ads') {
       where.plataforma = { in: ['facebook_ads', 'instagram_ads'] } as any;
     } else {
@@ -739,7 +739,7 @@ export async function getOfertasComMetricas(params: {
     const skip = (page - 1) * limit;
 
     // Construir where clause otimizada
-    const whereClause: any = { isActive: true };
+    const whereClause: any = { isActive: true, imagem: { not: null } };
 
     if (filters.plataforma) {
       const plat = (filters.plataforma as unknown as string);
