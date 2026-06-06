@@ -5,9 +5,11 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : [
       'http://localhost:3000',
-      'http://localhost:3001', 
+      'http://localhost:3001',
       'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001'
+      'http://127.0.0.1:3001',
+      'https://scaleaki.site',
+      'https://app.scaleaki.site'
     ];
 
 // Configuração segura do CORS
@@ -24,7 +26,7 @@ export const corsConfig: CorsOptions = {
     }
     
     // Verificar se a origem está na lista permitida ou se é da Vercel
-    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app'))) {
+    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.scaleaki.site'))) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido pelo CORS'), false);
