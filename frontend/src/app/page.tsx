@@ -49,13 +49,13 @@ function AuthPageContent() {
   const searchParams = useSearchParams();
   const { user, loading, login, checkAuth } = useAuth();
 
-  const [isLogin, setIsLogin] = useState(false); // Começa com cadastro por padrão
+  const [isLogin, setIsLogin] = useState(true); // Começa com login por padrão
 
-  // Se a URL tiver ?mode=login, abrir direto no formulário de login
+  // Se a URL tiver ?mode=register, abrir direto no formulário de cadastro
   useEffect(() => {
     const mode = searchParams.get('mode');
-    if (mode === 'login') {
-      setIsLogin(true);
+    if (mode === 'register') {
+      setIsLogin(false);
     }
   }, [searchParams]);
 
