@@ -246,7 +246,7 @@ export function OfertaCard({ oferta, onView, getNichoName, className = '', isAdm
             {/* Stats Row */}
             <div className="grid grid-cols-2 gap-4 mb-8 p-4 rounded-xl bg-black/40 border border-white/5">
               <div className="flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-white/30 font-bold">Data de Captura</span>
+                <span className="text-[9px] uppercase tracking-[0.2em] text-white/30 font-bold whitespace-nowrap">Data de Captura</span>
                 <div className="flex items-center gap-1.5 text-white/90">
                   <Calendar className="w-3.5 h-3.5 text-green-500/60" />
                   <span className="text-xs font-black font-mono text-green-400">{formatDate(oferta.createdAt)}</span>
@@ -264,7 +264,7 @@ export function OfertaCard({ oferta, onView, getNichoName, className = '', isAdm
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full py-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-green-500 hover:text-black transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(34,197,94,0.05)] hover:shadow-[0_0_30px_rgba(34,197,94,0.3)]"
+              className="w-full py-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-green-500 hover:text-black transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(34,197,94,0.05)] hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] whitespace-nowrap"
               onClick={(e) => {
                 e.stopPropagation();
                 handleClick();
