@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScaleAki — Swipe File de Ofertas Escaladas</title>
+  <meta name="description" content="Acesse o maior swipe file de anúncios escalados do Brasil. VSL, copy, tempo de veiculação e muito mais. Descubra o que está funcionando agora.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Promo Banner -->
+  <div class="promo-banner">
+    Oferta especial de lançamento: assine agora com desconto. Vagas limitadas!
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="#" class="header-logo" id="logo-link">
+        <svg width="170" height="36" viewBox="0 0 170 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Scaleaki">
+          <defs>
+            <linearGradient id="hlg" x1="2" y1="2" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#34d399"/><stop offset="1" stop-color="#047857"/>
+            </linearGradient>
+            <filter id="hglow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <g filter="url(#hglow)">
+            <rect x="2" y="2" width="32" height="32" rx="9" fill="url(#hlg)"/>
+            <rect x="2.5" y="2.5" width="31" height="31" rx="8.5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          </g>
+          <path d="M5 31L14.5 21.5" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M5 31L14.5 21.5" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="20" cy="15.5" r="7" fill="rgba(255,255,255,0.12)" stroke="#ffffff" stroke-width="2.4"/>
+          <text x="20" y="19.8" font-family="Outfit, sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">$</text>
+          <text x="44" y="26" font-family="Outfit, sans-serif" font-size="24" font-weight="900" letter-spacing="-0.8"><tspan fill="#ffffff">scale</tspan><tspan fill="#34d399">aki</tspan></text>
+        </svg>
+      </a>
+      <nav class="header-nav" id="main-nav">
+        <a href="#como-funciona" class="active">Como Funciona</a>
+        <a href="#beneficios">Benefícios</a>
+        <a href="#preco">Preço</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://api.whatsapp.com/send/?phone=5521959476313&amp;text&amp;type=phone_number&amp;app_absent=0" target="_blank" class="btn-whatsapp-nav" id="nav-whatsapp">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.117.549 4.103 1.504 5.836L0 24l6.335-1.48A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.626 0 11.999 0zm.001 21.818a9.808 9.808 0 01-5.032-1.388l-.361-.214-3.741.981.998-3.648-.235-.374A9.786 9.786 0 012.18 12c0-5.412 4.407-9.818 9.82-9.818 5.412 0 9.818 4.406 9.818 9.818 0 5.413-4.406 9.818-9.818 9.818z"/></svg>
+          Suporte
+        </a>
+      </nav>
+      <div class="header-cta">
+        <a href="#preco" class="btn-primary" id="cta-header">Quero Acesso</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="position:relative; z-index:1;">
+
+    <!-- ═══ HERO ═══ -->
+    <section class="hero shimmer" id="hero-section">
+      <div class="hero-glow"></div>
+      <div class="container" style="position:relative; z-index:2;">
+        <h1>
+          Descubra as<br>
+          <span class="gradient-text">ofertas que mais escalam</span><br>
+          no digital
+        </h1>
+        <p class="subtitle">
+          O swipe file com VSL, copy, tempo de veiculação e análise completa dos anúncios que estão gerando milhões. Chega de adivinhar, copie a estratégia.
+        </p>
+        <div class="hero-buttons">
+          <a href="#preco" class="btn-primary" id="cta-hero-primary">
+            <i data-lucide="zap" style="width:18px;height:18px;"></i>
+            Acessar Swipe File
+          </a>
+          <a href="#como-funciona" class="btn-secondary" id="cta-hero-secondary">
+            <i data-lucide="play-circle" style="width:18px;height:18px;"></i>
+            Ver como funciona
+          </a>
+        </div>
+        <div class="hero-mockup">
+          <div class="hero-mockup-glow"></div>
+          <img src="assets/dashboard-mockup.png" alt="Painel Scaleaki — feed de ofertas escaladas" width="1180" loading="eager">
+          <div class="hero-mockup-badge">
+            <span class="hmb-dot"></span> +500 ofertas rastreadas · atualizado agora
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TRUST BAR ═══ -->
+    <section class="trust-bar reveal" id="trust-bar">
+      <div class="container">
+        <div class="trust-grid">
+          <div class="trust-item glass">
+            <div class="trust-icon"><i data-lucide="search" style="width:20px;height:20px;"></i></div>
+            <div>
+              <h4>+500 anúncios</h4>
+              <p>Biblioteca atualizada</p>
+            </div>
+          </div>
+          <div class="trust-item glass">
+            <div class="trust-icon"><i data-lucide="trending-up" style="width:20px;height:20px;"></i></div>
+            <div>
+              <h4>Só escalados</h4>
+              <p>Ofertas comprovadas</p>
+            </div>
+          </div>
+          <div class="trust-item glass">
+            <div class="trust-icon"><i data-lucide="video" style="width:20px;height:20px;"></i></div>
+            <div>
+              <h4>VSL completa</h4>
+              <p>Vídeo + copy + dados</p>
+            </div>
+          </div>
+          <div class="trust-item glass">
+            <div class="trust-icon"><i data-lucide="refresh-cw" style="width:20px;height:20px;"></i></div>
+            <div>
+              <h4>Atualização constante</h4>
+              <p>Novos anúncios toda semana</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ MARQUEE OFERTAS ═══ -->
+    <section class="marquee-section" id="ofertas-ticker" aria-label="Ofertas em destaque">
+      <div class="marquee-label">Ofertas que estão escalando agora</div>
+      <div class="marquee-track" id="marquee-track">
+        <div class="marquee-card"><span class="dot"></span>Oferta Detox Emagrecimento</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Renda Extra em 30D</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Encapsulado Queda de Cabelo</div>
+        <div class="marquee-card"><span class="dot"></span>VSL Nicho Finanças</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Diabetes Revertida</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Curso Tráfego Pago</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Bumbum Perfeito</div>
+        <div class="marquee-card"><span class="dot"></span>VSL Relacionamento Afetivo</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Dropshipping Nacional</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Clareza Mental CBD</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Renda com Celular</div>
+        <div class="marquee-card"><span class="dot"></span>VSL Emagrecer Rápido</div>
+        <!-- duplicate for seamless loop -->
+        <div class="marquee-card"><span class="dot"></span>Oferta Detox Emagrecimento</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Renda Extra em 30D</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Encapsulado Queda de Cabelo</div>
+        <div class="marquee-card"><span class="dot"></span>VSL Nicho Finanças</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Diabetes Revertida</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Curso Tráfego Pago</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Bumbum Perfeito</div>
+        <div class="marquee-card"><span class="dot"></span>VSL Relacionamento Afetivo</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Dropshipping Nacional</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Clareza Mental CBD</div>
+        <div class="marquee-card"><span class="dot"></span>Oferta Renda com Celular</div>
+        <div class="marquee-card"><span class="dot"></span>VSL Emagrecer Rápido</div>
+      </div>
+    </section>
+
+    <!-- ═══ PROBLEMA / DOR ═══ -->
+    <section class="problem-section reveal" id="problema">
+      <div class="container">
+        <h2 class="section-title" style="text-align:center;">Você reconhece alguma dessas dores?</h2>
+        <p class="section-subtitle" style="text-align:center; margin: 0 auto;">
+          Se respondeu sim para pelo menos uma, você está no lugar certo.
+        </p>
+        <div class="problem-grid">
+          <div class="problem-card glass">
+            <div class="step-icon" style="margin-bottom:14px;"><i data-lucide="clock" style="width:20px;height:20px;"></i></div>
+            <p>Gasta horas criando anúncios que nunca escalam e não entende onde está errando.</p>
+          </div>
+          <div class="problem-card glass">
+            <div class="step-icon" style="margin-bottom:14px;"><i data-lucide="eye-off" style="width:20px;height:20px;"></i></div>
+            <p>Fica perdido tentando espionar concorrentes sem saber o que realmente funciona.</p>
+          </div>
+          <div class="problem-card glass">
+            <div class="step-icon" style="margin-bottom:14px;"><i data-lucide="trending-down" style="width:20px;height:20px;"></i></div>
+            <p>Queima dinheiro testando criativos no escuro, sem nenhuma referência de oferta validada.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ COMO FUNCIONA ═══ -->
+    <section class="how-section reveal" id="como-funciona">
+      <div class="container">
+        <div class="how-header">
+          <div>
+            <h2 class="section-title">Como o ScaleAki funciona</h2>
+            <p class="section-subtitle">Uma área de membros intuitiva com tudo que você precisa para modelar ofertas vencedoras.</p>
+          </div>
+        </div>
+        <div class="steps-grid">
+          <div class="step-card glass">
+            <div class="step-icon"><i data-lucide="log-in" style="width:20px;height:20px;"></i></div>
+            <h3>1) Acesse a plataforma</h3>
+            <p>Faça login na área de membros e navegue pela biblioteca de anúncios escalados e categorizados por nicho.</p>
+          </div>
+          <div class="step-card glass">
+            <div class="step-icon"><i data-lucide="play-circle" style="width:20px;height:20px;"></i></div>
+            <h3>2) Analise cada oferta</h3>
+            <p>Assista a VSL completa, leia a copy, veja o tempo de veiculação e os dados de performance do anúncio.</p>
+          </div>
+          <div class="step-card glass">
+            <div class="step-icon"><i data-lucide="trending-up" style="width:20px;height:20px;"></i></div>
+            <h3>3) Modele e escale</h3>
+            <p>Use as referências como base para criar seus próprios criativos e escalar suas campanhas com inteligência.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ EDGE / BENEFÍCIOS ═══ -->
+    <section class="edge-section reveal" id="beneficios">
+      <div class="container">
+        <div class="edge-grid">
+          <div class="edge-card glass">
+            <div class="glow-spot" style="top:-100px; right:-100px;"></div>
+            <h2 style="position:relative;">Tudo que você precisa em um só lugar</h2>
+            <p style="position:relative;">Chega de perder tempo em ferramentas dispersas. O ScaleAki centraliza as melhores referências de mercado.</p>
+            <div class="feature-mini-grid" style="position:relative;">
+              <div class="feature-mini">
+                <div class="label"><i data-lucide="film" style="width:14px;height:14px;"></i> VSL Completa</div>
+                <div class="desc">Assista ao vídeo de venda do anúncio</div>
+              </div>
+              <div class="feature-mini">
+                <div class="label"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Copy Detalhada</div>
+                <div class="desc">Texto completo do criativo</div>
+              </div>
+              <div class="feature-mini">
+                <div class="label"><i data-lucide="clock" style="width:14px;height:14px;"></i> Tempo de Veiculação</div>
+                <div class="desc">Saiba há quanto tempo está rodando</div>
+              </div>
+              <div class="feature-mini">
+                <div class="label"><i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> Dados de Performance</div>
+                <div class="desc">Métricas e análise do anúncio</div>
+              </div>
+            </div>
+          </div>
+          <div class="edge-card glass" style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+            <div class="glow-spot" style="bottom:-100px; left:-100px;"></div>
+            <div style="position:relative; z-index:1;">
+              <img src="assets/lupa-icon.png" alt="ScaleAki Lupa" style="width:120px; height:120px; object-fit:contain; margin: 0 auto 24px; animation: float 6s ease-in-out infinite; filter: drop-shadow(0 0 30px rgba(16,185,129,0.4));">
+              <h2>Encontre o que está escalando agora</h2>
+              <p style="margin-top:12px;">Nosso time monitora diariamente as maiores plataformas para trazer apenas ofertas com resultados reais e comprovados.</p>
+              <div style="margin-top:32px; display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--color-accent); font-weight:500;">
+                  <i data-lucide="check-circle" style="width:16px;height:16px;"></i> Facebook Ads
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--color-accent); font-weight:500;">
+                  <i data-lucide="check-circle" style="width:16px;height:16px;"></i> Google Ads
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--color-accent); font-weight:500;">
+                  <i data-lucide="check-circle" style="width:16px;height:16px;"></i> TikTok Ads
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SOCIAL PROOF / NÚMEROS ═══ -->
+    <section class="reveal" style="padding:80px 0; text-align:center; position:relative; overflow:hidden;" id="prova-social">
+      <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:600px; height:600px; background:radial-gradient(circle, rgba(16,185,129,0.2), transparent 70%); border-radius:50%; pointer-events:none; animation:pulseGlow 5s ease-in-out infinite;"></div>
+      <div class="container" style="position:relative; z-index:2;">
+        <h2 style="font-family:var(--font-heading); font-size:clamp(3rem,7vw,5rem); font-weight:800; letter-spacing:-0.03em; background:linear-gradient(135deg, var(--color-accent), #fff, var(--color-accent)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:8px;">
+          +500 Ofertas
+        </h2>
+        <p style="font-size:1.2rem; color:var(--color-text-muted); margin-bottom:8px;">
+          Anúncios escalados analisados na plataforma
+        </p>
+        <p style="font-size:1rem; color:var(--color-accent); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-top:16px;">
+          Atualização semanal • Curadoria manual • Dados reais
+        </p>
+        <div class="stat-strip">
+          <div class="stat-chip glass"><span class="sc-num">3</span><span class="sc-lbl">Plataformas<br>FB · TikTok · Google</span></div>
+          <div class="stat-chip glass"><span class="sc-num">+40</span><span class="sc-lbl">Nichos<br>mapeados</span></div>
+          <div class="stat-chip glass"><span class="sc-num">24/7</span><span class="sc-lbl">Mineração<br>automática</span></div>
+          <div class="stat-chip glass"><span class="sc-num">100%</span><span class="sc-lbl">Ofertas<br>escaladas</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ BENTO COMPARISON ═══ -->
+    <section class="comparison-section reveal" id="comparativo">
+      <div class="container">
+        <h2 class="section-title" style="text-align:center;">Por que o ScaleAki é diferente?</h2>
+        <p class="section-subtitle" style="text-align:center; margin:0 auto;">Enquanto você gasta dólares em ferramentas gringas, o ScaleAki entrega mais — em reais.</p>
+        <div class="comparison-grid">
+
+          <!-- Card ruim: ferramentas caras -->
+          <div class="comp-card comp-card-bad">
+            <div class="comp-tag comp-tag-bad">
+              <i data-lucide="x-circle" style="width:12px;height:12px;"></i>
+              Ferramentas gringas
+            </div>
+            <h3>$99–$299/mês em dólar</h3>
+            <p class="comp-sub">Paga caro todo mês, mas ainda não acessa o entregável da oferta — só vê o anúncio por fora.</p>
+            <div class="comp-features">
+              <div class="comp-feature">
+                <span class="ci ci-bad"><i data-lucide="x" style="width:10px;height:10px;"></i></span>
+                Sem acesso à VSL completa
+              </div>
+              <div class="comp-feature">
+                <span class="ci ci-bad"><i data-lucide="x" style="width:10px;height:10px;"></i></span>
+                Sem copy do criativo
+              </div>
+              <div class="comp-feature">
+                <span class="ci ci-bad"><i data-lucide="x" style="width:10px;height:10px;"></i></span>
+                Interface complicada
+              </div>
+              <div class="comp-feature">
+                <span class="ci ci-bad"><i data-lucide="x" style="width:10px;height:10px;"></i></span>
+                Cobrança recorrente em dólar
+              </div>
+            </div>
+            <div class="comp-progress-wrap">
+              <div class="comp-progress-label">
+                <span class="pl-title">Custo-benefício</span>
+                <span class="pl-val-bad">20%</span>
+              </div>
+              <div class="comp-bar-track">
+                <div class="comp-bar-fill comp-bar-fill-bad"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card bom: ScaleAki -->
+          <div class="comp-card comp-card-good">
+            <div class="comp-tag comp-tag-good">
+              <i data-lucide="check-circle" style="width:12px;height:12px;"></i>
+              ScaleAki
+            </div>
+            <h3>A partir de R$67/mês</h3>
+            <p class="comp-sub">Acesso ao anúncio <strong>E</strong> ao entregável da oferta. VSL, copy, tempo de veiculação e métricas em um só lugar. Assine e cancele quando quiser.</p>
+            <div class="comp-features">
+              <div class="comp-feature has">
+                <span class="ci ci-good"><i data-lucide="check" style="width:10px;height:10px;"></i></span>
+                VSL completa de cada oferta
+              </div>
+              <div class="comp-feature has">
+                <span class="ci ci-good"><i data-lucide="check" style="width:10px;height:10px;"></i></span>
+                Copy e entregável do criativo
+              </div>
+              <div class="comp-feature has">
+                <span class="ci ci-good"><i data-lucide="check" style="width:10px;height:10px;"></i></span>
+                Interface intuitiva em PT-BR
+              </div>
+              <div class="comp-feature has">
+                <span class="ci ci-good"><i data-lucide="check" style="width:10px;height:10px;"></i></span>
+                Assine e cancele quando quiser
+              </div>
+            </div>
+            <div class="comp-progress-wrap">
+              <div class="comp-progress-label">
+                <span class="pl-title">Custo-benefício</span>
+                <span class="pl-val-good">100%</span>
+              </div>
+              <div class="comp-bar-track">
+                <div class="comp-bar-fill comp-bar-fill-good"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ RADAR / ECONOMIA ═══ -->
+    <section class="radar-section reveal" id="economia">
+      <div class="container">
+        <div class="radar-orb">
+          <div class="orb-aura"></div>
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="sphere">
+            <div class="radar-sweep"></div>
+            <div class="cross-h"></div>
+            <div class="cross-v"></div>
+            <div class="center-dot"></div>
+            <div class="ping"></div>
+          </div>
+          <div class="radar-tag radar-tag-1"><span class="rtdot"></span>Economia anual</div>
+          <div class="radar-tag radar-tag-2"><span class="rtdot"></span>+R$2.400/ano</div>
+        </div>
+        <h2 class="section-title" style="max-width:680px; margin:0 auto 12px;">Economize mais de R$2.400 por ano</h2>
+        <p class="section-subtitle" style="margin:0 auto 0;">
+          Ferramentas gringas cobram $99–$299/mês em dólar. O ScaleAki começa em R$67/mês.
+        </p>
+        <div class="economy-grid">
+          <div class="economy-card glass">
+            <div class="eco-val">R$67</div>
+            <div class="eco-label">Plano anual do ScaleAki</div>
+          </div>
+          <div class="economy-card glass">
+            <div class="eco-val">+R$2.400</div>
+            <div class="eco-label">Economia anual vs. concorrentes</div>
+          </div>
+          <div class="economy-card glass">
+            <div class="eco-val">100%</div>
+            <div class="eco-label">Acesso ao entregável das ofertas</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PRICING ═══ -->
+    <section class="pricing-section reveal" id="preco">
+      <div class="container">
+        <h2 class="section-title">Acesso completo por um preço irreal</h2>
+        <p class="section-subtitle" style="margin:0 auto; padding-bottom: 8px;">
+          Escolha o plano que faz mais sentido pra você e comece hoje.
+        </p>
+
+        <div class="plans-grid">
+
+          <!-- Mensal -->
+          <div class="plan-card" id="plan-monthly">
+            <div class="plan-body">
+              <div class="plan-name">Mensal</div>
+              <div class="plan-sub">Flexibilidade total</div>
+              <div class="plan-price">R$84</div>
+              <div class="plan-period">por mês</div>
+              <div class="plan-divider"></div>
+              <div class="plan-features">
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Funis de Vendas Escalados (FB, TikTok &amp; Google Ads)</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Criativos de Conversão (FB, TikTok &amp; Google Ads)</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Scripts e Textos de VSLs Transcritos</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Relatórios Avançados com Histórico de Performance</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Modelos de Landing Pages de Alta Conversão</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Rastreamento Diário de Novas Ofertas e Criativos</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Acesso à Toolbox (HTML, EXIF e Ofuscador)</div>
+              </div>
+              <div class="plan-billing-note">Cobrado mensalmente</div>
+              <a href="https://pay.cakto.com.br/xh83thw_917445" class="plan-cta plan-cta-outline" id="cta-monthly">Assinar Mensal</a>
+            </div>
+          </div>
+
+          <!-- Trimestral (Featured) -->
+          <div class="plan-card featured" id="plan-quarterly">
+            <div class="plan-popular">Mais Escolhido</div>
+            <div class="plan-body">
+              <div class="plan-name">Trimestral</div>
+              <div class="plan-sub">Economize 11%</div>
+              <div class="plan-price">R$75</div>
+              <div class="plan-period">por mês</div>
+              <div class="plan-savings">
+                <i data-lucide="tag" style="width:10px;height:10px;"></i>
+                Economia de R$108/ano
+              </div>
+              <div class="plan-divider"></div>
+              <div class="plan-features">
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Funis de Vendas Escalados (FB, TikTok &amp; Google Ads)</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Criativos de Conversão (FB, TikTok &amp; Google Ads)</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Scripts e Textos de VSLs Transcritos</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Relatórios Avançados com Histórico de Performance</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Modelos de Landing Pages de Alta Conversão</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Rastreamento Diário de Novas Ofertas e Criativos</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Acesso à Toolbox (HTML, EXIF e Ofuscador)</div>
+              </div>
+              <div class="plan-billing-note">Cobrado R$ 225 a cada 3 meses</div>
+              <a href="https://pay.cakto.com.br/8cbgatw" class="plan-cta plan-cta-primary" id="cta-quarterly">
+                <i data-lucide="zap" style="width:14px;height:14px;"></i>
+                Assinar Agora
+              </a>
+            </div>
+          </div>
+
+          <!-- Anual -->
+          <div class="plan-card" id="plan-annual">
+            <div class="plan-popular eco">Maior Economia</div>
+            <div class="plan-body">
+              <div class="plan-name">Anual</div>
+              <div class="plan-sub">Melhor custo-benefício</div>
+              <div class="plan-price">R$67</div>
+              <div class="plan-period">por mês</div>
+              <div class="plan-savings">
+                <i data-lucide="tag" style="width:10px;height:10px;"></i>
+                Economia de R$204/ano
+              </div>
+              <div class="plan-divider"></div>
+              <div class="plan-features">
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Funis de Vendas Escalados (FB, TikTok &amp; Google Ads)</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Criativos de Conversão (FB, TikTok &amp; Google Ads)</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Scripts e Textos de VSLs Transcritos</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Relatórios Avançados com Histórico de Performance</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Modelos de Landing Pages de Alta Conversão</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Rastreamento Diário de Novas Ofertas e Criativos</div>
+                <div class="plan-feature"><span class="pf-check"><i data-lucide="check" style="width:10px;height:10px;"></i></span>Acesso à Toolbox (HTML, EXIF e Ofuscador)</div>
+              </div>
+              <div class="plan-billing-note">Cobrado R$ 804 anualmente</div>
+              <a href="https://pay.cakto.com.br/yhu2jvy" class="plan-cta plan-cta-outline" id="cta-annual">Assinar Anual</a>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="plan-guarantee">
+          <i data-lucide="shield-check" style="width:15px;height:15px;color:var(--color-primary);"></i>
+          Garantia de 7 dias. Se não gostar, devolvemos tudo.
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DIFERENCIAIS DISRUPTIVOS ═══ -->
+    <section class="diff-section reveal" id="diferenciais">
+      <div class="container">
+        <div class="diff-header">
+          <div class="diff-label">Por que o ScaleAki é diferente</div>
+          <h2 class="section-title">3 diferenciais que nenhuma outra plataforma tem</h2>
+          <p class="section-subtitle" style="margin:0 auto;">Enquanto outros te mostram o anúncio por fora, o ScaleAki te entrega o que está dentro.</p>
+        </div>
+
+        <div class="diff-grid">
+
+          <!-- Feature A: Multilingual -->
+          <div class="diff-card" id="feature-multilingual">
+            <div class="diff-card-glow"></div>
+            <div class="diff-tag">Feature A</div>
+            <h3>Ofertas Multilíngues</h3>
+            <p>Escale globalmente sem barreira de idioma. Disponibilizamos ofertas já adaptadas e validadas em <strong>Inglês, Espanhol, Francês, Italiano</strong> e outros idiomas para você conquistar mercados internacionais com facilidade.</p>
+            <div class="lang-flags">
+              <div class="lang-flag"><span class="lf-dot"></span>EN — Inglês</div>
+              <div class="lang-flag"><span class="lf-dot"></span>ES — Espanhol</div>
+              <div class="lang-flag"><span class="lf-dot"></span>FR — Francês</div>
+              <div class="lang-flag"><span class="lf-dot"></span>IT — Italiano</div>
+              <div class="lang-flag"><span class="lf-dot"></span>PT — Português</div>
+              <div class="lang-flag"><span class="lf-dot"></span>DE — Alemão</div>
+            </div>
+            <div class="lang-bars">
+              <div class="lang-bar-row">
+                <span class="lang-bar-name">EN</span>
+                <div class="lang-bar-track"><div class="lang-bar-fill" style="width:92%"></div></div>
+                <span class="lang-bar-pct">92%</span>
+              </div>
+              <div class="lang-bar-row">
+                <span class="lang-bar-name">ES</span>
+                <div class="lang-bar-track"><div class="lang-bar-fill" style="width:84%"></div></div>
+                <span class="lang-bar-pct">84%</span>
+              </div>
+              <div class="lang-bar-row">
+                <span class="lang-bar-name">FR</span>
+                <div class="lang-bar-track"><div class="lang-bar-fill" style="width:71%"></div></div>
+                <span class="lang-bar-pct">71%</span>
+              </div>
+              <div class="lang-bar-row">
+                <span class="lang-bar-name">IT</span>
+                <div class="lang-bar-track"><div class="lang-bar-fill" style="width:65%"></div></div>
+                <span class="lang-bar-pct">65%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature B: Cloaker -->
+          <div class="diff-card" id="feature-cloaker">
+            <div class="diff-card-glow" style="background:rgba(52,211,153,0.12); top:auto; bottom:-80px; right:-60px;"></div>
+            <div class="diff-tag">Feature B</div>
+            <h3>Ofertas com Cloaker Quebrado</h3>
+            <p>Acesse anúncios <strong>blackhat e agressivos</strong> que a biblioteca convencional do Facebook esconde. Com o cloaker já quebrado, você acelera imensamente o processo de modelagem e otimização de campanhas agressivas.</p>
+            <div class="cloaker-visual">
+              <div class="cloaker-ring cloaker-ring-2"></div>
+              <div class="cloaker-ring cloaker-ring-1"></div>
+              <div class="cloaker-orb">
+                <i data-lucide="unlock" class="cloaker-icon" style="width:40px;height:40px;"></i>
+              </div>
+              <div class="cloaker-badge cb-1"><span class="cbd"></span>Blackhat</div>
+              <div class="cloaker-badge cb-2"><span class="cbd"></span>Cloaker OFF</div>
+              <div class="cloaker-badge cb-3"><span class="cbd"></span>Acesso Total</div>
+            </div>
+          </div>
+
+          <!-- Feature C: Monitoring (full width) -->
+          <div class="diff-card diff-card-full" id="feature-monitoring">
+            <div class="diff-card-glow" style="width:500px; height:300px; left:50%; top:-50%; background:rgba(16,185,129,0.06);"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:36px; align-items:start;">
+              <div>
+                <div class="diff-tag">Feature C</div>
+                <h3>Monitoramento de Criativos</h3>
+                <p>Acompanhe anúncios que já estão escalados no mercado. Filtre com precisão por <strong>nicho</strong> e por <strong>ângulo de venda</strong> para encontrar exatamente a referência que sua campanha precisa, sem perder tempo garimpando.</p>
+              </div>
+              <div>
+                <div class="monitor-ui">
+                  <div class="monitor-header">
+                    <span class="monitor-dot monitor-dot-red"></span>
+                    <span class="monitor-dot monitor-dot-yel"></span>
+                    <span class="monitor-dot monitor-dot-grn"></span>
+                    <span class="monitor-title">ScaleAki — Painel de Monitoramento</span>
+                  </div>
+                  <div class="monitor-body">
+                    <div class="monitor-filter">
+                      <i data-lucide="filter" class="mf-icon" style="width:14px;height:14px;"></i>
+                      <span class="mf-label">nicho</span>
+                      <span class="mf-val">Saúde &amp; Bem-Estar</span>
+                    </div>
+                    <div class="monitor-filter">
+                      <i data-lucide="tag" class="mf-icon" style="width:14px;height:14px;"></i>
+                      <span class="mf-label">ângulo</span>
+                      <span class="mf-val">Prova Social</span>
+                    </div>
+                    <div class="monitor-filter">
+                      <i data-lucide="trending-up" class="mf-icon" style="width:14px;height:14px;"></i>
+                      <span class="mf-label">status</span>
+                      <span class="mf-val">● Escalando Agora</span>
+                    </div>
+                    <div class="monitor-stats">
+                      <div class="monitor-stat">
+                        <div class="ms-val">+500</div>
+                        <div class="ms-label">Anúncios ativos</div>
+                      </div>
+                      <div class="monitor-stat">
+                        <div class="ms-val">24h</div>
+                        <div class="ms-label">Atualização</div>
+                      </div>
+                      <div class="monitor-stat">
+                        <div class="ms-val">12+</div>
+                        <div class="ms-label">Nichos</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FAQ ═══ -->
+    <section class="faq-section reveal" id="faq">
+      <div class="container">
+        <h2 class="section-title" style="text-align:center;">Perguntas frequentes</h2>
+        <p class="section-subtitle" style="text-align:center; margin:0 auto;">
+          Tire suas dúvidas antes de assinar.
+        </p>
+        <div class="faq-list">
+          <div class="faq-item" id="faq-1">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>O que exatamente é o ScaleAki?</span>
+              <span class="icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>O ScaleAki é um swipe file digital com assinatura recorrente. Dentro da área de membros você encontra a VSL completa, a copy, o tempo de veiculação e análise de cada oferta escalada para usar como referência nos seus criativos.</p>
+            </div>
+          </div>
+          <div class="faq-item" id="faq-2">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>Para quem é o ScaleAki?</span>
+              <span class="icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Para gestores de tráfego, copywriters, media buyers e empreendedores digitais que querem criar campanhas melhores usando referências reais de anúncios que já estão gerando resultados no mercado.</p>
+            </div>
+          </div>
+          <div class="faq-item" id="faq-3">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>Como funciona a assinatura?</span>
+              <span class="icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Você escolhe o plano (Mensal, Trimestral ou Anual) e tem acesso completo à plataforma enquanto sua assinatura estiver ativa. A cobrança é automática no cartão, e você pode cancelar quando quiser, sem burocracia.</p>
+            </div>
+          </div>
+          <div class="faq-item" id="faq-4">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>Tem garantia?</span>
+              <span class="icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Sim. Você tem 7 dias de garantia incondicional. Se por qualquer motivo não ficar satisfeito, basta solicitar o reembolso e devolvemos 100% do valor, sem perguntas.</p>
+            </div>
+          </div>
+          <div class="faq-item" id="faq-5">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>Com que frequência a biblioteca é atualizada?</span>
+              <span class="icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Adicionamos novos anúncios escalados toda semana. Nossa equipe monitora diariamente as principais plataformas para garantir que você tenha sempre as referências mais atuais do mercado.</p>
+            </div>
+          </div>
+          <div class="faq-item" id="faq-6">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>Posso acessar do celular?</span>
+              <span class="icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Sim. A área de membros é 100% responsiva e funciona em qualquer dispositivo, seja computador, tablet ou celular.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ═══ CTA FINAL ═══ -->
+    <section class="final-cta reveal" id="cta-final">
+      <div class="container">
+        <div class="final-cta-box">
+          <div class="glow-spot" style="top:0; left:20%;"></div>
+          <div class="glow-spot" style="bottom:0; right:20%;"></div>
+          <h2 style="position:relative; z-index:1;">Chega de adivinhar.<br>Comece a escalar.</h2>
+          <p style="position:relative; z-index:1;">Acesse agora o maior swipe file de ofertas escaladas do Brasil e veja os resultados na prática.</p>
+          <div style="position:relative; z-index:1;">
+            <a href="#preco" class="btn-primary" id="cta-final-btn" style="font-size:1.1rem; padding:20px 48px;">
+              <i data-lucide="zap" style="width:20px;height:20px;"></i>
+              Quero Assinar Agora
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- WhatsApp Floating Button -->
+  <a href="https://api.whatsapp.com/send/?phone=5521959476313&amp;text&amp;type=phone_number&amp;app_absent=0" target="_blank" class="whatsapp-float" id="whatsapp-float" aria-label="Falar no WhatsApp">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.117.549 4.103 1.504 5.836L0 24l6.335-1.48A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.626 0 11.999 0zm.001 21.818a9.808 9.808 0 01-5.032-1.388l-.361-.214-3.741.981.998-3.648-.235-.374A9.786 9.786 0 012.18 12c0-5.412 4.407-9.818 9.82-9.818 5.412 0 9.818 4.406 9.818 9.818 0 5.413-4.406 9.818-9.818 9.818z"/></svg>
+  </a>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <svg width="170" height="36" viewBox="0 0 170 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Scaleaki">
+            <defs>
+              <linearGradient id="flg" x1="2" y1="2" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#34d399"/><stop offset="1" stop-color="#047857"/>
+              </linearGradient>
+            </defs>
+            <rect x="2" y="2" width="32" height="32" rx="9" fill="url(#flg)"/>
+            <rect x="2.5" y="2.5" width="31" height="31" rx="8.5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            <path d="M5 31L14.5 21.5" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M5 31L14.5 21.5" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="20" cy="15.5" r="7" fill="rgba(255,255,255,0.12)" stroke="#ffffff" stroke-width="2.4"/>
+            <text x="20" y="19.8" font-family="Outfit, sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">$</text>
+            <text x="44" y="26" font-family="Outfit, sans-serif" font-size="24" font-weight="900" letter-spacing="-0.8"><tspan fill="#ffffff">scale</tspan><tspan fill="#34d399">aki</tspan></text>
+          </svg>
+          <p>O swipe file definitivo de ofertas escaladas. Descubra, analise e modele os anúncios que mais geram resultados no digital.</p>
+        </div>
+        <div>
+          <h4>Produto</h4>
+          <ul>
+            <li><a href="#como-funciona">Como Funciona</a></li>
+            <li><a href="#beneficios">Benefícios</a></li>
+            <li><a href="#preco">Preço</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Suporte</h4>
+          <ul>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#">Contato</a></li>
+            <li><a href="#">Termos de Uso</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 ScaleAki. Todos os direitos reservados.</p>
+        <div class="footer-socials">
+          <a href="#" aria-label="Instagram"><i data-lucide="instagram" style="width:18px;height:18px;"></i></a>
+          <a href="#" aria-label="YouTube"><i data-lucide="youtube" style="width:18px;height:18px;"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══ EXIT-INTENT POPUP ═══ -->
+  <div class="exit-overlay" id="exitPopup" aria-hidden="true">
+    <div class="exit-modal" role="dialog" aria-modal="true" aria-labelledby="exitTitle">
+      <button class="exit-close" id="exitClose" aria-label="Fechar">
+        <i data-lucide="x" style="width:20px;height:20px;"></i>
+      </button>
+      <div class="exit-badge"><i data-lucide="hand" style="width:13px;height:13px;"></i> Espera aí</div>
+      <h3 class="exit-title" id="exitTitle">Não vá embora sem seu desconto</h3>
+      <div class="exit-discount">
+        <span class="exit-discount-off">15%</span>
+        <span class="exit-discount-lbl">OFF<br>AGORA</span>
+      </div>
+      <p class="exit-text">Liberei um cupom exclusivo só pra você não sair de mãos vazias. Garanta seu acesso completo com <b>15% de desconto</b> — sem fidelidade, cancele quando quiser.</p>
+      <div class="exit-price">
+        <span class="exit-price-old">R$84</span>
+        <span class="exit-price-val">R$71</span>
+        <span class="exit-price-per">/mês</span>
+      </div>
+      <div class="exit-price-note">Cupom aplicado automaticamente · Acesso completo · Garantia de 7 dias</div>
+      <a href="https://pay.cakto.com.br/t3nf6rm" class="exit-cta" id="exitCta">
+        <i data-lucide="zap" style="width:16px;height:16px;"></i>
+        Quero meu acesso com 15% OFF
+      </a>
+      <button class="exit-decline" id="exitDecline">Não, prefiro pagar o preço cheio depois</button>
+    </div>
+  </div>
+
+  <script>
+    // Lucide icons
+    lucide.createIcons();
+
+    // Reveal on scroll
+    (function() {
+      const targets = document.querySelectorAll('.reveal');
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-visible');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -80px 0px' });
+      targets.forEach(el => io.observe(el));
+    })();
+
+    // FAQ Toggle
+    function toggleFaq(btn) {
+      const item = btn.parentElement;
+      const isActive = item.classList.contains('active');
+      document.querySelectorAll('.faq-item.active').forEach(i => i.classList.remove('active'));
+      if (!isActive) item.classList.add('active');
+    }
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Exit-intent popup
+    (function() {
+      const overlay = document.getElementById('exitPopup');
+      if (!overlay) return;
+      let shown = sessionStorage.getItem('exitShown') === '1';
+
+      function openPopup() {
+        if (shown) return;
+        shown = true;
+        sessionStorage.setItem('exitShown', '1');
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+      function closePopup() {
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+
+      // Desktop: mouse leaves viewport from the top
+      document.addEventListener('mouseout', function(e) {
+        if (!e.relatedTarget && e.clientY <= 0) openPopup();
+      });
+
+      // Mobile: fast scroll-up near the top (back-to-leave gesture)
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', function() {
+        const y = window.scrollY;
+        if (lastY - y > 18 && y < 320) openPopup();
+        lastY = y;
+      }, { passive: true });
+
+      // X de fechar leva direto pro checkout com 15% OFF
+      document.getElementById('exitClose').addEventListener('click', function() {
+        window.location.href = 'https://pay.cakto.com.br/t3nf6rm';
+      });
+      document.getElementById('exitDecline').addEventListener('click', closePopup);
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closePopup();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePopup();
+      });
+    })();
+  </script>
+
+</body>
+</html>

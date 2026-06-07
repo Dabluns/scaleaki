@@ -8,7 +8,7 @@ Com uma arquitetura robusta e um design *Dark/Emerald Premium*, o Scaleaki varre
 
 ## 🏗️ Arquitetura do Projeto
 
-O projeto é dividido em 3 camadas principais:
+O projeto é dividido em 4 camadas principais:
 
 1. **Frontend (SaaS/Dashboard)**
    - Construído em **Next.js (React)** com estilização em **TailwindCSS**.
@@ -23,6 +23,11 @@ O projeto é dividido em 3 camadas principais:
 3. **Scaleaki Toolkit (Extensão do Chrome)**
    - Extensão baseada em **Manifest V3** que transforma o navegador do usuário em uma máquina de garimpo.
    - Atua de forma ativa (injetando botões e modais) e passiva (ocultando anúncios lixo na Biblioteca do Facebook).
+
+4. **Landing / Página de Venda** (`landing/`)
+   - Página de venda estática (HTML + CSS puro, zero build) com estética *Dark/Emerald Premium*.
+   - Seções: hero, problema, como funciona, benefícios, comparativo, preço (mensal/trimestral/anual), prova social, FAQ e CTA.
+   - Deploy independente em host estático (Vercel). Detalhes e placeholders pendentes em [`landing/README.md`](landing/README.md).
 
 ---
 
