@@ -1364,17 +1364,16 @@ async function handleChargeback(event: CaktoWebhookEvent) {
 async function determinePlanFromAmount(amountInCents: number): Promise<UserPlan> {
   const amount = amountInCents / 100; // Converter de centavos para reais
 
-  // Valores dos planos (em reais)
-  // Anual: R$ 974,00
-  // Trimestral: R$ 271,00
-  // Mensal: R$ 97,00
-  if (amount >= 974.00) {
-    return UserPlan.anual; // Anual
-  } else if (amount >= 271.00) {
-    return UserPlan.trimestral; // Trimestral
-  } else if (amount >= 97.00) {
-    return UserPlan.mensal; // Mensal
+  // Valores reais cobrados por plano (em reais) — atualizado 2026-06-08
+  // Anual:       R$ 804,00 (1x/ano, headline R$67/mês)
+  // Trimestral:  R$ 225,00 (a cada 3 meses, headline R$75/mês)
+  // Mensal:      R$ 84,00 (ou R$ 71,00 com desconto 15% t3nf6rm)
+  // Faixas sem sobreposição: >=500 anual, >=150 trimestral, resto mensal
+  if (amount >= 500.00) {
+    return UserPlan.anual; // Anual (R$804)
+  } else if (amount >= 150.00) {
+    return UserPlan.trimestral; // Trimestral (R$225)
   }
 
-  return UserPlan.mensal;
+  return UserPlan.mensal; // Mensal (R$84 ou R$71 com desconto)
 }
