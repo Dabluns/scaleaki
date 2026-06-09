@@ -26,6 +26,7 @@
     "seed": "ts-node src/scripts/seedNichosOfertas.ts",
     "seed:exemplo": "ts-node src/scripts/seedOfertasExemplo.ts",
     "seed:staging": "ts-node src/scripts/seedStagingDataset.ts",
+    "update:nicho-icons": "ts-node src/scripts/updateNichoIcons.ts",
     "install:all": "npm install && cd frontend && npm install",
     "setup:windows": "npm install && cd frontend && npm install",
     "dev:windows": "concurrently \"npm run dev\" \"cd frontend && npm run dev\"",
