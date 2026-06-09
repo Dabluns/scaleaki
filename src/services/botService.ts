@@ -20,6 +20,28 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
+// --- MAPA DE ÍCONES (sincronizado com keywords.json) ---
+const KEYWORDS_FILE = path.join(__dirname, '../../keywords.json');
+let _nichoIconMap: Record<string, string> | null = null;
+function getNichoIconMap(): Record<string, string> {
+    if (_nichoIconMap) return _nichoIconMap;
+    try {
+        const bank = JSON.parse(fs.readFileSync(KEYWORDS_FILE, 'utf-8'));
+        _nichoIconMap = {};
+        for (const [nome, entry] of Object.entries(bank)) {
+            const icon = (entry as any)?.icon;
+            if (icon) _nichoIconMap[nome.toLowerCase()] = icon;
+        }
+    } catch {
+        _nichoIconMap = {};
+    }
+    return _nichoIconMap;
+}
+function resolveNichoIcon(nicheName: string): string {
+    const map = getNichoIconMap();
+    return map[nicheName.toLowerCase()] || 'Tag';
+}
+
 // LLM unificado: prefere Groq (free, rápido), cai pra Gemini se Groq falhar.
 async function llmComplete(prompt: string): Promise<string> {
     if (GROQ_API_KEY) {
@@ -989,7 +1011,7 @@ async function processSingleFolder(folderId: string, folderName: string) {
                         data: {
                             nome: newNicheName,
                             slug: slug,
-                            icone: 'tag',
+                            icone: resolveNichoIcon(newNicheName),
                             descricao: `Ofertas de ${newNicheName}`
                         }
                     });
