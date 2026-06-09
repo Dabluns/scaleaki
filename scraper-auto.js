@@ -244,6 +244,9 @@ async function upsertAds(ads) {
 
 (async () => {
   const t0 = Date.now();
+  // Extrai array de keywords de uma entrada (suporta formato antigo e novo com { icon, keywords })
+  const extractKeywords = (entry) => Array.isArray(entry) ? entry : (entry?.keywords || []);
+
   let keywords;
   if (CLI_KEYWORDS) {
     keywords = CLI_KEYWORDS.split(',').map(s => s.trim()).filter(Boolean);
@@ -251,9 +254,9 @@ async function upsertAds(ads) {
     const bank = JSON.parse(fs.readFileSync(KEYWORDS_FILE, 'utf-8'));
     if (NICHE) {
       const key = Object.keys(bank).find(k => k.toLowerCase() === NICHE.toLowerCase());
-      keywords = key ? bank[key] : [];
+      keywords = key ? extractKeywords(bank[key]) : [];
     } else {
-      keywords = Object.values(bank).flat();
+      keywords = Object.values(bank).flatMap(extractKeywords);
     }
   }
   keywords = [...new Set(keywords)];
