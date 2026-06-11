@@ -442,11 +442,103 @@ export async function createAdmin(req: AuthRequest, res: Response) {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Error creating admin', { 
-      error: errorMessage, 
-      adminId: req.user?.userId 
+    logger.error('Error creating admin', {
+      error: errorMessage,
+      adminId: req.user?.userId
     });
-    
+
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+}
+
+// ===== MÉTRICAS DE NEGÓCIO (MRR / novos / churn / LTV) =====
+
+/**
+ * Normaliza valor da assinatura (centavos) para receita mensal em reais.
+ * mensal ÷1, trimestral ÷3, anual ÷12.
+ */
+function monthlyRevenueReais(plan: string, amountCents: number): number {
+  const divisor = plan === 'anual' ? 12 : plan === 'trimestral' ? 3 : 1;
+  return (amountCents / 100) / divisor;
+}
+
+export async function getMetrics(req: AuthRequest, res: Response) {
+  try {
+    const now = new Date();
+    const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Assinaturas ativas → MRR + breakdown por plano
+    const activeSubs = await prisma.subscription.findMany({
+      where: { status: 'active' },
+      select: { plan: true, amount: true },
+    });
+
+    const byPlan: Record<string, number> = { mensal: 0, trimestral: 0, anual: 0 };
+    let mrr = 0;
+    for (const s of activeSubs) {
+      mrr += monthlyRevenueReais(s.plan, s.amount);
+      byPlan[s.plan] = (byPlan[s.plan] || 0) + 1;
+    }
+    const activeCount = activeSubs.length;
+
+    // Novos no mês (assinaturas criadas no mês corrente, ativas ou trial)
+    const novosMes = await prisma.subscription.count({
+      where: { createdAt: { gte: startMonth }, status: { in: ['active', 'trial'] } },
+    });
+
+    // Churn no mês (canceladas no mês corrente)
+    const churnMes = await prisma.subscription.count({
+      where: { status: 'cancelled', cancelledAt: { gte: startMonth } },
+    });
+
+    // Base início do mês ≈ ativas agora + canceladas no mês
+    const baseInicioMes = activeCount + churnMes;
+    const churnRate = baseInicioMes > 0 ? churnMes / baseInicioMes : 0;
+
+    // ARPU mensal e LTV
+    const arpu = activeCount > 0 ? mrr / activeCount : 0;
+    const ltv = churnRate > 0 ? arpu / churnRate : null; // null = churn 0 → LTV "infinito"
+
+    // Receita total acumulada (pagamentos pagos)
+    const revenueAgg = await prisma.payment.aggregate({
+      _sum: { amount: true },
+      where: { status: 'paid' },
+    });
+    const receitaTotal = (revenueAgg._sum.amount || 0) / 100;
+
+    // Receita do mês corrente
+    const revenueMesAgg = await prisma.payment.aggregate({
+      _sum: { amount: true },
+      where: { status: 'paid', paidAt: { gte: startMonth } },
+    });
+    const receitaMes = (revenueMesAgg._sum.amount || 0) / 100;
+
+    // Usuários pagantes ativos
+    const usuariosPagantes = await prisma.user.count({
+      where: { plan: { in: ['mensal', 'trimestral', 'anual'] }, isActive: true },
+    });
+
+    logger.info('Admin accessed business metrics', { adminId: req.user?.userId });
+
+    return res.json({
+      mrr: Number(mrr.toFixed(2)),
+      arpu: Number(arpu.toFixed(2)),
+      ltv: ltv === null ? null : Number(ltv.toFixed(2)),
+      churnRate: Number((churnRate * 100).toFixed(2)), // %
+      novosMes,
+      churnMes,
+      assinaturasAtivas: activeCount,
+      usuariosPagantes,
+      receitaTotal: Number(receitaTotal.toFixed(2)),
+      receitaMes: Number(receitaMes.toFixed(2)),
+      breakdownPlanos: byPlan,
+      referencia: { mes: startMonth.toISOString(), agora: now.toISOString() },
+    });
+  } catch (error) {
+    logger.error('Error fetching business metrics', {
+      error: error instanceof Error ? error.message : String(error),
+      adminId: req.user?.userId,
+    });
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 } 
