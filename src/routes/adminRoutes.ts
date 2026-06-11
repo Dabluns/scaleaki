@@ -43,6 +43,9 @@ router.delete('/users/:id', authorizeRoles(['admin']), validateUUID('id'), logAd
 router.post('/admins', authorizeRoles(['admin']), logAdminAction('create_admin'), adminController.createAdmin);
 
 // ===== ROTAS COMPARTILHADAS (admin + moderator) =====
+// Métricas de negócio (MRR / novos / churn / LTV)
+router.get('/metrics', logAdminAction('view_metrics'), adminController.getMetrics);
+
 // Storage Cleanup
 import * as cleanupController from '../controllers/cleanupController';
 router.post('/cleanup', logAdminAction('cleanup_storage'), cleanupController.runCleanup);
