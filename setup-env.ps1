@@ -12,7 +12,7 @@ if (-not (Test-Path ".env")) {
 DATABASE_URL="file:./admin.db"
 
 # JWT
-JWT_SECRET="Qw8!zP2@rT7vL6$kN9^bS4&xM1*eJ5%uH0adadfawrd34ef344"
+JWT_SECRET="CHANGE_ME_use_a_random_64_char_secret"
 
 # Redis (desabilitado para desenvolvimento local)
 ENABLE_REDIS=false
