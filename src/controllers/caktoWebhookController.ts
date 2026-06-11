@@ -146,6 +146,9 @@ export async function handleWebhook(req: Request, res: Response) {
       case 'subscription_renewed':
         await handleSubscriptionRenewed(event);
         break;
+      case 'subscription_renewal_refused':
+        await handleSubscriptionRenewalRefused(event);
+        break;
 
       // Eventos de reembolso e chargeback
       case 'refund':
@@ -615,6 +618,95 @@ async function handleSubscriptionRenewed(event: CaktoWebhookEvent) {
       dataId: event.data?.id,
     });
     throw error;
+  }
+}
+
+/**
+ * Handler para renovação recusada (subscription_renewal_refused) — DUNNING.
+ * Cartão recusado na recorrência. NÃO revoga acesso (grace period): a Cakto
+ * retenta o cartão automaticamente. Só avisa o cliente p/ atualizar o cartão.
+ * Se a Cakto esgotar as tentativas → dispara subscription_canceled → free.
+ */
+async function handleSubscriptionRenewalRefused(event: CaktoWebhookEvent) {
+  try {
+    const customerEmail = event.data.customer?.email;
+    const subscription = event.data.subscription;
+
+    if (!customerEmail) {
+      logger.warn('Customer email missing in subscription_renewal_refused webhook', {
+        dataId: event.data?.id,
+      });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: customerEmail } });
+    if (!user) {
+      logger.warn('User not found for renewal_refused webhook', { email: customerEmail });
+      return;
+    }
+
+    // Registrar tentativa de dunning na assinatura (sem mudar plano = grace period)
+    const subscriptionRecord = await prisma.subscription.findFirst({
+      where: {
+        OR: [
+          ...(subscription?.id ? [{ caktoSubscriptionId: subscription.id }] : []),
+          { caktoCustomerId: customerEmail },
+          { userId: user.id },
+        ],
+      },
+    });
+
+    let dunningCount = 1;
+    if (subscriptionRecord) {
+      const meta = subscriptionRecord.metadata ? JSON.parse(subscriptionRecord.metadata) : {};
+      dunningCount = (meta.dunningAttempts || 0) + 1;
+      await prisma.subscription.update({
+        where: { id: subscriptionRecord.id },
+        data: {
+          metadata: JSON.stringify({
+            ...meta,
+            dunningAttempts: dunningCount,
+            lastDunningAt: new Date().toISOString(),
+            caktoData: subscription || meta.caktoData,
+          }),
+        },
+      });
+    }
+
+    // Email de dunning — pedir atualização do cartão
+    try {
+      const { sendEmail } = require('../utils/email');
+      const updateUrl = process.env.DUNNING_UPDATE_URL || 'https://pay.cakto.com.br/xh83thw_917445';
+      const whats = process.env.SUPPORT_WHATSAPP || '5521959476313';
+      await sendEmail(
+        customerEmail,
+        '⚠️ Pagamento recusado — atualize seu cartão para manter o acesso',
+        `<div style="font-family: sans-serif; max-width: 600px;">
+            <h2>Seu pagamento foi recusado 💳</h2>
+            <p>Olá, <strong>${user.name}</strong>!</p>
+            <p>A cobrança da renovação da sua assinatura <strong>Scaleaki</strong> foi recusada pelo seu banco/cartão.</p>
+            <p><strong>Seu acesso continua ativo por enquanto</strong> — vamos tentar cobrar novamente nos próximos dias. Para não perder o acesso, atualize seu cartão agora:</p>
+            <a href="${updateUrl}" style="background-color: #22c55e; color: #000; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 12px 0;">Atualizar pagamento</a>
+            <p style="font-size: 13px; color: #666;">Se já atualizou ou pagou, ignore este e-mail.</p>
+            <p style="font-size: 13px; color: #666;">Precisa de ajuda? Fale com a gente no WhatsApp: <a href="https://api.whatsapp.com/send/?phone=${whats}">+55 21 95947-6313</a></p>
+          </div>`
+      );
+    } catch (err) {
+      logger.error('Falha ao enviar e-mail de dunning (renewal_refused)', err);
+    }
+
+    logger.info('Subscription renewal refused — dunning email sent', {
+      userId: user.id,
+      email: customerEmail,
+      dunningAttempt: dunningCount,
+    });
+  } catch (error: any) {
+    logger.error('Error handling subscription_renewal_refused webhook', {
+      error: error.message,
+      event: event.event,
+      dataId: event.data?.id,
+    });
+    // Não relança — não quebra o webhook
   }
 }
 
