@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Monitor de uptime self-hosted — roda via cron na VM Oracle (*/5 * * * *).
+ * Monitor de uptime self-hosted — roda via cron na VM Oracle (a cada 5 min).
  * Pinga api + app scaleaki. Alerta por email (Resend) só na MUDANÇA de estado
  * (down→alerta, up→recovery) p/ não spammar. Estado em ~/.scaleaki-monitor-state.json.
  *
