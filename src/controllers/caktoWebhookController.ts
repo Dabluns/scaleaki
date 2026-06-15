@@ -255,14 +255,10 @@ async function handlePurchaseApproved(event: CaktoWebhookEvent) {
         }
       });
 
-      try {
-        // Enviar os acessos gerados para o email desse cliente
-        const { sendEmail } = require('../utils/email');
-        const loginUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}`;
-        await sendEmail(
-          customerEmail,
-          'Bem-vindo ao Scaleaki! Seu acesso foi liberado.',
-          `<div style="font-family: sans-serif; max-width: 600px;">
+      // ── Enviar acesso ao cliente — GARANTIR ENTREGA (retry 3x + alerta admin) ──
+      const { sendEmail } = require('../utils/email');
+      const appUrl = process.env.FRONTEND_URL || 'https://app.scaleaki.site';
+      const welcomeHtml = `<div style="font-family: sans-serif; max-width: 600px;">
               <h2>Acesso Liberado! 🚀</h2>
               <p>Olá, <strong>${customerName}</strong>!</p>
               <p>O seu pagamento foi confirmado com sucesso e nós criamos sua conta no <strong>Scaleaki</strong> automaticamente.</p>
@@ -272,12 +268,52 @@ async function handlePurchaseApproved(event: CaktoWebhookEvent) {
                 <li><strong>Senha: </strong> ${tempPassword}</li>
               </ul>
               <br/>
-              <a href="${loginUrl}" style="background-color: #22c55e; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Fazer Login no Painel</a>
+              <a href="${appUrl}" style="background-color: #22c55e; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Fazer Login no Painel</a>
               <p style="font-size: 12px; color: #666; margin-top: 20px;">Por motivos de segurança, recomendamos que você altere sua senha nas configurações assim que acessar.</p>
-            </div>`
-        );
-      } catch (err) {
-        logger.error('Falha ao enviar e-mail de conta gerada por auto-checkout', err);
+            </div>`;
+
+      let emailOk = false;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await sendEmail(customerEmail, 'Bem-vindo ao Scaleaki! Seu acesso foi liberado.', welcomeHtml);
+          emailOk = true;
+          logger.info('E-mail de acesso enviado ao comprador', { email: customerEmail, attempt });
+          break;
+        } catch (err) {
+          logger.error(`Falha ao enviar e-mail de acesso (tentativa ${attempt}/3)`, {
+            email: customerEmail,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          if (attempt < 3) await new Promise((r) => setTimeout(r, 2000 * attempt));
+        }
+      }
+
+      // Se as 3 tentativas falharam, alerta o admin p/ entregar acesso manualmente
+      if (!emailOk) {
+        try {
+          const adminEmail = process.env.ADMIN_ALERT_EMAIL || 'andreyfreitadsd@gmail.com';
+          await sendEmail(
+            adminEmail,
+            `🚨 FALHA no e-mail de acesso — entregar manual: ${customerEmail}`,
+            `<div style="font-family: sans-serif; max-width: 600px;">
+                <h2>🚨 Comprador sem e-mail de acesso</h2>
+                <p>O e-mail de acesso para <strong>${customerEmail}</strong> FALHOU após 3 tentativas. Entregue manualmente:</p>
+                <ul style="background: #f4f4f4; padding: 20px; border-radius: 8px;">
+                  <li><strong>E-mail:</strong> ${customerEmail}</li>
+                  <li><strong>Senha provisória:</strong> ${tempPassword}</li>
+                  <li><strong>Login:</strong> ${appUrl}</li>
+                  <li><strong>Payment ID:</strong> ${paymentId}</li>
+                </ul>
+              </div>`
+          );
+          logger.warn('Alerta admin enviado: email de acesso ao cliente falhou', { customerEmail, adminEmail });
+        } catch (e2) {
+          logger.error('CRÍTICO: e-mail cliente E alerta admin falharam — comprador sem acesso entregue', {
+            email: customerEmail,
+            paymentId,
+            error: e2 instanceof Error ? e2.message : String(e2),
+          });
+        }
       }
     }
 
