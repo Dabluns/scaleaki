@@ -213,10 +213,11 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     userAgent: req.get('User-Agent')
   });
 
+  // Não vazar detalhes internos em produção (paths, libs, fragmentos de query)
+  const isDev = process.env.NODE_ENV === 'development';
   res.status(500).json({
     error: 'Internal Server Error',
-    message: err.message, // Mostrar sempre a mensagem real temporariamente para debugar a Render
-    stack: err.stack,
+    ...(isDev ? { message: err.message, stack: err.stack } : {}),
     timestamp: new Date().toISOString(),
   });
 });

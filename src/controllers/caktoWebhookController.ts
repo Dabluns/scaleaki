@@ -1,7 +1,20 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import logger from '../config/logger';
 import prisma from '../config/database';
 import { PaymentStatus, SubscriptionStatus, PaymentMethod, UserPlan } from '@prisma/client';
+
+/**
+ * Comparação de segredo em tempo constante (anti timing-attack).
+ * Retorna false se algum lado faltar ou tamanhos divergirem.
+ */
+function secretsMatch(received?: string, expected?: string): boolean {
+  if (!received || !expected) return false;
+  const a = Buffer.from(received);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
 
 interface CaktoCustomer {
   name: string;
@@ -95,20 +108,22 @@ export async function handleWebhook(req: Request, res: Response) {
     const event: CaktoWebhookEvent = req.body;
     const webhookSecret = process.env.CAKTO_WEBHOOK_SECRET || '';
 
-    // Validar secret do webhook (vem no body, não no header)
-    if (webhookSecret && event.secret) {
-      if (event.secret !== webhookSecret) {
-        logger.warn('Invalid webhook secret from Cakto', {
-          received: event.secret.substring(0, 10) + '...',
-          ip: req.ip,
-        });
-        return res.status(401).json({ error: 'Invalid secret' });
-      }
-    } else if (webhookSecret && !event.secret) {
-      logger.warn('Webhook secret missing in request body', {
+    // Fail-closed: sem secret configurado no servidor, NUNCA processar.
+    // Evita liberação/revogação de acesso por evento forjado se a env sumir.
+    if (!webhookSecret) {
+      logger.error('CAKTO_WEBHOOK_SECRET não configurado — rejeitando webhook', {
         ip: req.ip,
       });
-      return res.status(401).json({ error: 'Secret missing' });
+      return res.status(503).json({ error: 'Webhook not configured' });
+    }
+
+    // Validar secret do webhook (vem no body, não no header) em tempo constante
+    if (!secretsMatch(event.secret, webhookSecret)) {
+      logger.warn('Invalid or missing webhook secret from Cakto', {
+        hasSecret: Boolean(event.secret),
+        ip: req.ip,
+      });
+      return res.status(401).json({ error: 'Invalid secret' });
     }
 
     logger.info('Cakto webhook received', {
