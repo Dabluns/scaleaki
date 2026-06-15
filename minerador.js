@@ -4,7 +4,11 @@ const axios = require('axios');
 
 // Configure aqui a URL do seu backend e o Token Admin JWT que geramos antes
 const API_URL = process.env.API_URL || 'http://localhost:4000';
-const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMTA1ZTI3MC00ZmE5LTQyMDktOTFjOS0yNmI5OTVlZDhlMWEiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImZyZWl0YXNhbmRyZXkxNEBnbWFpbC5jb20iLCJpYXQiOjE3Nzk5MDMzMDcsImV4cCI6MTgxMTQzOTMwN30.Ewdtq_Lk5RZ8T6eW6j0EtesXSs66Ctn-GBmxpjSWHiQ';
+const JWT_TOKEN = process.env.ADMIN_JWT;
+if (!JWT_TOKEN) {
+  console.error('❌ ADMIN_JWT ausente. Defina no .env antes de rodar o minerador.');
+  process.exit(1);
+}
 
 async function startMiner() {
   console.log('🤖 Iniciando Minerador Local Stealth do Scaleaki...');
