@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 import { authorizeRoles } from '../middlewares/roleMiddleware';
+import { requireFeature } from '../middlewares/requireFeature';
 import { ofertasRateLimiter, heavyOperationRateLimiter } from '../middlewares/rateLimitMiddleware';
 import * as fbAdsController from '../controllers/fbAdsController';
 
@@ -11,7 +12,7 @@ const router = Router();
 // ─── Listagem e busca ─────────────────────────────────────────────────────────
 router.get('/', authenticateJWT, ofertasRateLimiter, fbAdsController.listAnuncios);
 router.post('/search', authenticateJWT, heavyOperationRateLimiter, fbAdsController.liveSearch);
-router.post('/user-save', fbAdsController.saveAdFromUser);
+router.post('/user-save', authenticateJWT, requireFeature('extension_garimpo'), fbAdsController.saveAdFromUser);
 
 // ─── Rotas de admin (estáticas) ───────────────────────────────────────────────
 router.post('/sync', authenticateJWT, authorizeRoles(['admin']), heavyOperationRateLimiter, fbAdsController.syncAds);

@@ -5,6 +5,7 @@ import { scanFunnel } from '../services/urlscan.service';
 import logger from '../config/logger';
 import { applyFreemium } from '../utils/freemium';
 import { hasPaidAccess } from '../utils/access';
+import { countGarimposToday, recordGarimpo } from '../utils/dailyGarimpo';
 
 /** Carrega user + subscription pra decisão de entitlement. */
 async function loadFreemiumUser(userId: string) {
@@ -141,9 +142,27 @@ export async function saveAdFromUser(req: Request, res: Response) {
       return res.status(400).json({ error: 'Dados do anúncio inválidos ou faltando fbAdId.' });
     }
 
-    // Aqui podemos futuramente associar ao userId. Por enquanto salva globalmente.
-    // const authReq = req as any;
-    // const userId = authReq.user?.id;
+    const authReq = req as any;
+    const userId: string | undefined = authReq.user?.userId;
+    const featureLimit: number | null = authReq.featureLimit ?? null; // null = ilimitado (pago/admin)
+
+    // Cota diária de garimpo para free. Re-garimpar anúncio já salvo não consome cota.
+    if (userId && featureLimit !== null) {
+      const jaGarimpado = await prisma.garimpoLog.findUnique({
+        where: { userId_fbAdId: { userId, fbAdId: ad.fbAdId } },
+      });
+      if (!jaGarimpado) {
+        const usadosHoje = await countGarimposToday(userId);
+        if (usadosHoje >= featureLimit) {
+          return res.status(403).json({
+            error: 'garimpo_limit_reached',
+            limit: featureLimit,
+            used: usadosHoje,
+            message: `Você atingiu o limite de ${featureLimit} garimpos por dia do plano Free. Assine para garimpar sem limite.`,
+          });
+        }
+      }
+    }
 
     const duplicatas = ad.duplicatas || 1;
     const deliveryStartTime = ad.deliveryStartTime ? new Date(ad.deliveryStartTime) : new Date();
@@ -167,11 +186,16 @@ export async function saveAdFromUser(req: Request, res: Response) {
     };
 
     const existing = await prisma.anuncioFacebook.findUnique({ where: { fbAdId: ad.fbAdId } });
-    
+
     if (existing) {
       await prisma.anuncioFacebook.update({ where: { fbAdId: ad.fbAdId }, data });
     } else {
       await prisma.anuncioFacebook.create({ data: { fbAdId: ad.fbAdId, ...data } });
+    }
+
+    // Registra o garimpo para a cota diária (idempotente por usuário+anúncio).
+    if (userId) {
+      await recordGarimpo(userId, ad.fbAdId);
     }
 
     res.json({ success: true, message: 'Anúncio salvo com sucesso no Scaleaki.' });
