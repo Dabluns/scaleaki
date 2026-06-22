@@ -8,7 +8,7 @@ interface User {
   email: string;
   name: string;
   role: 'admin' | 'moderator' | 'user';
-  plan: 'free' | 'basic' | 'premium' | 'enterprise';
+  plan: 'free' | 'mensal' | 'trimestral' | 'anual';
   isActive: boolean;
 }
 
