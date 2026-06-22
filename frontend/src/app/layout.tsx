@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { AuthProvider } from '@/context/AuthContext';
+import { AccessProvider } from '@/context/AccessContext';
 import { SearchProvider } from '@/context/SearchContext';
 import { ToastProvider } from '@/components/ui/Toast';
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -35,7 +36,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Skaleaki — Ofertas Facebook Ads',
+  title: 'Scaleaki — Ofertas Facebook Ads',
   description: 'Acesse, copie e baixe as melhores ofertas de Facebook Ads com inteligência artificial',
 };
 
@@ -77,11 +78,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <SettingsProvider>
             <AuthProvider>
-              <ToastProvider>
-                <SearchProvider>
-                  {children}
-                </SearchProvider>
-              </ToastProvider>
+              <AccessProvider>
+                <ToastProvider>
+                  <SearchProvider>
+                    {children}
+                  </SearchProvider>
+                </ToastProvider>
+              </AccessProvider>
             </AuthProvider>
           </SettingsProvider>
         </ThemeProvider>

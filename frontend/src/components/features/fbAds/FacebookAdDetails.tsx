@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { AnuncioFacebook, calcDaysOnAir, formatLikes } from '@/hooks/useFacebookAds';
 import { FunnelAnalysisTab } from './FunnelAnalysisTab';
+import FeatureGate from '@/components/ui/FeatureGate';
 
 interface FacebookAdDetailsProps {
   anuncioId: string;
@@ -360,14 +361,16 @@ export function FacebookAdDetails({ anuncioId, onClose, onFunnelScan, fetchById 
                     exit={{ opacity: 0, x: 20 }}
                     className="p-8"
                   >
-                    <FunnelAnalysisTab
-                      anuncio={anuncio}
-                      onScanFunnel={() => onFunnelScan(anuncio.id)}
-                      onRefresh={async () => {
-                        const updated = await fetchById(anuncio.id);
-                        if (updated) setAnuncio(updated);
-                      }}
-                    />
+                    <FeatureGate feature="trafego_funil">
+                      <FunnelAnalysisTab
+                        anuncio={anuncio}
+                        onScanFunnel={() => onFunnelScan(anuncio.id)}
+                        onRefresh={async () => {
+                          const updated = await fetchById(anuncio.id);
+                          if (updated) setAnuncio(updated);
+                        }}
+                      />
+                    </FeatureGate>
                   </motion.div>
                 )}
               </AnimatePresence>
