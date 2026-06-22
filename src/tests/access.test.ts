@@ -1,4 +1,4 @@
-import { hasPaidAccess } from '../utils/access';
+import { hasPaidAccess, resolveTier } from '../utils/access';
 
 const base = { role: 'user', plan: 'mensal', subscription: { status: 'active', endDate: new Date(Date.now() + 86400000) } };
 
@@ -20,5 +20,26 @@ describe('hasPaidAccess', () => {
   });
   it('endDate null + status active = true (sem expiração)', () => {
     expect(hasPaidAccess({ ...base, subscription: { status: 'active', endDate: null } } as any)).toBe(true);
+  });
+});
+
+describe('resolveTier', () => {
+  it('admin → plus', () => {
+    expect(resolveTier({ role: 'admin', plan: 'free', subscription: null } as any)).toBe('plus');
+  });
+  it('sem assinatura paga → free (ignora tier salvo)', () => {
+    expect(resolveTier({ role: 'user', plan: 'free', tier: 'plus', subscription: null } as any)).toBe('free');
+  });
+  it('pago sem tier salvo → basico', () => {
+    expect(resolveTier({ ...base } as any)).toBe('basico');
+  });
+  it('pago com tier basico → basico', () => {
+    expect(resolveTier({ ...base, tier: 'basico' } as any)).toBe('basico');
+  });
+  it('pago com tier plus → plus', () => {
+    expect(resolveTier({ ...base, tier: 'plus' } as any)).toBe('plus');
+  });
+  it('assinatura expirada → free mesmo com tier plus', () => {
+    expect(resolveTier({ ...base, tier: 'plus', subscription: { status: 'active', endDate: new Date(Date.now() - 1000) } } as any)).toBe('free');
   });
 });

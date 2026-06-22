@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import prisma from '../config/database';
 import logger from '../config/logger';
-import { hasPaidAccess } from '../utils/access';
+import { hasPaidAccess, resolveTier } from '../utils/access';
 import { countViewsToday, DAILY_FREE_LIMIT } from '../utils/dailyViews';
 import { buildAccessMap } from '../config/featureAccess';
 
@@ -17,15 +17,17 @@ export async function getAccess(req: AuthRequest, res: Response) {
     if (!user) return res.status(404).json({ error: 'user_not_found' });
 
     const paid = hasPaidAccess(user as any);
+    const tier = resolveTier(user as any);
     const used = paid ? 0 : await countViewsToday(req.user.userId);
 
     return res.json({
-      tier: user.plan,
+      tier,
+      plan: user.plan,
       paid,
       dailyViewsUsed: used,
       dailyViewsLimit: paid ? null : DAILY_FREE_LIMIT,
       subscriptionEndDate: user.subscription?.endDate ?? null,
-      features: buildAccessMap(paid),
+      features: buildAccessMap(tier),
     });
   } catch (error: any) {
     logger.error('[Account] Erro ao buscar acesso:', error);
