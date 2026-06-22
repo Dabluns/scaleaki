@@ -26,6 +26,10 @@ export default function FeatureGate({ feature, children, blur = true }: Props) {
   const access = can(feature);
   if (access.allowed) return <>{children}</>;
 
+  const isPlus = access.requiredTier === 'plus';
+  const href = isPlus ? '/upgrade' : '/checkout';
+  const cta = isPlus ? 'Conhecer o Scaleaki+' : 'Liberar acesso';
+
   return (
     <div className="relative rounded-xl overflow-hidden">
       {blur && (
@@ -34,13 +38,22 @@ export default function FeatureGate({ feature, children, blur = true }: Props) {
         </div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm p-6 text-center">
-        <span className="text-3xl">🔒</span>
+        <span className="text-3xl">{isPlus ? '⚡' : '🔒'}</span>
+        {isPlus && (
+          <span className="rounded-full bg-[#a855f7]/15 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#c084fc]">
+            Scaleaki+
+          </span>
+        )}
         <p className="text-sm text-white/80 max-w-xs">{access.upsell}</p>
         <Link
-          href="/checkout"
-          className="rounded-lg bg-[#22c55e] px-5 py-2 text-sm font-extrabold uppercase text-black transition hover:bg-[#4ade80]"
+          href={href}
+          className={`rounded-lg px-5 py-2 text-sm font-extrabold uppercase transition ${
+            isPlus
+              ? 'bg-[#a855f7] text-white hover:bg-[#c084fc]'
+              : 'bg-[#22c55e] text-black hover:bg-[#4ade80]'
+          }`}
         >
-          Liberar acesso
+          {cta}
         </Link>
       </div>
     </div>

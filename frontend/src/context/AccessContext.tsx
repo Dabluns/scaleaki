@@ -10,7 +10,7 @@ type AccessState = {
   can: (feature: FeatureKey) => FeatureAccess;
 };
 
-const FALLBACK: FeatureAccess = { allowed: false, limit: 0, upsell: 'Recurso indisponível.' };
+const FALLBACK: FeatureAccess = { allowed: false, limit: 0, upsell: 'Recurso indisponível.', requiredTier: 'plus' };
 
 const AccessContext = createContext<AccessState | undefined>(undefined);
 

@@ -19,14 +19,18 @@ export type FeatureKey =
   | 'criativo_preaprovador'
   | 'trafego_funil';
 
+export type PlanTier = 'free' | 'basico' | 'plus';
+
 export type FeatureAccess = {
   allowed: boolean;
   limit: number | null;
   upsell: string;
+  requiredTier: PlanTier;
 };
 
 export type AccessResponse = {
-  tier: 'free' | 'mensal' | 'trimestral' | 'anual';
+  tier: PlanTier;
+  plan: 'free' | 'mensal' | 'trimestral' | 'anual';
   paid: boolean;
   dailyViewsUsed: number;
   dailyViewsLimit: number | null;
