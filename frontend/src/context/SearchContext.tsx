@@ -4,6 +4,14 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 import { Oferta } from '@/types/oferta';
 import { Nicho } from '@/types/nicho';
 
+/** Normaliza texto para busca: lowercase + remove acentos. */
+function normalizeText(value: string): string {
+  return (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, "");
+}
+
 interface SearchContextType {
   // Busca de ofertas (Header)
   ofertasSearchTerm: string;

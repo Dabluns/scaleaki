@@ -36,7 +36,7 @@ interface OfertaContextType {
     hasPrev: boolean;
   } | null;
   fetchDashboardData: () => Promise<void>;
-  criarOferta: (oferta: Omit<Oferta, 'id'>) => Promise<boolean>;
+  criarOferta: (oferta: Omit<Oferta, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>;
   editarOferta: (oferta: Oferta) => Promise<boolean>;
   removerOferta: (id: string) => Promise<boolean>;
 }
@@ -123,7 +123,7 @@ export function OfertaProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const criarOferta = useCallback(async (oferta: Omit<Oferta, 'id'>) => {
+  const criarOferta = useCallback(async (oferta: Omit<Oferta, 'id' | 'createdAt' | 'updatedAt'>) => {
     setErro('');
     console.log('Tentando criar oferta:', oferta);
     try {

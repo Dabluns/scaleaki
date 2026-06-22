@@ -6,7 +6,7 @@ import clsx from 'clsx';
 interface SkeletonCardProps {
   shimmer?: boolean;
   gradient?: boolean;
-  pulseColor?: 'green' | 'purple' | 'cyan' | 'orange';
+  pulseColor?: 'green' | 'emerald' | 'cyan' | 'dark' | 'purple' | 'orange';
   className?: string;
   lines?: number;
 }
@@ -23,6 +23,8 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
     emerald: 'bg-emerald-500/20',
     cyan: 'bg-cyan-500/20',
     dark: 'bg-black/40',
+    purple: 'bg-purple-500/20',
+    orange: 'bg-orange-500/20',
   };
 
   return (

@@ -6,9 +6,17 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   title?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function Modal({ isOpen, onClose, children, title }: ModalProps) {
+const sizeClasses: Record<NonNullable<ModalProps['size']>, string> = {
+  sm: 'max-w-md',
+  md: 'max-w-2xl',
+  lg: 'max-w-3xl',
+  xl: 'max-w-5xl',
+};
+
+export function Modal({ isOpen, onClose, children, title, size = 'md' }: ModalProps) {
   // Prevenir scroll do body quando modal estiver aberto
   useEffect(() => {
     if (isOpen) {
@@ -50,7 +58,7 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
       />
       
       {/* Modal */}
-      <div className="relative bg-surface rounded-lg shadow-2xl w-full max-w-2xl mx-auto max-h-[90vh] overflow-hidden hover-lift border border-border">
+      <div className={`relative bg-surface rounded-lg shadow-2xl w-full ${sizeClasses[size]} mx-auto max-h-[90vh] overflow-hidden hover-lift border border-border`}>
         {/* Header */}
         <div className="relative h-48 bg-gradient-to-r from-surface-secondary to-surface-hover dark:from-gray-800 dark:to-gray-700 overflow-hidden">
           {/* Background Image/Video Frame */}

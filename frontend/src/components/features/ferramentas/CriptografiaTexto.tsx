@@ -179,6 +179,20 @@ export function CriptografiaTexto() {
     setTimeout(() => setCryptoCopied(false), 2000);
   };
 
+  const downloadCryptoText = () => {
+    const textToDownload = cryptoMode === 'obfuscate' ? obfuscatedText : deobfuscatedText;
+    if (!textToDownload) return;
+    const blob = new Blob([textToDownload], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = cryptoMode === 'obfuscate' ? 'matriz-ofuscada.txt' : 'matriz-decodificada.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const clearInput = () => {
     setTextInput('');
     setTextFile(null);

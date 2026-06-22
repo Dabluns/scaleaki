@@ -17,6 +17,7 @@ import { FavoritoButton } from './FavoritoButton';
 import { useSettings } from '@/context/SettingsContext';
 import { ConfirmDeleteModal } from '@/components/ui/ConfirmDeleteModal';
 import { OfertaCard } from './OfertaCard';
+import { ImageParallax } from '@/components/ui/ImageParallax';
 
 interface OfertasListProps {
   ofertas: Oferta[];
@@ -24,7 +25,6 @@ interface OfertasListProps {
   onEditOferta?: (oferta: Oferta) => void;
   onDeleteOferta?: (ofertaId: string) => void;
   getNichoName: (nichoId: string) => string;
-  getBadgeColor: (type: string, value: string) => string;
 }
 
 const OfertaItem = ({
@@ -33,7 +33,6 @@ const OfertaItem = ({
   onEditOferta,
   onDeleteOferta,
   getNichoName,
-  getBadgeColor
 }: OfertasListProps & { oferta: Oferta }) => {
   const { settings } = useSettings();
   const [imageError, setImageError] = useState(false);
@@ -560,7 +559,6 @@ export function OfertasList({
   onEditOferta,
   onDeleteOferta,
   getNichoName,
-  getBadgeColor
 }: OfertasListProps) {
   const { settings } = useSettings();
   const defaultPageSize = Math.max(10, Math.min(100, Number((settings as any)?.itemsPerPage) || 25));

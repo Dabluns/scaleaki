@@ -12,9 +12,9 @@ export const TestComponents: React.FC = () => {
       <Card3D variant="elevated" className="p-6">
         <h2 className="text-xl font-semibold mb-4">Botões</h2>
         <div className="flex flex-wrap gap-4">
-          <Button variant="default">Botão Padrão</Button>
+          <Button variant="primary">Botão Padrão</Button>
           <Button variant="gradient">Botão Gradiente</Button>
-          <Button variant="default" hasRipple>Com Ripple</Button>
+          <Button variant="primary" hasRipple>Com Ripple</Button>
           <Button variant="gradient" hasGlow>Com Glow</Button>
         </div>
       </Card3D>

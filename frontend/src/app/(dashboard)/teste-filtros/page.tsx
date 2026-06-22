@@ -21,8 +21,8 @@ export default function TesteFiltrosPage() {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Teste de Filtros Avançados</h1>
       
-      <OfertasFilters 
-        onFilterChange={handleFilterChange}
+      <OfertasFilters
+        onFiltersChange={handleFilterChange}
         nichos={nichosMock}
       />
       
