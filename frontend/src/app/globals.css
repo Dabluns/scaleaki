@@ -130,7 +130,7 @@
   --foreground: #86efac;
   /* verde claro para foreground */
 
-  /* Accent — @dev (Fix-HP-003): Unificado para identidade verde/ciano do Skaleaki */
+  /* Accent — @dev (Fix-HP-003): Unificado para identidade verde/ciano do Scaleaki */
   /* Magenta (#ff00ff) removido do :root — conflitava com identidade verde principal */
   /* Mantém ciano como cor de destaque secundária (cyberpunk sem perder coerência) */
   --accent: #22c55e;

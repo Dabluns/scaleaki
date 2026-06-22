@@ -61,7 +61,7 @@ export default function PerfilSettingsPage() {
               </h1>
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-10 pt-6">
                 <p className="text-[12px] font-bold text-white/30 uppercase tracking-[0.3em] italic max-w-md">
-                  Gerenciamento de credenciais biográficas e integridade de acesso ao ecossistema Skaleaki.
+                  Gerenciamento de credenciais biográficas e integridade de acesso ao ecossistema Scaleaki.
                 </p>
                 <div className="hidden sm:block w-px h-10 bg-white/10" />
                 <div className="flex flex-col">
@@ -138,7 +138,7 @@ export default function PerfilSettingsPage() {
               <div className="space-y-4">
                 <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">Proteção_de_Identidade</h3>
                 <p className="text-[12px] font-bold text-white/20 uppercase tracking-tight italic leading-relaxed">
-                  Seu perfil está vinculado a uma conta Skaleaki Alpha. Certifique-se de manter seus dados atualizados para garantir a recepção de alertas de bot e logs do sistema.
+                  Seu perfil está vinculado a uma conta Scaleaki Alpha. Certifique-se de manter seus dados atualizados para garantir a recepção de alertas de bot e logs do sistema.
                 </p>
               </div>
 

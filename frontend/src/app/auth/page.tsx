@@ -10,6 +10,7 @@ import { ShieldCheck, Mail, Lock, ArrowRight, Zap, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { Spotlight } from '@/components/ui/Spotlight';
+import { ScaleakiLogo } from '@/components/ui/ScaleakiLogo';
 
 // ─────────────────────────────────────────────────────────────────
 // @ux-design-expert (Uma) · Premium AuthPage v2.0
@@ -117,6 +118,8 @@ function AuthPageContent() {
           animate={{ opacity: 1, x: 0 }}
           className="hidden lg:flex flex-col gap-10"
         >
+          <ScaleakiLogo size={56} showText />
+
           <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full w-fit">
             <ShieldCheck className="w-4 h-4 text-green-500" />
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Portal de Comando Seguro</span>
@@ -159,8 +162,8 @@ function AuthPageContent() {
             has3DRotation
             className="relative p-10 md:p-14 bg-[#0d0d0d] border-white/5 rounded-[3rem] overflow-hidden shadow-2xl"
           >
-            <div className="mb-10 lg:hidden">
-              <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter">scaleaki</h1>
+            <div className="mb-10 lg:hidden flex justify-center">
+              <ScaleakiLogo size={48} showText />
             </div>
 
             <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-8 italic">LOGIN OPERACIONAL</h2>

@@ -59,7 +59,7 @@ export const HomeBanner: React.FC = () => {
 
           {/* Subtext Refinado */}
           <p className="max-w-2xl text-sm md:text-base text-white/40 font-medium leading-relaxed mb-8 animate-fade-in animation-delay-500">
-            O Skaleaki utiliza tecnologia proprietária para filtrar e processar as ofertas que estão
+            O Scaleaki utiliza tecnologia proprietária para filtrar e processar as ofertas que estão
             <span className="text-white/80 font-bold"> dominando o Facebook Ads em tempo real.</span>
             A mineração de dados nunca foi tão visual e eficiente.
           </p>

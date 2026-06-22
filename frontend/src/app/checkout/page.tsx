@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card3D } from '@/components/ui/Card3D';
+import { ScaleakiLogo } from '@/components/ui/ScaleakiLogo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
@@ -237,6 +239,31 @@ function CheckoutPageContent() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Brand */}
+        <div className="mb-6 flex justify-center sm:justify-start">
+          <ScaleakiLogo size={44} showText />
+        </div>
+
+        {/* Brand Banner */}
+        <div className="mb-8">
+          <Image
+            src="/branding/banner-checkout.png"
+            alt="Scaleaki Checkout"
+            width={2640}
+            height={1488}
+            priority
+            className="hidden sm:block w-full h-auto rounded-3xl border border-white/10"
+          />
+          <Image
+            src="/branding/banner-checkout-mobile.png"
+            alt="Scaleaki Checkout"
+            width={2241}
+            height={2640}
+            priority
+            className="sm:hidden w-full h-44 object-cover object-center rounded-3xl border border-white/10"
+          />
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <button

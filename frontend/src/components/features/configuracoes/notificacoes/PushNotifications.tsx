@@ -108,7 +108,7 @@ export default function PushNotifications() {
               </div>
             </div>
             <p className="text-[11px] font-bold text-white/20 uppercase italic tracking-widest leading-relaxed ml-4">
-              As notificações push permitem que o Skaleaki envie alertas críticos diretamente para o seu sistema operacional, mesmo com o navegador minimizado.
+              As notificações push permitem que o Scaleaki envie alertas críticos diretamente para o seu sistema operacional, mesmo com o navegador minimizado.
             </p>
           </div>
 

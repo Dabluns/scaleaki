@@ -238,7 +238,7 @@ export default function ProfileForm() {
           </div>
           <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">Avatar de Operação</h3>
           <p className="text-[11px] font-bold text-white/20 uppercase tracking-widest italic leading-relaxed max-w-sm">
-            Sua imagem de identificação no ecossistema Skaleaki. Recomenda-se o uso de ativos em alta resolução (PNG/JPG).
+            Sua imagem de identificação no ecossistema Scaleaki. Recomenda-se o uso de ativos em alta resolução (PNG/JPG).
           </p>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
         </div>

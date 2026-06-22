@@ -83,7 +83,7 @@ export const InfiniteScrollIndicator: React.FC<InfiniteScrollIndicatorProps> = (
             </div>
             <div className="mt-4 flex justify-between items-center opacity-20">
               <span className="text-[8px] font-black uppercase tracking-widest text-white">Status: 100% Synced</span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-white">Protocol Skaleaki v4.0</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-white">Protocol Scaleaki v4.0</span>
             </div>
           </div>
         )}

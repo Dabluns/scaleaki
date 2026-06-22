@@ -111,7 +111,7 @@ export default function DashboardPage() {
         {/* Footer Filler */}
         <div className="mt-32 flex flex-col items-center">
           <div className="h-20 w-[1px] bg-gradient-to-b from-green-500/50 to-transparent mb-8" />
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10">Skaleaki Intelligence Systems © 2026</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10">Scaleaki Intelligence Systems © 2026</p>
         </div>
       </div>
     </div>
