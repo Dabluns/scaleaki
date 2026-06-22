@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useOfertaContext } from '@/context/OfertaContext';
+import { Oferta } from '@/types/oferta';
 import { useNichos } from '@/context/NichoContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -33,8 +34,8 @@ export function CriarOfertaRapida({ isOpen, onClose, onSuccess }: CriarOfertaRap
     titulo: '',
     texto: '',
     nichoId: '',
-    plataforma: 'facebook_ads',
-    linguagem: 'pt_BR',
+    plataforma: 'facebook_ads' as Oferta['plataforma'],
+    linguagem: 'pt_BR' as Oferta['linguagem'],
     links: [''],
     vsl: '',
     imagem: ''

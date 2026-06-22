@@ -34,7 +34,7 @@ interface OfertaFormData {
   imagem: string;
   texto: string;
   nichoId: string;
-  linguagem: string;
+  linguagem: 'pt_BR' | 'en_US' | 'es_ES' | 'fr_FR';
   links: string[];
   metricas: string;
   vsl: string;
@@ -52,8 +52,8 @@ interface FormErrors {
 }
 
 const LINGUAGENS = [
-  { value: 'pt-BR', label: 'Português (BR)' },
-  { value: 'en-US', label: 'Inglês (US)' },
+  { value: 'pt_BR', label: 'Português (BR)' },
+  { value: 'en_US', label: 'Inglês (US)' },
   { value: 'es-ES', label: 'Espanhol (ES)' },
   { value: 'fr-FR', label: 'Francês (FR)' },
   { value: 'de-DE', label: 'Alemão (DE)' },
@@ -69,7 +69,7 @@ export default function OfertasAdmin() {
     imagem: '',
     texto: '',
     nichoId: '',
-    linguagem: 'pt-BR',
+    linguagem: 'pt_BR',
     links: [''],
     metricas: '',
     vsl: ''
@@ -143,7 +143,7 @@ export default function OfertasAdmin() {
         imagem: '',
         texto: '',
         nichoId: nichos[0]?.id || '',
-        linguagem: 'pt-BR',
+        linguagem: 'pt_BR',
         links: [''],
         metricas: '',
         vsl: ''
@@ -168,7 +168,13 @@ export default function OfertasAdmin() {
         await editarOferta({ ...editingOferta, ...ofertaData });
         toast.showToast('Oferta atualizada com sucesso!');
       } else {
-        await criarOferta(ofertaData);
+        await criarOferta({
+          plataforma: 'facebook_ads',
+          tipoOferta: 'ecommerce',
+          status: 'ativa',
+          isActive: true,
+          ...ofertaData,
+        });
         toast.showToast('Oferta criada com sucesso!');
       }
       
@@ -244,8 +250,8 @@ export default function OfertasAdmin() {
              if (sortBy === 'titulo') {
          comparison = a.titulo.localeCompare(b.titulo);
        } else {
-         const dateA = new Date(a.data || a.createdAt || '').getTime();
-         const dateB = new Date(b.data || b.createdAt || '').getTime();
+         const dateA = new Date(a.createdAt || '').getTime();
+         const dateB = new Date(b.createdAt || '').getTime();
          comparison = dateA - dateB;
        }
       
@@ -523,7 +529,7 @@ export default function OfertasAdmin() {
                   </label>
                   <select
                     value={formData.linguagem}
-                    onChange={(e) => setFormData(prev => ({ ...prev, linguagem: e.target.value }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, linguagem: e.target.value as OfertaFormData['linguagem'] }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     {LINGUAGENS.map(lang => (

@@ -62,7 +62,7 @@ export function GerenciadorMetadados() {
         reviveValues: true,
         sanitize: true,
         mergeOutput: true,
-      });
+      } as any);
 
       setMetadata(metadataResult || {});
     } catch (err) {
