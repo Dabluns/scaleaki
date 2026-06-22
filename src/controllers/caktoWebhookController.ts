@@ -439,7 +439,7 @@ async function handlePurchaseApproved(event: CaktoWebhookEvent) {
       // Atualizar plano do usuário
       await prisma.user.update({
         where: { id: user.id },
-        data: { plan: subscriptionRecord.plan },
+        data: { plan: subscriptionRecord.plan, tier: determineTierFromEvent(event) },
       });
 
       // Atualizar payment com subscriptionId
@@ -520,7 +520,7 @@ async function handleSubscriptionCanceled(event: CaktoWebhookEvent) {
     // Rebaixar plano do usuário para free
     await prisma.user.update({
       where: { id: subscriptionRecord.userId },
-      data: { plan: 'free' },
+      data: { plan: 'free', tier: 'free' },
     });
 
     logger.info('Subscription cancelled from webhook', {
@@ -652,7 +652,7 @@ async function handleSubscriptionRenewed(event: CaktoWebhookEvent) {
     if (subscription.status === 'active' && user.plan !== subscriptionRecord.plan) {
       await prisma.user.update({
         where: { id: user.id },
-        data: { plan: subscriptionRecord.plan },
+        data: { plan: subscriptionRecord.plan, tier: determineTierFromEvent(event) },
       });
     }
 
@@ -1289,7 +1289,7 @@ async function handlePurchaseRefused(event: CaktoWebhookEvent) {
         // Rebaixar plano do usuário
         await prisma.user.update({
           where: { id: user.id },
-          data: { plan: 'free' },
+          data: { plan: 'free', tier: 'free' },
         });
       }
 
@@ -1382,7 +1382,7 @@ async function handleRefund(event: CaktoWebhookEvent) {
         // Rebaixar plano do usuário
         await prisma.user.update({
           where: { id: user.id },
-          data: { plan: 'free' },
+          data: { plan: 'free', tier: 'free' },
         });
       }
 
@@ -1476,7 +1476,7 @@ async function handleChargeback(event: CaktoWebhookEvent) {
         // Rebaixar plano do usuário
         await prisma.user.update({
           where: { id: user.id },
-          data: { plan: 'free' },
+          data: { plan: 'free', tier: 'free' },
         });
       }
 
@@ -1519,4 +1519,24 @@ async function determinePlanFromAmount(amountInCents: number): Promise<UserPlan>
   }
 
   return UserPlan.mensal; // Mensal (R$84 ou R$71 com desconto)
+}
+
+/**
+ * Determina o tier de PRODUTO (escada de acesso) a partir do payload Cakto.
+ * Plus é identificado por product.id ou offer.id na env CAKTO_PLUS_PRODUCT_IDS
+ * (lista separada por vírgula). Qualquer outra compra paga = básico.
+ */
+function determineTierFromEvent(event: CaktoWebhookEvent): 'basico' | 'plus' {
+  const plusIds = (process.env.CAKTO_PLUS_PRODUCT_IDS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (plusIds.length === 0) return 'basico';
+
+  const productId = event.data.product?.id;
+  const offerId = event.data.offer?.id;
+  if ((productId && plusIds.includes(productId)) || (offerId && plusIds.includes(offerId))) {
+    return 'plus';
+  }
+  return 'basico';
 }
