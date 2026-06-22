@@ -4,6 +4,7 @@ import prisma from '../config/database';
 import logger from '../config/logger';
 import { hasPaidAccess } from '../utils/access';
 import { countViewsToday, DAILY_FREE_LIMIT } from '../utils/dailyViews';
+import { buildAccessMap } from '../config/featureAccess';
 
 /** Status de acesso/entitlement do usuário — consumido pelo frontend (paywall/contador/CTA). */
 export async function getAccess(req: AuthRequest, res: Response) {
@@ -24,6 +25,7 @@ export async function getAccess(req: AuthRequest, res: Response) {
       dailyViewsUsed: used,
       dailyViewsLimit: paid ? null : DAILY_FREE_LIMIT,
       subscriptionEndDate: user.subscription?.endDate ?? null,
+      features: buildAccessMap(paid),
     });
   } catch (error: any) {
     logger.error('[Account] Erro ao buscar acesso:', error);
