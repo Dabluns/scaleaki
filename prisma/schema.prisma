@@ -42,6 +42,7 @@ model User {
   favoritos                Favorito[]
   ofertaViews              OfertaView[]
   anuncioViews             AnuncioView[]
+  garimpoLogs              GarimpoLog[]
   payments                 Payment[]
   subscription             Subscription?
   profile                  UserProfile?
@@ -162,6 +163,17 @@ model AnuncioView {
 
   @@unique([userId, anuncioId])
   @@index([userId, viewedAt])
+}
+
+model GarimpoLog {
+  id          String   @id @default(uuid())
+  userId      String
+  fbAdId      String
+  garimpedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fbAdId])
+  @@index([userId, garimpedAt])
 }
 
 model UserSettings {

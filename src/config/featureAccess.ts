@@ -17,7 +17,8 @@ export type FeatureKey =
   | 'marketplace_shein'
   | 'adspy_youtube'
   | 'adspy_tiktok'
-  | 'criativo_preaprovador';
+  | 'criativo_preaprovador'
+  | 'trafego_funil';
 
 export interface FeatureRule {
   /** Free tem algum acesso? */
@@ -46,6 +47,7 @@ export const FEATURE_RULES: Record<FeatureKey, FeatureRule> = {
   adspy_youtube:             { freeAllowed: false, freeLimit: 0,    upsell: 'Anúncios escalados do YouTube são exclusivos do plano pago.' },
   adspy_tiktok:              { freeAllowed: false, freeLimit: 0,    upsell: 'Anúncios escalados do TikTok são exclusivos do plano pago.' },
   criativo_preaprovador:     { freeAllowed: false, freeLimit: 0,    upsell: 'O Pré-aprovador de Criativo é exclusivo do plano pago.' },
+  trafego_funil:             { freeAllowed: false, freeLimit: 0,    upsell: 'A análise de funil e tráfego é exclusiva do plano pago.' },
 };
 
 /** Resolve, para um user, o acesso a uma feature. */
