@@ -132,6 +132,58 @@ export async function scanFunnel(fbAdId: string, destinationUrl: string): Promis
   }
 }
 
+export interface FunnelScanResult {
+  uuid: string;
+  checkout: string | null;
+  tecnologia: string | null;
+  activePixels: string[];
+  subdomains: string[];
+  externalServices: string[];
+  screenshot: string;
+  redirectChain: string[];
+}
+
+/**
+ * Versão genérica do scanFunnel: roda o scan para uma URL arbitrária e
+ * RETORNA os dados extraídos (sem gravar em AnuncioFacebook). Usado pela
+ * feature de Tráfego & Funil do Scaleaki+. Reusa todos os detectores.
+ */
+export async function scanUrl(targetUrl: string): Promise<FunnelScanResult> {
+  if (!API_KEY) throw new Error('URLSCAN_API_KEY não configurada');
+  if (!targetUrl) throw new Error('URL vazia');
+
+  const submitRes = await axios.post(
+    `${URLSCAN_API}/scan/`,
+    { url: targetUrl, visibility: 'unlisted' },
+    { headers: { 'API-Key': API_KEY, 'Content-Type': 'application/json' } }
+  );
+  const uuid: string = submitRes.data.uuid;
+
+  const result = await pollResult(uuid);
+  if (!result) throw new Error('Timeout esperando resultado do URLscan');
+
+  const requests: string[] = (result.data?.requests || [])
+    .map((r: any) => r.request?.request?.url || '')
+    .filter(Boolean);
+  const domains: string[] = extractDomains(result, requests);
+
+  const redirectChain: string[] = (result.data?.requests || [])
+    .map((r: any) => r.response?.response?.redirectURL || '')
+    .filter(Boolean)
+    .slice(0, 20);
+
+  return {
+    uuid,
+    checkout: detectCheckout([...requests, ...domains]),
+    tecnologia: detectTech([...requests, ...domains]),
+    activePixels: detectPixels(requests),
+    subdomains: extractSubdomains(domains, targetUrl),
+    externalServices: extractExternalServices(domains, targetUrl),
+    screenshot: `https://urlscan.io/screenshots/${uuid}.png`,
+    redirectChain,
+  };
+}
+
 async function pollResult(uuid: string, maxAttempts = 12, intervalMs = 5000): Promise<any | null> {
   for (let i = 0; i < maxAttempts; i++) {
     await sleep(intervalMs);

@@ -58,6 +58,8 @@ model User {
   profile                  UserProfile?
   settings                 UserSettings?
   webhooks                 Webhook[]
+  placaRequests            PlacaRequest[]
+  funnelExtractions        FunnelExtraction[]
 }
 
 model AdminAuditLog {
@@ -517,4 +519,176 @@ model AnuncioFacebook {
   @@index([isActive, deliveryStartTime(sort: Desc)])
   @@index([isActive, escala(sort: Desc)])
   @@index([isActive, duplicatas(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCALEAKI+ — Features premium (tier plus)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Origem do produto escalado (uma tabela p/ os 5 marketplaces). */
+enum ProductSource {
+  dropshipping
+  mercadolivre
+  aliexpress
+  shopee
+  shein
+}
+
+/** Produto escalado / em promoção coletado por scraper de marketplace. */
+model ScaledProduct {
+  id String @id @default(uuid())
+
+  source      ProductSource
+  externalId  String // ID do produto na origem (MLB123, item id, etc.)
+  title       String
+  description String?
+  imageUrl    String?
+  productUrl  String // URL canônica do produto na origem
+  storeName   String? // Loja/vendedor
+
+  price          Float? // Preço atual
+  originalPrice  Float? // Preço cheio (antes do desconto)
+  discountPct    Int? // % de desconto
+  currency       String? @default("BRL")
+
+  soldCount   Int?    @default(0) // Vendas/pedidos (sinal de escala)
+  rating      Float? // Avaliação média
+  reviewCount Int?    @default(0)
+  category    String?
+
+  escala       Int?      @default(0) // Score de escala (vendas + recência)
+  isActive     Boolean   @default(true)
+  scraperLastRun DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([source, externalId])
+  @@index([source])
+  @@index([isActive])
+  @@index([source, isActive, escala(sort: Desc)])
+  @@index([source, isActive, soldCount(sort: Desc)])
+  @@index([source, isActive, discountPct(sort: Desc)])
+}
+
+/** Plataforma do anúncio escalado (ad spy). */
+enum AdPlatform {
+  youtube
+  tiktok
+}
+
+/** Anúncio escalado coletado de YouTube Ads / TikTok Ads. */
+model ScaledAd {
+  id String @id @default(uuid())
+
+  platform   AdPlatform
+  externalId String // ID do anúncio/vídeo na plataforma
+  advertiser String? // Anunciante
+  title      String?
+  adCopy     String?
+  thumbnailUrl String?
+  videoUrl   String? // URL do criativo (quando público)
+  landingUrl String? // URL de destino
+
+  views       Int?    @default(0)
+  likes       Int?    @default(0)
+  shares      Int?    @default(0)
+  ctaText     String? // CTA do anúncio
+  region      String? @default("BR")
+
+  firstSeen DateTime?
+  lastSeen  DateTime?
+
+  escala         Int?      @default(0)
+  isActive       Boolean   @default(true)
+  scraperLastRun DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([platform, externalId])
+  @@index([platform])
+  @@index([isActive])
+  @@index([platform, isActive, escala(sort: Desc)])
+  @@index([platform, isActive, views(sort: Desc)])
+}
+
+/** Scaleflix — videoaulas de como usar o Scaleaki. */
+model ScaleflixVideo {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+  thumbnailUrl String?
+  videoUrl    String // Embed/stream URL (YouTube/Vimeo/Mux)
+  durationSec Int? // Duração em segundos
+  module      String? // Módulo/categoria (Onboarding, Avançado...)
+  ordem       Int     @default(0) // Ordem de exibição
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([module])
+  @@index([isActive, ordem])
+}
+
+/** Status da solicitação de placa de faturamento. */
+enum PlacaStatus {
+  pendente
+  aprovada
+  enviada
+  rejeitada
+}
+
+/** Solicitação de placa de faturamento (milestone com o Scaleaki). */
+model PlacaRequest {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  faturamento  Float // Faturamento declarado no período
+  periodo      String // Ex: "2026-06" ou "Q2 2026"
+  comprovante  String? // URL do comprovante (print/extrato)
+  observacao   String?
+
+  status      PlacaStatus @default(pendente)
+  adminNote   String? // Nota do revisor
+  trackingUrl String? // Rastreio do envio físico
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+/** Extração de funil (URL → mapa do funil). Reusa stack URLscan. */
+model FunnelExtraction {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  domain        String // Domínio/URL analisado
+  checkout      String? // Plataforma de checkout detectada
+  tecnologia    String? // Stack do site
+  subdomains    String? // JSON array de subdomínios do funil
+  activePixels  String? // JSON array de pixels
+  externalServices String? // JSON array de serviços externos
+  screenshot    String? // Screenshot da landing
+  redirectChain String? // JSON array da cadeia de redirects
+  urlscanUuid   String?
+
+  // Estimativa de tráfego (SimilarWeb-like, MVP)
+  estimatedVisits Int? // Visitas/mês estimadas (quando provider disponível)
+  trafficSources  String? // JSON: distribuição de fontes
+  topCountries    String? // JSON array
+
+  status    String   @default("pending") // pending | done | failed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([domain])
 }

@@ -27,6 +27,12 @@ import paymentRoutes from './routes/paymentRoutes';
 import botRoutes from './routes/botRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import fbAdsRoutes from './routes/fbAdsRoutes';
+import marketplaceRoutes from './routes/marketplaceRoutes';
+import adspyRoutes from './routes/adspyRoutes';
+import preaprovadorRoutes from './routes/preaprovadorRoutes';
+import funilRoutes from './routes/funilRoutes';
+import scaleflixRoutes from './routes/scaleflixRoutes';
+import placaRoutes from './routes/placaRoutes';
 import { botService } from './services/botService';
 import { startBillingMonitor } from './services/billingService';
 
@@ -164,6 +170,12 @@ app.use('/payments', paymentRoutes);
 app.use('/bot', botRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/fb-ads', fbAdsRoutes);
+app.use('/marketplace', marketplaceRoutes);
+app.use('/adspy', adspyRoutes);
+app.use('/criativo', preaprovadorRoutes);
+app.use('/funil', funilRoutes);
+app.use('/scaleflix', scaleflixRoutes);
+app.use('/placa', placaRoutes);
 
 import { startCleanupJob } from './jobs/cleanupJob';
 
