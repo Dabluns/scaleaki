@@ -1,7 +1,7 @@
 name: Scrape Marketplace (diário)
 
-# 3 scrapers R$0: AliExpress + TikTok Creative Center + Mercado Livre.
-# Gravam em ScaledProduct (ali+ml) e ScaledAd (tiktok) via Supabase upsert.
+# 4 scrapers R$0: AliExpress + TikTok Creative Center + Mercado Livre + YouTube/Google Ads.
+# Gravam em ScaledProduct (ali+ml) e ScaledAd (tiktok+youtube) via Supabase upsert.
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: 'Rodar só um scraper (aliexpress|tiktok|mercadolivre). Vazio = todos.'
+        description: 'Rodar só um scraper (aliexpress|tiktok|mercadolivre|youtube). Vazio = todos.'
         required: false
         default: ''
 
@@ -53,3 +53,8 @@ jobs:
         if: ${{ env.ONLY == '' || env.ONLY == 'mercadolivre' }}
         continue-on-error: true
         run: node scrapers/mercadolivre.js --headless
+
+      - name: YouTube / Google Ads Transparency
+        if: ${{ env.ONLY == '' || env.ONLY == 'youtube' }}
+        continue-on-error: true
+        run: node scrapers/youtube.js --perKeyword=3 --headless
