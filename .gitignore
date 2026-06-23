@@ -16,6 +16,11 @@ tmp/
 
 google-credentials.json
 *-credentials.json
+*credentials*.json
+service-account*.json
+*.pem
+*.key
+*.p12
 
 # scratch de scraping (cookies, dumps, markdown temporário)
 *cookies*.txt
