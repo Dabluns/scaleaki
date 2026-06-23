@@ -1,0 +1,55 @@
+name: Scrape Marketplace (diário)
+
+# 3 scrapers R$0: AliExpress + TikTok Creative Center + Mercado Livre.
+# Gravam em ScaledProduct (ali+ml) e ScaledAd (tiktok) via Supabase upsert.
+
+on:
+  schedule:
+    - cron: '30 11 * * *'   # 11:30 UTC = 08:30 BRT (antes do Ad Library às 09:00)
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Rodar só um scraper (aliexpress|tiktok|mercadolivre). Vazio = todos.'
+        required: false
+        default: ''
+
+concurrency:
+  group: scrape-marketplace
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ONLY: ${{ github.event.inputs.only }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Chrome for Puppeteer
+        run: npx puppeteer browsers install chrome
+
+      - name: AliExpress
+        if: ${{ env.ONLY == '' || env.ONLY == 'aliexpress' }}
+        continue-on-error: true
+        run: node scrapers/aliexpress.js --headless
+
+      - name: TikTok Creative Center
+        if: ${{ env.ONLY == '' || env.ONLY == 'tiktok' }}
+        continue-on-error: true
+        run: node scrapers/tiktok.js --periods=7,30,180 --headless
+
+      - name: Mercado Livre
+        if: ${{ env.ONLY == '' || env.ONLY == 'mercadolivre' }}
+        continue-on-error: true
+        run: node scrapers/mercadolivre.js --headless
