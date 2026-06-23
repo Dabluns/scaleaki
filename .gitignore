@@ -16,3 +16,15 @@ tmp/
 
 google-credentials.json
 *-credentials.json
+
+# scratch de scraping (cookies, dumps, markdown temporário)
+*cookies*.txt
+jar.txt
+twr_*.txt
+twr_*.html
+pg_*.txt
+jina_*.txt
+det_*.txt
+
+# diretórios de ferramenta de IA (não pertencem ao repo do projeto)
+.claude/
