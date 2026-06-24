@@ -4,6 +4,7 @@ import { OfertasDestaque } from '@/components/features/dashboard/OfertasDestaque
 import { NichosPopulares } from '@/components/features/dashboard/NichosPopulares';
 import { MetricasUsuario } from '@/components/features/dashboard/MetricasUsuario';
 import { AcoesRapidas } from '@/components/features/dashboard/AcoesRapidas';
+import { PlusFeaturesGrid } from '@/components/features/dashboard/PlusFeaturesGrid';
 import { HomeBanner } from '@/components/features/dashboard/HomeBanner';
 import { DashboardHero } from '@/components/features/dashboard/DashboardHero';
 import { BadgeCollection } from '@/components/gamification/BadgeCollection';
@@ -65,6 +66,16 @@ export default function DashboardPage() {
               viewport={{ once: true }}
             >
               <AcoesRapidas />
+            </motion.section>
+
+            <div className="h-px w-full bg-gradient-to-r from-white/5 via-white/10 to-transparent" />
+
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <PlusFeaturesGrid />
             </motion.section>
 
             <div className="h-px w-full bg-gradient-to-r from-white/5 via-white/10 to-transparent" />

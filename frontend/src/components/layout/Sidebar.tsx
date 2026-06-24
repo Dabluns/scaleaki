@@ -7,7 +7,8 @@ import {
   BarChart3, ShieldCheck, LockKeyhole, Home, Package,
   ChevronDown, Image as ImageIcon, Clock, Sparkles, Trophy, Video,
   Menu, ChevronLeft, ChevronRight, LogOut,
-  User, Bell, FileText, CreditCard, Compass
+  User, Bell, FileText, CreditCard, Compass,
+  ShoppingBag, Radio, Network, Clapperboard, Award
 } from 'lucide-react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import clsx from 'clsx';
@@ -412,6 +413,16 @@ export const Sidebar: React.FC = () => {
               collapsed={collapsed}
               isActive={pathname === '/conquistas'}
             />
+          </ul>
+
+          <SectionLabel label="Scaleaki+" collapsed={collapsed} />
+          <ul className="space-y-1">
+            <NavItem href="/marketplace" icon={ShoppingBag} label="Marketplaces" collapsed={collapsed} isActive={pathname === '/marketplace'} />
+            <NavItem href="/adspy" icon={Radio} label="Ad Spy" collapsed={collapsed} isActive={pathname === '/adspy'} />
+            <NavItem href="/funil" icon={Network} label="Extrator de Funil" collapsed={collapsed} isActive={pathname === '/funil'} />
+            <NavItem href="/pre-aprovador" icon={ShieldCheck} label="Pré-aprovador" collapsed={collapsed} isActive={pathname === '/pre-aprovador'} />
+            <NavItem href="/scaleflix" icon={Clapperboard} label="Scaleflix" collapsed={collapsed} isActive={pathname === '/scaleflix'} />
+            <NavItem href="/placa" icon={Award} label="Placa" collapsed={collapsed} isActive={pathname === '/placa'} />
           </ul>
 
           {(isAdmin || user) && (
