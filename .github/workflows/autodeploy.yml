@@ -61,12 +61,35 @@ jobs:
       - name: Deploy prebuilt -> producao
         run: vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
 
+  # backend: COMPILA no Actions (VM de 1GB nao aguenta tsc = OOM) e envia dist/ pronto
   deploy-backend:
     needs: changes
     if: needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy backend via SSH
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install deps (sem baixar chrome do puppeteer)
+        run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - name: Prisma generate + compilar TypeScript (aqui, com RAM)
+        run: npm run build
+      - name: Empacotar dist/
+        run: tar czf dist.tgz dist
+      - name: Enviar dist/ pra VM (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          timeout: 60s
+          source: dist.tgz
+          target: /home/${{ secrets.ORACLE_USER }}/scaleaki
+      - name: Sync deps + restart na VM (sem tsc)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.ORACLE_HOST }}
@@ -79,9 +102,11 @@ jobs:
             cd ~/scaleaki
             git fetch origin main
             git reset --hard origin/main
+            # dist vem pronto do Actions -> substitui o antigo
+            rm -rf dist && tar xzf dist.tgz && rm -f dist.tgz
             export PUPPETEER_SKIP_DOWNLOAD=true
             npm ci --include=dev
-            npm run build
+            npx prisma generate
             pm2 restart scaleaki-api --update-env
             pm2 save
             echo "backend deploy OK: $(git rev-parse --short HEAD)"
