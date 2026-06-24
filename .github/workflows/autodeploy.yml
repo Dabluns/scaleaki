@@ -79,6 +79,7 @@ jobs:
             cd ~/scaleaki
             git fetch origin main
             git reset --hard origin/main
+            export PUPPETEER_SKIP_DOWNLOAD=true
             npm ci --include=dev
             npm run build
             pm2 restart scaleaki-api --update-env
