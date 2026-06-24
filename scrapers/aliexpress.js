@@ -13,7 +13,11 @@ const HEADLESS = args.includes('--headless');
 const MAX_PAGES = parseInt(getArg(args, 'max-pages', '2'), 10);
 const CLI_KEYWORDS = getArg(args, 'keywords', '');
 const TABLE = 'ScaledProduct';
-const SOURCE = 'aliexpress';
+// --source permite reusar o motor do Ali para popular a aba "dropshipping"
+// (dropshipper compra do Ali). Default: aliexpress.
+const SOURCE = ['aliexpress', 'dropshipping'].includes(getArg(args, 'source', 'aliexpress'))
+  ? getArg(args, 'source', 'aliexpress')
+  : 'aliexpress';
 
 const DEFAULT_KEYWORDS = [
   'gadgets', 'kitchen tools', 'organizer', 'led light', 'phone holder',

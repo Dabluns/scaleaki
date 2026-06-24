@@ -1,7 +1,7 @@
 name: Scrape Marketplace (diário)
 
-# 4 scrapers R$0: AliExpress + TikTok Creative Center + Mercado Livre + YouTube/Google Ads.
-# Gravam em ScaledProduct (ali+ml) e ScaledAd (tiktok+youtube) via Supabase upsert.
+# 6 scrapers R$0: AliExpress + Dropshipping(motor Ali) + SHEIN + TikTok + Mercado Livre + YouTube.
+# Gravam em ScaledProduct (ali+dropshipping+shein+ml) e ScaledAd (tiktok+youtube) via Supabase upsert.
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: 'Rodar só um scraper (aliexpress|tiktok|mercadolivre|youtube). Vazio = todos.'
+        description: 'Rodar só um scraper (aliexpress|dropshipping|shein|tiktok|mercadolivre|youtube). Vazio = todos.'
         required: false
         default: ''
 
@@ -43,6 +43,16 @@ jobs:
         if: ${{ env.ONLY == '' || env.ONLY == 'aliexpress' }}
         continue-on-error: true
         run: node scrapers/aliexpress.js --headless
+
+      - name: Dropshipping (motor Ali, keywords virais BR)
+        if: ${{ env.ONLY == '' || env.ONLY == 'dropshipping' }}
+        continue-on-error: true
+        run: node scrapers/aliexpress.js --headless --source=dropshipping --max-pages=1 --keywords="luminaria astronauta,mini drone,fone bluetooth,massageador,projetor estrelas,organizador,depilador eletrico,suporte celular,camera seguranca,escova alisadora"
+
+      - name: SHEIN (categorias BR)
+        if: ${{ env.ONLY == '' || env.ONLY == 'shein' }}
+        continue-on-error: true
+        run: node scrapers/shein.js --headless
 
       - name: TikTok Creative Center
         if: ${{ env.ONLY == '' || env.ONLY == 'tiktok' }}
