@@ -89,24 +89,37 @@ jobs:
           timeout: 60s
           source: dist.tgz
           target: /home/${{ secrets.ORACLE_USER }}/scaleaki
-      - name: Sync deps + restart na VM (sem tsc)
+      - name: Trocar dist + restart na VM (sem npm ci)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.ORACLE_HOST }}
           username: ${{ secrets.ORACLE_USER }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           timeout: 60s
-          command_timeout: 15m
+          command_timeout: 8m
           script: |
             set -e
             cd ~/scaleaki
             git fetch origin main
             git reset --hard origin/main
-            # dist vem pronto do Actions -> substitui o antigo
+            # dist vem PRONTO do Actions -> so substitui o antigo
             rm -rf dist && tar xzf dist.tgz && rm -f dist.tgz
             export PUPPETEER_SKIP_DOWNLOAD=true
-            npm ci --include=dev
-            npx prisma generate
+            # A VM ja tem node_modules funcional. NUNCA rodar npm ci aqui:
+            # ele apaga tudo e recompila sqlite3/puppeteer sob swap (1GB) = trava a VM.
+            # So instala deps QUANDO package-lock.json muda de verdade, e protegido.
+            LOCK_HASH=$(sha1sum package-lock.json | awk '{print $1}')
+            PREV_HASH=$(cat .deps-lock-hash 2>/dev/null || echo "")
+            if [ "$LOCK_HASH" != "$PREV_HASH" ]; then
+              echo "package-lock mudou -> instalando deps (protegido, sem dev/optional)"
+              # nice+timeout pra nao travar a VM; pula chrome e nao roda audit/fund
+              timeout 6m nice -n 19 npm install --omit=dev --omit=optional --no-audit --no-fund
+              echo "$LOCK_HASH" > .deps-lock-hash
+            else
+              echo "package-lock inalterado -> pulando install (node_modules ja serve)"
+            fi
+            # prisma generate e leve e idempotente (precisa do client pro dist rodar)
+            nice -n 19 npx prisma generate
             pm2 restart scaleaki-api --update-env
             pm2 save
             echo "backend deploy OK: $(git rev-parse --short HEAD)"
