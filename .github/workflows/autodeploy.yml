@@ -1,0 +1,86 @@
+name: Auto Deploy (frontend Vercel + backend Oracle)
+
+# 100% automatico: todo push na main builda e publica o que mudou.
+# - frontend/  -> build + deploy prod na Vercel (build roda aqui, nao na VM = sem OOM)
+# - backend (src/, prisma/, package.json) -> git pull + build + pm2 restart na Oracle VM
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: autodeploy-main
+  cancel-in-progress: false
+
+jobs:
+  # Detecta o que mudou pra rodar so o necessario
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: filter
+        run: |
+          BASE="${{ github.event.before }}"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE=$(git rev-parse HEAD~1 2>/dev/null || echo "")
+          fi
+          if [ -z "$BASE" ]; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            echo "backend=true"  >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          DIFF=$(git diff --name-only "$BASE" HEAD)
+          echo "$DIFF"
+          echo "frontend=$(echo "$DIFF" | grep -qE '^frontend/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "backend=$(echo "$DIFF"  | grep -qE '^(src/|prisma/|package\.json|package-lock\.json|tsconfig)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  deploy-frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+      # rootDirectory=frontend ja esta nas settings do projeto -> rodar da raiz
+      - name: Pull Vercel env (prod)
+        run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+      - name: Build (prebuilt, roda aqui)
+        run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+      - name: Deploy prebuilt -> producao
+        run: vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
+
+  deploy-backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy backend via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          timeout: 60s
+          command_timeout: 15m
+          script: |
+            set -e
+            cd ~/scaleaki
+            git fetch origin main
+            git reset --hard origin/main
+            npm ci --include=dev
+            npm run build
+            pm2 restart scaleaki-api --update-env
+            pm2 save
+            echo "backend deploy OK: $(git rev-parse --short HEAD)"

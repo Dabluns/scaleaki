@@ -1,10 +1,10 @@
-name: Deploy
+name: Deploy (LEGADO Railway - manual)
 
+# DESATIVADO do push automatico em 2026-06-24.
+# Backend agora roda na Oracle VM via .github/workflows/autodeploy.yml.
+# Mantido so para disparo manual caso Railway volte a ser usado.
 on:
-  push:
-    branches:
-      - main    # Produção
-      - develop # Staging
+  workflow_dispatch:
 
 jobs:
   deploy:

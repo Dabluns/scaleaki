@@ -1,8 +1,7 @@
-name: Deploy Staging
+name: Deploy Staging (manual)
 
+# Removido do push automatico em 2026-06-24 para nao competir com autodeploy.yml.
 on:
-  push:
-    branches: ['main']
   workflow_dispatch:
 
 jobs:
