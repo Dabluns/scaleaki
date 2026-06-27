@@ -22,6 +22,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "backfill:checkout": "ts-node src/scripts/backfillCheckout.ts",
     "create-admin": "ts-node src/scripts/createFirstAdmin.ts",
     "seed": "ts-node src/scripts/seedNichosOfertas.ts",
     "seed:exemplo": "ts-node src/scripts/seedOfertasExemplo.ts",
