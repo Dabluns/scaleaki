@@ -18,6 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSearchContext } from '@/context/SearchContext';
 import { useReelsStats } from '@/hooks/useReelsStats';
 import { getLucideIconByName } from '@/lib/icons';
+import { SCALEAKI_PLUS_ENABLED } from '@/lib/featureFlags';
 import { ScaleakiLogo } from '@/components/ui/ScaleakiLogo';
 
 // Sub-items de Configurações (espelhando o SettingsLayout)
@@ -415,15 +416,19 @@ export const Sidebar: React.FC = () => {
             />
           </ul>
 
-          <SectionLabel label="Scaleaki+" collapsed={collapsed} />
-          <ul className="space-y-1">
-            <NavItem href="/marketplace" icon={ShoppingBag} label="Marketplaces" collapsed={collapsed} isActive={pathname === '/marketplace'} />
-            <NavItem href="/adspy" icon={Radio} label="Ad Spy" collapsed={collapsed} isActive={pathname === '/adspy'} />
-            <NavItem href="/funil" icon={Network} label="Extrator de Funil" collapsed={collapsed} isActive={pathname === '/funil'} />
-            <NavItem href="/pre-aprovador" icon={ShieldCheck} label="Pré-aprovador" collapsed={collapsed} isActive={pathname === '/pre-aprovador'} />
-            <NavItem href="/scaleflix" icon={Clapperboard} label="Scaleflix" collapsed={collapsed} isActive={pathname === '/scaleflix'} />
-            <NavItem href="/placa" icon={Award} label="Placa" collapsed={collapsed} isActive={pathname === '/placa'} />
-          </ul>
+          {SCALEAKI_PLUS_ENABLED && (
+            <>
+              <SectionLabel label="Scaleaki+" collapsed={collapsed} />
+              <ul className="space-y-1">
+                <NavItem href="/marketplace" icon={ShoppingBag} label="Marketplaces" collapsed={collapsed} isActive={pathname === '/marketplace'} />
+                <NavItem href="/adspy" icon={Radio} label="Ad Spy" collapsed={collapsed} isActive={pathname === '/adspy'} />
+                <NavItem href="/funil" icon={Network} label="Extrator de Funil" collapsed={collapsed} isActive={pathname === '/funil'} />
+                <NavItem href="/pre-aprovador" icon={ShieldCheck} label="Pré-aprovador" collapsed={collapsed} isActive={pathname === '/pre-aprovador'} />
+                <NavItem href="/scaleflix" icon={Clapperboard} label="Scaleflix" collapsed={collapsed} isActive={pathname === '/scaleflix'} />
+                <NavItem href="/placa" icon={Award} label="Placa" collapsed={collapsed} isActive={pathname === '/placa'} />
+              </ul>
+            </>
+          )}
 
           {(isAdmin || user) && (
             <>
