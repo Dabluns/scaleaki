@@ -184,7 +184,7 @@ export async function scanUrl(targetUrl: string): Promise<FunnelScanResult> {
   };
 }
 
-async function pollResult(uuid: string, maxAttempts = 12, intervalMs = 5000): Promise<any | null> {
+async function pollResult(uuid: string, maxAttempts = 24, intervalMs = 5000): Promise<any | null> {
   for (let i = 0; i < maxAttempts; i++) {
     await sleep(intervalMs);
     try {
