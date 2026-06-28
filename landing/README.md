@@ -8,11 +8,22 @@ Origem: repo [`Geeknosnegocios/scaleaki03`](https://github.com/Geeknosnegocios/s
 
 ```
 landing/
-├── index.html      # página completa single-file (~48 KB)
-├── style.css       # estilos Dark/Emerald Premium (~48 KB)
+├── index.html      # página da PLATAFORMA (venda do SaaS) single-file
+├── grupo.html      # landing de CAPTURA do Grupo VIP WhatsApp (isca grátis → SaaS)
+├── style.css       # estilos Dark/Emerald Premium (compartilhado pelas 2 páginas)
 ├── assets/         # imagens, mockups, logos, favicon
 └── .gitignore      # ignora .vercel
 ```
+
+## grupo.html — Landing de captura (Grupo VIP)
+
+Página de captura para o grupo de WhatsApp (entrega diária de swipe files grátis).
+Funil: grupo grátis → upsell para a plataforma paga (`index.html`).
+
+- **CTA único:** entrar no grupo WhatsApp `https://chat.whatsapp.com/BeCGybVA4KME2g4DWmLCC1`
+- **Seções:** hero → simulador de chat WhatsApp → benefícios (bento) → como funciona → regras do grupo → FAQ → CTA final.
+- **Reusa `style.css`.** Classes exclusivas no fim do CSS (bloco "LANDING DO GRUPO VIP"): `wa-simulator`, `badge-convite`, `btn-whatsapp-cta`, `urgency-badge`, `group-rules-*`. Não afetam `index.html`.
+- Encoding UTF-8 (sem BOM).
 
 ### Assets
 

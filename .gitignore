@@ -33,3 +33,13 @@ det_*.txt
 
 # diretórios de ferramenta de IA (não pertencem ao repo do projeto)
 .claude/
+.vercel
+
+# working files locais (não pertencem ao repo do projeto)
+memory/
+dados/
+
+# assets pesados de design (mp4/PSD/exports gigantes — fora do git)
+designs scaleaki/
+*.mp4
+*.psd
