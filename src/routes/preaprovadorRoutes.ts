@@ -14,4 +14,12 @@ router.post(
   preaprovadorController.preAprovarCriativo
 );
 
+router.post(
+  '/reescrever',
+  authenticateJWT,
+  requireFeature('criativo_preaprovador'),
+  heavyOperationRateLimiter,
+  preaprovadorController.reescreverCriativo
+);
+
 export default router;
