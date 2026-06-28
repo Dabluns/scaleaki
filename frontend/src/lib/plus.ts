@@ -232,8 +232,21 @@ export interface PreaproveInput {
   plataforma?: 'meta' | 'google';
 }
 
+export interface RewriteInput extends PreaproveInput {
+  termosProblema?: string[];
+}
+
+export interface RewriteResult {
+  headline: string;
+  copy: string;
+  descricao: string;
+  mudancas: string[];
+  anguloSchwartz: string;
+}
+
 export const preaprovadorApi = {
   run: (input: PreaproveInput) => post<{ data: PreaproveResult }>(`/criativo/pre-aprovar`, input),
+  rewrite: (input: RewriteInput) => post<{ data: RewriteResult }>(`/criativo/reescrever`, input),
 };
 
 // ── Scaleflix ────────────────────────────────────────────────────────

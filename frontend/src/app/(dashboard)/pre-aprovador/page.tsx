@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ShieldCheck, Loader2, CheckCircle2, AlertTriangle, XCircle, Wand2, ListChecks, Ban,
+  Sparkles, Copy, Check,
 } from 'lucide-react';
 import FeatureGate from '@/components/ui/FeatureGate';
-import { preaprovadorApi, PreaproveResult, Veredito, PlusApiError } from '@/lib/plus';
+import { preaprovadorApi, PreaproveResult, RewriteResult, Veredito, PlusApiError } from '@/lib/plus';
 
 const VEREDITO_UI: Record<Veredito, { label: string; color: string; bg: string; icon: any }> = {
   aprovado: { label: 'Aprovado', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30', icon: CheckCircle2 },
@@ -14,9 +15,10 @@ const VEREDITO_UI: Record<Veredito, { label: string; color: string; bg: string; 
   reprovado: { label: 'Reprovado', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', icon: XCircle },
 };
 
-function ResultPanel({ r }: { r: PreaproveResult }) {
+function ResultPanel({ r, onFix, fixing }: { r: PreaproveResult; onFix: () => void; fixing: boolean }) {
   const ui = VEREDITO_UI[r.veredito];
   const Icon = ui.icon;
+  const precisaCorrigir = r.veredito === 'risco' || r.veredito === 'reprovado';
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       <div className={`flex items-center gap-4 rounded-2xl border p-5 ${ui.bg}`}>
@@ -68,6 +70,66 @@ function ResultPanel({ r }: { r: PreaproveResult }) {
           </ul>
         </div>
       )}
+
+      {precisaCorrigir && (
+        <button
+          onClick={onFix}
+          disabled={fixing}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7c3aed] py-3 text-sm font-black uppercase text-white transition hover:brightness-110 disabled:opacity-40"
+        >
+          {fixing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {fixing ? 'Reescrevendo...' : 'Corrigir agora — reescrever forte e dentro da política'}
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+function RewritePanel({ r }: { r: RewriteResult }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const copyText = (label: string, text: string) => {
+    navigator.clipboard?.writeText(text).then(() => {
+      setCopied(label);
+      setTimeout(() => setCopied(null), 1800);
+    });
+  };
+  const Field = ({ label, value }: { label: string; value: string }) => {
+    if (!value?.trim()) return null;
+    return (
+      <div className="rounded-xl bg-white/[0.03] border border-white/10 p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c084fc]">{label}</span>
+          <button onClick={() => copyText(label, value)}
+            className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[11px] text-white/60 hover:bg-white/10 hover:text-white transition">
+            {copied === label ? <><Check className="w-3 h-3 text-emerald-400" /> Copiado</> : <><Copy className="w-3 h-3" /> Copiar</>}
+          </button>
+        </div>
+        <p className="whitespace-pre-wrap text-sm text-white/90 leading-relaxed">{value}</p>
+      </div>
+    );
+  };
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+      <div className="flex items-center gap-2 rounded-xl border border-[#a855f7]/30 bg-[#a855f7]/10 px-4 py-3">
+        <Sparkles className="w-5 h-5 text-[#c084fc]" />
+        <div>
+          <div className="text-sm font-black text-white">Versão reescrita — forte e policy-safe</div>
+          {r.anguloSchwartz && <div className="text-[12px] text-white/50">{r.anguloSchwartz}</div>}
+        </div>
+      </div>
+      <Field label="Headline" value={r.headline} />
+      <Field label="Copy" value={r.copy} />
+      <Field label="Descrição" value={r.descricao} />
+      {r.mudancas?.length > 0 && (
+        <div className="rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20 p-4">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+            <Wand2 className="w-4 h-4" /> O que mudou e por quê
+          </div>
+          <ul className="space-y-1 text-sm text-white/80">
+            {r.mudancas.map((m, i) => <li key={i} className="flex gap-2"><span className="text-emerald-500">→</span>{m}</li>)}
+          </ul>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -80,12 +142,15 @@ function PreaprovadorBoard() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PreaproveResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fixing, setFixing] = useState(false);
+  const [rewrite, setRewrite] = useState<RewriteResult | null>(null);
 
   const run = async () => {
     if (!copy.trim()) { setError('Cole pelo menos a copy do anúncio.'); return; }
     setLoading(true);
     setError(null);
     setResult(null);
+    setRewrite(null);
     try {
       const res = await preaprovadorApi.run({
         headline: headline.trim() || undefined,
@@ -103,6 +168,30 @@ function PreaprovadorBoard() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fix = async () => {
+    setFixing(true);
+    setError(null);
+    try {
+      const res = await preaprovadorApi.rewrite({
+        headline: headline.trim() || undefined,
+        copy: copy.trim(),
+        descricao: descricao.trim() || undefined,
+        plataforma,
+        termosProblema: result?.termosProblema || [],
+      });
+      setRewrite(res.data);
+    } catch (e) {
+      const err = e as PlusApiError;
+      if (err.status === 503 || err.code === 'llm_unavailable') {
+        setError('A reescrita está temporariamente indisponível. Tente novamente em instantes.');
+      } else {
+        setError(err.message || 'Erro ao reescrever o criativo');
+      }
+    } finally {
+      setFixing(false);
     }
   };
 
@@ -147,13 +236,14 @@ function PreaprovadorBoard() {
         {error && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>}
       </div>
 
-      <div>
-        {result ? <ResultPanel r={result} /> : (
+      <div className="space-y-6">
+        {result ? <ResultPanel r={result} onFix={fix} fixing={fixing} /> : (
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 text-center text-white/30">
             <ShieldCheck className="mb-3 w-10 h-10" />
             <p className="max-w-xs text-sm">O parecer da IA aparece aqui: veredito, score, termos de risco e ajustes para reduzir reprovação.</p>
           </div>
         )}
+        {rewrite && <RewritePanel r={rewrite} />}
       </div>
     </div>
   );
