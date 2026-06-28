@@ -54,6 +54,7 @@ export interface FbAdsFilters {
   status?: 'active' | 'inactive' | 'all';
   orderBy?: 'createdAt' | 'escala' | 'duplicatas' | 'deliveryStartTime' | 'pageLikes';
   order?: 'asc' | 'desc';
+  windowDays?: 3 | 7 | 14 | 30;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -64,7 +65,7 @@ export function useFacebookAds() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FbAdsFilters>({ orderBy: 'escala', order: 'desc', status: 'active', escalaMin: 30 });
+  const [filters, setFilters] = useState<FbAdsFilters>({ orderBy: 'escala', order: 'desc', status: 'active', escalaMin: 30, windowDays: 7 });
   const [page, setPage] = useState(1);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -80,6 +81,7 @@ export function useFacebookAds() {
     if (f.status && f.status !== 'all') params.set('status', f.status);
     if (f.orderBy) params.set('orderBy', f.orderBy);
     if (f.order) params.set('order', f.order);
+    if (f.windowDays) params.set('windowDays', String(f.windowDays));
     return params.toString();
   }, []);
 

@@ -197,6 +197,31 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
         />
       </div>
 
+      {/* ── Janela de atividade (busca ativa) ─────────────────────────── */}
+      <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
+        {([
+          { v: 3, label: '🔥 3 dias' },
+          { v: 7, label: '7 dias' },
+          { v: undefined, label: 'Todos' },
+        ] as const).map(opt => {
+          const active = filters.windowDays === opt.v;
+          return (
+            <button
+              key={opt.label}
+              onClick={() => set({ windowDays: opt.v as FbAdsFilters['windowDays'] })}
+              title="Mostra só anúncios confirmados rodando na biblioteca nessa janela"
+              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
+                active
+                  ? 'bg-orange-500/20 border border-orange-500/30 text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.15)]'
+                  : 'text-white/25 hover:text-white/60'
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* ── Status ────────────────────────────────────────────────────── */}
       <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
         {(['active', 'all', 'inactive'] as const).map(s => (
