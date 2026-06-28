@@ -274,6 +274,7 @@ export async function listAnuncios(req: Request, res: Response) {
       search,
       orderBy = 'createdAt',
       order = 'desc',
+      windowDays,
     } = req.query as Record<string, string>;
 
     const take = Math.min(Number(limit), 100);
@@ -294,6 +295,18 @@ export async function listAnuncios(req: Request, res: Response) {
     if (checkout) where.checkout = checkout;
     if (finalEscalaMin !== undefined) where.escala = { gte: finalEscalaMin };
     if (duplicatasMin) where.duplicatas = { gte: Number(duplicatasMin) };
+
+    // ── Janela de atividade ("busca ativa") ──────────────────────────────────
+    // scraperLastRun = última vez que o garimpo CONFIRMOU o anúncio rodando na
+    // biblioteca. Janela 3/7d mostra só o que está comprovadamente no ar agora.
+    // Quem some da biblioteca para de ser re-confirmado e cai fora da janela.
+    const allowedWindows = [3, 7, 14, 30];
+    const win = windowDays ? Number(windowDays) : undefined;
+    if (win && allowedWindows.includes(win)) {
+      const cutoff = new Date(Date.now() - win * 86_400_000);
+      where.scraperLastRun = { gte: cutoff };
+    }
+
     if (search) {
       where.OR = [
         { pageName: { contains: search, mode: 'insensitive' } },
