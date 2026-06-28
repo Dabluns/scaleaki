@@ -18,6 +18,12 @@ interface FacebookAdsFiltersProps {
   total: number;
 }
 
+// Filtros que dependem de campos ainda pouco populados (checkout/tecnologia ~0,6%).
+// Enquanto o backfill não cobre a base, escondê-los evita vitrine vazia.
+// Reativar = true quando a cobertura subir.
+const SHOW_CHECKOUT_FILTER = false;
+const SHOW_PLAYER_FILTER = false;
+
 // ─── Mini badge colorido ──────────────────────────────────────────────────────
 
 function TechBadge({ tech, size = 'sm' }: { tech: Technology; size?: 'sm' | 'xs' }) {
@@ -209,6 +215,7 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
       </div>
 
       {/* ── Checkout / Plataforma ──────────────────────────────────────── */}
+      {SHOW_CHECKOUT_FILTER && (
       <Dropdown
         isOpen={checkoutOpen}
         onToggle={() => { closeAll(); setCheckoutOpen(v => !v); }}
@@ -266,8 +273,10 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
           );
         })}
       </Dropdown>
+      )}
 
       {/* ── Player VSL ─────────────────────────────────────────────────── */}
+      {SHOW_PLAYER_FILTER && (
       <Dropdown
         isOpen={playerOpen}
         onToggle={() => { closeAll(); setPlayerOpen(v => !v); }}
@@ -323,6 +332,7 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
           </DropdownItem>
         ))}
       </Dropdown>
+      )}
 
       {/* ── Ordenação ─────────────────────────────────────────────────── */}
       <Dropdown
