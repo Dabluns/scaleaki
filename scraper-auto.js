@@ -31,6 +31,11 @@ const SCROLL_WAIT = parseInt(getArg('scroll-wait', '2500'), 10);
 const HEADLESS = args.includes('--headless');
 const CLI_KEYWORDS = getArg('keywords', '');
 const NICHE = getArg('niche', '');
+// Sweep de inativos: marca isActive=false quem não é reconfirmado há > STALE_DAYS.
+// Carência alta evita falso positivo (scraper é por keyword, pode não ver um ativo num dia).
+// --no-sweep desliga; --stale-days=N ajusta a carência.
+const STALE_DAYS = parseInt(getArg('stale-days', '10'), 10);
+const NO_SWEEP = args.includes('--no-sweep');
 const KEYWORDS_FILE = path.join(__dirname, 'keywords.json');
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -175,6 +180,29 @@ async function countAds(filter) {
   return count || 0;
 }
 
+// Sweep de inativos: o scraper só busca active_status=active e por keyword, então quem
+// SAIU do ar simplesmente deixa de ser reconfirmado (scraperLastRun para de avançar).
+// Aqui marcamos isActive=false em quem não é reconfirmado há > STALE_DAYS dias.
+// É reversível: se o anúncio reaparecer, o upsert volta isActive=true e renova o timestamp.
+// Carência protege contra falso positivo de flutuação do scraping.
+async function sweepInactive(staleDays) {
+  const cutoff = new Date(Date.now() - staleDays * 86400000).toISOString();
+  // conta antes (quantos serão afetados) para log honesto
+  const { count } = await supabase
+    .from(TABLE)
+    .select('*', { count: 'exact', head: true })
+    .eq('isActive', true)
+    .lt('scraperLastRun', cutoff);
+  if (!count) return 0;
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ isActive: false, deliveryStopTime: new Date().toISOString(), updatedAt: new Date().toISOString() })
+    .eq('isActive', true)
+    .lt('scraperLastRun', cutoff);
+  if (error) { console.error('  sweep err:', error.message); return 0; }
+  return count;
+}
+
 const BUCKET = 'ad-creatives';
 const STORE_PREFIX = `/storage/v1/object/public/${BUCKET}/`;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -280,7 +308,15 @@ async function upsertAds(ads) {
   }
 
   await browser.close();
+
+  // Sweep: derruba quem não é reconfirmado há > STALE_DAYS (anúncio saiu do ar).
+  let swept = 0;
+  if (!NO_SWEEP) {
+    swept = await sweepInactive(STALE_DAYS);
+    console.log(`🧹 Sweep: ${swept} anúncios marcados inativos (sem reconfirmação há >${STALE_DAYS}d)`);
+  }
+
   const total = await countAds();
   const e30 = await countAds('e30');
-  console.log(`\n✅ FIM em ${Math.round((Date.now() - t0) / 1000)}s — coletados=${allCollected} criados=${allCreated} atualizados=${allUpdated} | banco total=${total} escala>=30=${e30}`);
+  console.log(`\n✅ FIM em ${Math.round((Date.now() - t0) / 1000)}s — coletados=${allCollected} criados=${allCreated} atualizados=${allUpdated} inativados=${swept} | banco total=${total} escala>=30=${e30}`);
 })().catch(e => { console.error('❌ Fatal:', e.message); process.exit(1); });
