@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import logger from '../config/logger';
 import { llmComplete, llmAvailable, extractJson } from '../services/llm.service';
+import { SCHWARTZ_BASE } from '../services/schwartz';
 
 /**
  * Pré-aprovador de Criativo (Scaleaki+). Recebe copy/headline/descrição de um
@@ -97,7 +98,10 @@ interface RewriteResult {
  * legítimo dentro das políticas (promessa absoluta → prova social/specificidade,
  * alegação médica → depoimento/contexto, renda garantida → potencial com prova).
  */
-const REWRITE_RULES = `Você é copywriter de resposta direta nível Eugene Schwartz (Breakthrough Advertising) E revisor de políticas de Meta/Google Ads do mercado brasileiro.
+const REWRITE_RULES = `${SCHWARTZ_BASE}
+
+Você é copywriter de resposta direta nível Eugene Schwartz (Breakthrough Advertising) E revisor de políticas de Meta/Google Ads do mercado brasileiro.
+Use a metodologia Schwartz acima como base do seu diagnóstico e da sua reescrita.
 
 Sua tarefa: reescrever o criativo abaixo para que fique FORTE (alta conversão, pegada de copy black-hat-VENDEDORA mas honesta) E AO MESMO TEMPO dentro das políticas de anúncio. Você NÃO ofusca texto, NÃO usa caracteres especiais para enganar robô, NÃO burla review. Você reescreve o CONTEÚDO para ser legítimo e persuasivo.
 
