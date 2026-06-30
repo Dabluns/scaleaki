@@ -7,8 +7,7 @@ import {
   BarChart3, ShieldCheck, LockKeyhole, Home, Package,
   ChevronDown, Image as ImageIcon, Clock, Sparkles, Trophy, Video,
   Menu, ChevronLeft, ChevronRight, LogOut,
-  User, Bell, FileText, CreditCard, Compass,
-  ShoppingBag, Radio, Network, Clapperboard, Award
+  User, Bell, FileText, CreditCard, Compass
 } from 'lucide-react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import clsx from 'clsx';
@@ -18,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSearchContext } from '@/context/SearchContext';
 import { useReelsStats } from '@/hooks/useReelsStats';
 import { getLucideIconByName } from '@/lib/icons';
-import { SCALEAKI_PLUS_HAS_VISIBLE, isPlusRouteEnabled } from '@/lib/featureFlags';
+import { isPlusRouteEnabled } from '@/lib/featureFlags';
 import { ScaleakiLogo } from '@/components/ui/ScaleakiLogo';
 
 // Sub-items de Configurações (espelhando o SettingsLayout)
@@ -416,24 +415,13 @@ export const Sidebar: React.FC = () => {
             />
           </ul>
 
-          {SCALEAKI_PLUS_HAS_VISIBLE && (
-            <>
-              <SectionLabel label="Scaleaki+" collapsed={collapsed} />
-              <ul className="space-y-1">
-                {isPlusRouteEnabled('/marketplace') && <NavItem href="/marketplace" icon={ShoppingBag} label="Marketplaces" collapsed={collapsed} isActive={pathname === '/marketplace'} />}
-                {isPlusRouteEnabled('/adspy') && <NavItem href="/adspy" icon={Radio} label="Ad Spy" collapsed={collapsed} isActive={pathname === '/adspy'} />}
-                {isPlusRouteEnabled('/funil') && <NavItem href="/funil" icon={Network} label="Extrator de Funil" collapsed={collapsed} isActive={pathname === '/funil'} />}
-                {isPlusRouteEnabled('/pre-aprovador') && <NavItem href="/pre-aprovador" icon={ShieldCheck} label="Pré-aprovador" collapsed={collapsed} isActive={pathname === '/pre-aprovador'} />}
-                {isPlusRouteEnabled('/scaleflix') && <NavItem href="/scaleflix" icon={Clapperboard} label="Scaleflix" collapsed={collapsed} isActive={pathname === '/scaleflix'} />}
-                {isPlusRouteEnabled('/placa') && <NavItem href="/placa" icon={Award} label="Placa" collapsed={collapsed} isActive={pathname === '/placa'} />}
-              </ul>
-            </>
-          )}
-
           {(isAdmin || user) && (
             <>
               <SectionLabel label="Sistema" collapsed={collapsed} />
               <ul className="space-y-1">
+                {isPlusRouteEnabled('/pre-aprovador') && (
+                  <NavItem href="/pre-aprovador" icon={ShieldCheck} label="Pré-aprovador" collapsed={collapsed} isActive={pathname === '/pre-aprovador'} />
+                )}
                 {isAdmin && (
                   <>
                     <NavItem

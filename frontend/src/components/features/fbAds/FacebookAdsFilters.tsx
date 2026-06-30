@@ -139,7 +139,7 @@ function DropdownItem({ onClick, isActive, children }: DropdownItemProps) {
 function CategoryLabel({ label }: { label: string }) {
   return (
     <div className="px-3 pt-3 pb-1">
-      <span className="text-[9px] font-black uppercase tracking-widest text-white/20">{label}</span>
+      <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{label}</span>
     </div>
   );
 }
@@ -187,13 +187,13 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
       {/* ── Busca ─────────────────────────────────────────────────────── */}
       <div className="relative group flex-1 min-w-[220px] max-w-xs">
         <div className="absolute inset-0 bg-green-500/5 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity rounded-2xl" />
-        <Search size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-green-400 transition-colors" />
+        <Search size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-green-400 transition-colors" />
         <input
           type="text"
           placeholder="FILTRAR ANÚNCIOS..."
           defaultValue={filters.search}
           onChange={(e) => set({ search: e.target.value || undefined })}
-          className="relative w-full pl-10 pr-4 py-3 bg-white/[0.03] border border-white/5 rounded-2xl text-[10px] font-black text-white tracking-widest uppercase focus:outline-none focus:border-green-500/30 placeholder:text-white/15"
+          className="relative w-full pl-10 pr-4 py-3 bg-white/[0.03] border border-white/5 rounded-2xl text-[11px] font-black text-white tracking-widest uppercase focus:outline-none focus:border-green-500/30 placeholder:text-white/40"
         />
       </div>
 
@@ -213,7 +213,7 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
               className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
                 active
                   ? 'bg-orange-500/20 border border-orange-500/30 text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.15)]'
-                  : 'text-white/25 hover:text-white/60'
+                  : 'text-white/55 hover:text-white/80'
               }`}
             >
               {opt.label}
@@ -231,7 +231,7 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
               filters.status === s
                 ? 'bg-green-500/20 border border-green-500/30 text-green-400 shadow-[0_0_12px_rgba(74,222,128,0.15)]'
-                : 'text-white/25 hover:text-white/60'
+                : 'text-white/55 hover:text-white/80'
             }`}
           >
             {s === 'active' ? 'Ativos' : s === 'inactive' ? 'Inativos' : 'Todos'}
@@ -389,7 +389,7 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
       {/* ── Escala mínima ─────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-4 py-3 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-white/10 transition-colors">
         <Flame size={11} className="text-orange-400" />
-        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Escala ≥</span>
+        <span className="text-[10px] font-black text-white/45 uppercase tracking-widest">Escala ≥</span>
         <input
           type="number"
           min={0}
@@ -402,7 +402,7 @@ export function FacebookAdsFilters({ filters, onChange, total }: FacebookAdsFilt
       </div>
 
       {/* ── Contador ──────────────────────────────────────────────────── */}
-      <div className="ml-auto text-[9px] font-black text-white/20 uppercase tracking-widest tabular-nums">
+      <div className="ml-auto text-[10px] font-black text-white/45 uppercase tracking-widest tabular-nums">
         {total.toLocaleString('pt-BR')} anúncios
       </div>
     </motion.div>

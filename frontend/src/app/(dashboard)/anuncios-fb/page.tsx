@@ -237,7 +237,7 @@ function AnunciosFbContent() {
               value={liveQuery}
               onChange={(e) => handleLiveQueryChange(e.target.value)}
               placeholder="PESQUISAR NA BIBLIOTECA DO FACEBOOK... (ex: suplemento, dropshipping, curso...)"
-              className="flex-1 bg-transparent text-sm font-bold text-white placeholder:text-white/20 placeholder:text-[10px] placeholder:tracking-widest focus:outline-none uppercase tracking-wider"
+              className="flex-1 bg-transparent text-sm font-bold text-white placeholder:text-white/45 placeholder:text-[12px] placeholder:tracking-widest focus:outline-none uppercase tracking-wider"
             />
 
             {/* Badge de modo */}
@@ -270,7 +270,7 @@ function AnunciosFbContent() {
 
           {/* Dica */}
           {!isLiveMode && (
-            <p className="mt-2 ml-4 text-[9px] font-bold text-white/20 uppercase tracking-widest">
+            <p className="mt-2 ml-4 text-[11px] font-bold text-white/45 uppercase tracking-widest">
               Digite 2+ caracteres para pesquisar no acervo e minerar novos anúncios
             </p>
           )}

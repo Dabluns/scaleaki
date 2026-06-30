@@ -254,9 +254,6 @@ export default function PreaprovadorPage() {
     <div className="relative min-h-screen">
       <div className="max-w-[1400px] mx-auto px-8 lg:px-12 pt-10 pb-20">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="rounded-full bg-[#a855f7]/15 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#c084fc]">Scaleaki+</span>
-          </div>
           <h1 className="flex items-center gap-3 text-3xl lg:text-4xl font-black text-white uppercase tracking-tighter">
             <ShieldCheck className="w-8 h-8 text-emerald-500" /> Pré-<span className="text-emerald-500">aprovador</span>
           </h1>

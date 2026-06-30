@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FacebookAdCard } from './FacebookAdCard';
 import { SkeletonCard } from '@/components/ui/SkeletonCard';
@@ -19,6 +19,27 @@ interface FacebookAdsGridProps {
 export function FacebookAdsGrid({
   anuncios, isLoading, isLoadingMore, hasMore, onView, onLoadMore
 }: FacebookAdsGridProps) {
+
+  // ── Scroll infinito: dispara onLoadMore quando o sentinela entra na viewport ──
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  // Mantém a referência mais recente de onLoadMore sem recriar o observer
+  const loadMoreRef = useRef(onLoadMore);
+  loadMoreRef.current = onLoadMore;
+
+  useEffect(() => {
+    if (!hasMore || isLoadingMore || isLoading) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMoreRef.current();
+      },
+      { rootMargin: '600px 0px' } // pré-carrega antes de chegar no fim
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, isLoading, anuncios.length]);
 
   if (isLoading) {
     return (
@@ -61,9 +82,9 @@ export function FacebookAdsGrid({
         ))}
       </div>
 
-      {/* Botão de carregar mais */}
+      {/* Sentinela do scroll infinito + botão de fallback */}
       {hasMore && !isLoadingMore && (
-        <div className="flex justify-center pt-4">
+        <div ref={sentinelRef} className="flex justify-center pt-4">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
