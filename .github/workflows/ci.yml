@@ -25,6 +25,7 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://skaleaki_user:skaleaki_pass@localhost:5432/skaleaki_db
+      DIRECT_URL: postgresql://skaleaki_user:skaleaki_pass@localhost:5432/skaleaki_db
       JWT_SECRET: test-secret-key-with-minimum-32-characters-for-security
       NODE_ENV: test
     steps:
