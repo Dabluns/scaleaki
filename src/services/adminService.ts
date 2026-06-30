@@ -25,7 +25,7 @@ export async function getUsersList(params: PaginationParams): Promise<PaginatedR
   const sortBy = params.sortBy || 'createdAt';
   const sortOrder = params.sortOrder || 'desc';
 
-  let whereClause: any = {};
+  const whereClause: any = {};
 
   // Busca por nome ou email
   if (params.search) {

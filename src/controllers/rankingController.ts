@@ -44,7 +44,7 @@ export async function getRankingOfertas(req: AuthRequest, res: Response) {
     if (plataforma) where.plataforma = plataforma;
 
     // Definir ordenação baseada no critério
-    let orderBy: any = {};
+    const orderBy: any = {};
     switch (criterio) {
       case 'receita':
         orderBy.receita = 'desc';

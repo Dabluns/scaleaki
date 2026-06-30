@@ -28,6 +28,7 @@ jobs:
       DIRECT_URL: postgresql://skaleaki_user:skaleaki_pass@localhost:5432/skaleaki_db
       JWT_SECRET: test-secret-key-with-minimum-32-characters-for-security
       NODE_ENV: test
+      ESLINT_USE_FLAT_CONFIG: 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node.js

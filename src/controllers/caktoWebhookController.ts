@@ -967,7 +967,7 @@ async function handleBoletoGerado(event: CaktoWebhookEvent) {
     }
 
     // Buscar pagamento pendente
-    let payment = await prisma.payment.findFirst({
+    const payment = await prisma.payment.findFirst({
       where: {
         userId: user.id,
         OR: [
@@ -1065,7 +1065,7 @@ async function handlePixGerado(event: CaktoWebhookEvent) {
     }
 
     // Buscar pagamento pendente
-    let payment = await prisma.payment.findFirst({
+    const payment = await prisma.payment.findFirst({
       where: {
         userId: user.id,
         OR: [
@@ -1162,7 +1162,7 @@ async function handlePicpayGerado(event: CaktoWebhookEvent) {
     }
 
     // Buscar pagamento pendente
-    let payment = await prisma.payment.findFirst({
+    const payment = await prisma.payment.findFirst({
       where: {
         userId: user.id,
         OR: [
@@ -1250,7 +1250,7 @@ async function handlePurchaseRefused(event: CaktoWebhookEvent) {
     }
 
     // Buscar pagamento
-    let payment = await prisma.payment.findFirst({
+    const payment = await prisma.payment.findFirst({
       where: {
         userId: user.id,
         OR: [
@@ -1346,7 +1346,7 @@ async function handleRefund(event: CaktoWebhookEvent) {
     }
 
     // Buscar pagamento
-    let payment = await prisma.payment.findFirst({
+    const payment = await prisma.payment.findFirst({
       where: {
         userId: user.id,
         OR: [
@@ -1439,7 +1439,7 @@ async function handleChargeback(event: CaktoWebhookEvent) {
     }
 
     // Buscar pagamento
-    let payment = await prisma.payment.findFirst({
+    const payment = await prisma.payment.findFirst({
       where: {
         userId: user.id,
         OR: [

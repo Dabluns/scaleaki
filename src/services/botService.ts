@@ -693,7 +693,7 @@ async function processSingleFolder(folderId: string, folderName: string) {
         return;
     }
 
-    let titulo = folderName;
+    const titulo = folderName;
     let texto = '';
     let htmlContent = '';
     let imagemUrl: string | null = null;
