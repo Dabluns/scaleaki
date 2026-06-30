@@ -7,6 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      STAGING_SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +45,7 @@ jobs:
             frontend/package-lock.json
 
       - name: Rsync to staging (optional)
-        if: ${{ secrets.STAGING_SSH_HOST != '' }}
+        if: ${{ env.STAGING_SSH_HOST != '' }}
         uses: burnett01/rsync-deployments@7.0.0
         with:
           switches: -avzr --delete

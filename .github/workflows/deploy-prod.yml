@@ -12,7 +12,7 @@ on:
           - deploy
           - rollback
       artifact:
-        description: Nome do artefato para rollback (ex.: staging-artifacts)
+        description: 'Nome do artefato para rollback (ex.: staging-artifacts)'
         required: false
         type: string
 
@@ -20,6 +20,8 @@ jobs:
   promote:
     runs-on: ubuntu-latest
     environment: production
+    env:
+      PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
     steps:
       - uses: actions/checkout@v4
 
@@ -67,7 +69,7 @@ jobs:
           path: ./rollback-artifact
 
       - name: Deploy via rsync (deploy)
-        if: ${{ inputs.mode == 'deploy' && secrets.PROD_SSH_HOST != '' }}
+        if: ${{ inputs.mode == 'deploy' && env.PROD_SSH_HOST != '' }}
         uses: burnett01/rsync-deployments@7.0.0
         with:
           switches: -avzr --delete
@@ -85,7 +87,7 @@ jobs:
             frontend/package-lock.json
 
       - name: Deploy rollback artifact
-        if: ${{ inputs.mode == 'rollback' && inputs.artifact != '' && secrets.PROD_SSH_HOST != '' }}
+        if: ${{ inputs.mode == 'rollback' && inputs.artifact != '' && env.PROD_SSH_HOST != '' }}
         uses: burnett01/rsync-deployments@7.0.0
         with:
           switches: -avzr --delete
