@@ -5,11 +5,19 @@ import { sanitizeInput, validateUUID } from '../middlewares/inputSanitizationMid
 import { securityLogger } from '../middlewares/securityLoggingMiddleware';
 import { userRateLimiter } from '../middlewares/redisRateLimit';
 import * as webhooksController from '../controllers/webhooksController';
+import * as geekpayWebhookController from '../controllers/geekpayWebhookController';
 
 const router = Router();
 
 // Endpoint inbound público para receber eventos externos (usa raw body para verificação de assinatura)
 router.post('/inbound', raw({ type: '*/*', limit: '1mb' }), webhooksController.inboundHandler);
+
+// Webhook específico do GeekPay (pay.geekacademy.site → SCALEAKI)
+// Provider-agnostic naming: se um dia trocar de gateway, o path permanece.
+// IMPORTANTE: raw body middleware para validação HMAC. Não pode estar ANTES do express.json global
+// porque ele já foi consumido — mas como /webhooks/* está no escopo global do app,
+// usamos o rawBody capturado pelo express.json verify (em server.ts).
+router.post('/scaleaki', geekpayWebhookController.handleGeekPayWebhook);
 
 router.use(authenticateJWT);
 router.use(validateOwnership('webhook'));

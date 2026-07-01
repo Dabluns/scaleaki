@@ -86,31 +86,48 @@ export async function handleGeekPayWebhook(req: Request, res: Response) {
     const sigHeader = (process.env.GEEKPAY_SIGNATURE_HEADER || 'x-geekpay-signature').toLowerCase();
     const signature = (req.headers[sigHeader] as string) || '';
 
+    // rawBody é capturado pelo express.json({ verify }) em server.ts.
+    // Fallback só pra dev (quando express.json nao rodou por algum motivo).
+    const rawBody: Buffer | undefined = (req as any).rawBody;
+    const bodyString = rawBody ? rawBody.toString('utf8') : JSON.stringify(req.body || {});
+
     if (secret) {
       if (!signature) {
         logger.warn('[GeekPay] webhook sem signature header', { header: sigHeader });
         return res.status(401).json({ error: 'Missing signature' });
       }
-      const rawBody = (req as any).rawBody || JSON.stringify(req.body);
       const hmac = crypto.createHmac('sha256', secret);
-      hmac.update(rawBody);
+      hmac.update(bodyString);
       const expected = hmac.digest('hex');
+      // Aceita formato "sha256=hex" ou só hex puro
       const sigValue = signature.startsWith('sha256=') ? signature.slice(7) : signature;
       if (!secretsMatch(sigValue, expected)) {
-        logger.warn('[GeekPay] webhook signature invalida');
+        logger.warn('[GeekPay] webhook signature invalida', {
+          header: sigHeader,
+          // NUNCA logar signature recebida nem esperada completa (anti log leak)
+          sig_prefix: sigValue.slice(0, 8),
+        });
         return res.status(401).json({ error: 'Invalid signature' });
       }
     } else {
-      // Sem secret configurado: log warning e aceita (dev only).
-      logger.warn('[GeekPay] GEEKPAY_WEBHOOK_SECRET nao configurado — webhook aceito sem verificar signature');
+      logger.warn('[GeekPay] GEEKPAY_WEBHOOK_SECRET nao configurado — webhook aceito sem verificar signature (DEV ONLY)');
     }
 
-    const parsed = parseEvent(req.body);
+    // Log do payload parseado + raw size pra debug
+    let parsed;
+    try {
+      parsed = parseEvent(req.body);
+    } catch (parseErr: any) {
+      logger.error('[GeekPay] erro parseando body', { error: parseErr.message, raw_size: bodyString.length });
+      return res.status(400).json({ error: 'Invalid JSON' });
+    }
+
     logger.info('[GeekPay] webhook received', {
       event: parsed.eventType,
       externalId: parsed.externalId,
       email: parsed.customerEmail,
       plan: parsed.plan,
+      raw_size: bodyString.length,
     });
 
     switch (parsed.eventType) {

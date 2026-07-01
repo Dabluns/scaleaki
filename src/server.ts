@@ -130,9 +130,13 @@ app.use(compression({
 }));
 
 // Parsing com limites seguros para evitar ataques de memória
+// verify: captura raw body ANTES do parse — necessário pra validação HMAC dos webhooks
 app.use(express.json({
   limit: '1mb', // Reduzido de 10MB para 1MB
-  strict: true
+  strict: true,
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf;
+  }
 }));
 app.use(express.urlencoded({
   extended: true,

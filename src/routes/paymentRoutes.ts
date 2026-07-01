@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import * as paymentController from '../controllers/paymentController';
 import * as caktoWebhookController from '../controllers/caktoWebhookController';
-import * as geekpayWebhookController from '../controllers/geekpayWebhookController';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 import { validateOwnership } from '../middlewares/ownershipMiddleware';
 import { sanitizeInput, validateUUID } from '../middlewares/inputSanitizationMiddleware';
@@ -12,7 +11,7 @@ const router = Router();
 
 // Rotas públicas para webhooks (não requerem autenticação, mas validam assinatura)
 router.post('/webhook/cakto', caktoWebhookController.handleWebhook);
-router.post('/webhook/geekpay', geekpayWebhookController.handleGeekPayWebhook);
+// Webhook GeekPay migrado para /webhooks/scaleaki (provider-agnostic) em webhooksRoutes.ts
 
 // Todas as outras rotas requerem autenticação
 router.use(authenticateJWT);
