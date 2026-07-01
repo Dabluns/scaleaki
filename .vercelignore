@@ -1,0 +1,33 @@
+# Vercel ignora esses arquivos no deploy
+node_modules
+dist
+coverage
+logs
+.git
+.github
+.vercel
+.agents
+frontend
+landing
+extension
+"designs scaleaki"
+designs
+docs
+memory
+scripts
+infra
+dados
+.claude
+*.log
+.env
+.env.local
+.env.development
+.env.test
+__tests__
+*.test.ts
+*.test.js
+src/tests
+src/scripts
+src/app
+src/components
+src/config/__mocks__

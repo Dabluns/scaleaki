@@ -183,13 +183,18 @@ app.use('/placa', placaRoutes);
 
 import { startCleanupJob } from './jobs/cleanupJob';
 
-startBillingMonitor();
-startCleanupJob();
+// Serverless mode (Vercel): skip long-running jobs/bot — não funcionam em serverless
+const IS_SERVERLESS = !!process.env.VERCEL || process.env.SCALEKI_SERVERLESS === '1';
 
-// Restaurar estado do bot após restart do servidor
-botService.restoreState().catch(err => {
-  logger.error('Failed to restore bot state on startup:', err);
-});
+if (!IS_SERVERLESS) {
+  startBillingMonitor();
+  startCleanupJob();
+
+  // Restaurar estado do bot após restart do servidor
+  botService.restoreState().catch(err => {
+    logger.error('Failed to restore bot state on startup:', err);
+  });
+}
 
 // Rota de teste
 app.get('/', (req, res) => {
@@ -297,32 +302,34 @@ process.on('SIGINT', async () => {
 
 // Iniciar servidor com tratamento de erro
 let server: any;
-try {
-  server = app.listen(PORT, () => {
-    logger.info('Server started successfully', {
-      port: PORT,
-      host: HOST,
-      environment: process.env.NODE_ENV,
-      healthCheck: `http://${HOST}:${PORT}/health`
+if (!IS_SERVERLESS) {
+  try {
+    server = app.listen(PORT, () => {
+      logger.info('Server started successfully', {
+        port: PORT,
+        host: HOST,
+        environment: process.env.NODE_ENV,
+        healthCheck: `http://${HOST}:${PORT}/health`
+      });
     });
-  });
 
-  // Timeout de conexão aumentado
-  server.timeout = 60000; // 60 segundos
+    // Timeout de conexão aumentado
+    server.timeout = 60000; // 60 segundos
 
-  // Tratamento de erro do servidor
-  server.on('error', (error: NodeJS.ErrnoException) => {
-    if (error.code === 'EADDRINUSE') {
-      logger.error(`Port ${PORT} is already in use. Please use a different port.`);
-      process.exit(1);
-    } else {
-      logger.error('Server error:', error);
-      throw error;
-    }
-  });
-} catch (error) {
-  logger.error('Failed to start server:', error);
-  process.exit(1);
+    // Tratamento de erro do servidor
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        logger.error(`Port ${PORT} is already in use. Please use a different port.`);
+        process.exit(1);
+      } else {
+        logger.error('Server error:', error);
+        throw error;
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
 }
 
-export default app; 
+export default app;
