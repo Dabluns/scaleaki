@@ -43,3 +43,7 @@ dados/
 designs scaleaki/
 *.mp4
 *.psd
+
+
+# Frontend uploads (HF rejeita arquivos >10MB)
+frontend/public/uploads/
