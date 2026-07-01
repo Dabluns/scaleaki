@@ -225,7 +225,14 @@ export async function handleGeekPayWebhook(req: Request, res: Response) {
         externalId: parsed.externalId,
       });
       // 200 com error no body: GeekPay marca success (não retenta)
-      return res.status(200).json({ received: true, error: 'Processing failed' });
+      // DEBUG: retorna erro real pra diagnosticar
+      return res.status(200).json({
+        received: true,
+        error: 'Processing failed',
+        debug: processErr.message,
+        debug_code: processErr.code || null,
+        debug_meta: processErr.meta ? JSON.stringify(processErr.meta).slice(0, 500) : null,
+      });
     }
 
     return res.status(200).json({ received: true });
