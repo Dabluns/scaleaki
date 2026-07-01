@@ -220,19 +220,14 @@ export async function handleGeekPayWebhook(req: Request, res: Response) {
     } catch (processErr: any) {
       logger.error('[GeekPay] erro processando evento', {
         error: processErr.message,
+        code: processErr.code,
+        meta: processErr.meta ? JSON.stringify(processErr.meta).slice(0, 300) : null,
         stack: processErr.stack?.split('\n').slice(0, 3).join(' | '),
         event: parsed.eventType,
         externalId: parsed.externalId,
       });
       // 200 com error no body: GeekPay marca success (não retenta)
-      // DEBUG: retorna erro real pra diagnosticar
-      return res.status(200).json({
-        received: true,
-        error: 'Processing failed',
-        debug: processErr.message,
-        debug_code: processErr.code || null,
-        debug_meta: processErr.meta ? JSON.stringify(processErr.meta).slice(0, 500) : null,
-      });
+      return res.status(200).json({ received: true, error: 'Processing failed' });
     }
 
     return res.status(200).json({ received: true });
@@ -279,26 +274,12 @@ async function findUserByParsed(parsed: ParsedEvent): Promise<{ id: string } | n
 }
 
 async function activateSubscription(parsed: ParsedEvent) {
-  logger.info('[GeekPay] DEBUG activateSubscription start', { plan: parsed.plan, email: parsed.customerEmail, externalId: parsed.externalId });
-
   if (!parsed.plan) {
     logger.warn('[GeekPay] plan nao resolvido do product_slug', { productSlug: parsed.productSlug, externalId: parsed.externalId });
     return;
   }
 
-  let user: { id: string } | null = null;
-  try {
-    user = await findUserByParsed(parsed);
-    logger.info('[GeekPay] DEBUG findUserByParsed ok', { found: !!user });
-  } catch (lookupErr: any) {
-    logger.error('[GeekPay] DEBUG findUserByParsed THREW', {
-      error: lookupErr.message,
-      code: lookupErr.code,
-      meta: lookupErr.meta ? JSON.stringify(lookupErr.meta).slice(0, 300) : null,
-    });
-    throw lookupErr;
-  }
-
+  const user = await findUserByParsed(parsed);
   if (!user) {
     logger.warn('[GeekPay] user nao encontrado pra ativar', {
       email: parsed.customerEmail,
