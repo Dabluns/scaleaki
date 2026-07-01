@@ -9,6 +9,17 @@ import authConfig from '../config/auth';
 // Mock do processo para testes
 process.env.JWT_SECRET = 'test-secret-key-with-minimum-32-characters-for-security';
 
+// Mock do Prisma: authenticateJWT faz findUnique pra checar isActive/emailConfirmed.
+// Sem isso o user do token nao existe no banco e cai em 401 (Usuario nao encontrado).
+jest.mock('../config/database');
+import prisma from '../config/database';
+const mockPrisma = prisma as any;
+beforeEach(() => {
+  if (mockPrisma.user?.findUnique) {
+    (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({ emailConfirmed: true, isActive: true });
+  }
+});
+
 const app = express();
 app.use(express.json());
 
