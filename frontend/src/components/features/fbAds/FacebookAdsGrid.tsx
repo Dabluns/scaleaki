@@ -35,7 +35,7 @@ export function FacebookAdsGrid({
       (entries) => {
         if (entries[0]?.isIntersecting) loadMoreRef.current();
       },
-      { rootMargin: '600px 0px' } // pré-carrega antes de chegar no fim
+      { rootMargin: '1200px 0px' } // pré-carrega antes de chegar no fim
     );
     observer.observe(el);
     return () => observer.disconnect();

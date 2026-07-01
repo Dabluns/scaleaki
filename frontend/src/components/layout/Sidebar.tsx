@@ -419,9 +419,6 @@ export const Sidebar: React.FC = () => {
             <>
               <SectionLabel label="Sistema" collapsed={collapsed} />
               <ul className="space-y-1">
-                {isPlusRouteEnabled('/pre-aprovador') && (
-                  <NavItem href="/pre-aprovador" icon={ShieldCheck} label="Pré-aprovador" collapsed={collapsed} isActive={pathname === '/pre-aprovador'} />
-                )}
                 {isAdmin && (
                   <>
                     <NavItem
