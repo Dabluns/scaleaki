@@ -34,6 +34,15 @@ if (process.env.NODE_ENV !== 'production') {
       winston.format.simple()
     )
   }));
+} else {
+  // Em produção (Docker/Render), também loga no stdout pra aparecer nos logs do Render.
+  // Mantém os arquivos pra auditoria local (se /app/logs existir).
+  logger.add(new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+    )
+  }));
 }
 
 export default logger; 
