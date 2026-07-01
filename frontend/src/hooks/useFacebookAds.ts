@@ -65,14 +65,14 @@ export function useFacebookAds() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FbAdsFilters>({ orderBy: 'escala', order: 'desc', status: 'active', escalaMin: 30, windowDays: 7 });
+  const [filters, setFilters] = useState<FbAdsFilters>({ orderBy: 'escala', order: 'desc', status: 'active' });
   const [page, setPage] = useState(1);
   const abortRef = useRef<AbortController | null>(null);
 
   const buildParams = useCallback((f: FbAdsFilters, p: number) => {
     const params = new URLSearchParams();
     params.set('page', String(p));
-    params.set('limit', '24');
+    params.set('limit', '48');
     if (f.search) params.set('search', f.search);
     if (f.checkout) params.set('checkout', f.checkout);
     if (f.player) params.set('player', f.player);

@@ -39,11 +39,6 @@ export default function FeatureGate({ feature, children, blur = true }: Props) {
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm p-6 text-center">
         <span className="text-3xl">{isPlus ? '⚡' : '🔒'}</span>
-        {isPlus && (
-          <span className="rounded-full bg-[#a855f7]/15 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#c084fc]">
-            Scaleaki+
-          </span>
-        )}
         <p className="text-sm text-white/80 max-w-xs">{access.upsell}</p>
         <Link
           href={href}

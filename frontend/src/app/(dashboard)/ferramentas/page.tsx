@@ -35,6 +35,7 @@ interface Ferramenta {
   gradiente: string;
   id_tecnico: string;
   tags: string[];
+  href?: string;
 }
 
 const ferramentas: Ferramenta[] = [
@@ -67,6 +68,17 @@ const ferramentas: Ferramenta[] = [
     cor: 'blue',
     gradiente: 'from-blue-500/20 to-indigo-500/20',
     tags: ['Security', 'Algorithm', 'Text']
+  },
+  {
+    slug: 'pre-aprovador',
+    titulo: 'Pré-aprovador de Criativo',
+    id_tecnico: 'CREATIVE_SHIELD_X',
+    descricao: 'Analise seus criativos antes de subir para Meta Ads ou Google Ads e descubra o risco de reprovação por violar políticas de anúncio.',
+    IconComponent: ShieldCheck,
+    cor: 'purple',
+    gradiente: 'from-emerald-500/20 to-green-500/20',
+    tags: ['Compliance', 'IA', 'Criativos'],
+    href: '/pre-aprovador',
   },
 ];
 
@@ -141,7 +153,7 @@ export default function FerramentasPage() {
               transition={{ delay: index * 0.1, duration: 0.8 }}
               className="h-full"
             >
-              <Link href={`/ferramentas/${ferramenta.slug}`} className="group h-full block">
+              <Link href={ferramenta.href ?? `/ferramentas/${ferramenta.slug}`} className="group h-full block">
                 <Card3D
                   variant="glass"
                   className="p-10 lg:p-12 relative overflow-hidden h-full flex flex-col bg-white/[0.01] border-white/5 hover:border-green-500/20 transition-all duration-1000 group-hover:bg-white/[0.03] rounded-[3rem]"
@@ -157,6 +169,7 @@ export default function FerramentasPage() {
                         "w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all duration-700 border border-white/5 group-hover:scale-110",
                         ferramenta.cor === 'green' ? 'bg-green-500/10 text-green-500 group-hover:bg-green-500/20' :
                           ferramenta.cor === 'purple' ? 'bg-purple-500/10 text-purple-500 group-hover:bg-purple-500/20' :
+                            ferramenta.cor === 'emerald' ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' :
                             'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20'
                       )}>
                         <ferramenta.IconComponent size={32} />

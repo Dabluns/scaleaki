@@ -97,7 +97,7 @@ export default function UpgradePage() {
             </div>
             <h1 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tighter uppercase italic">
               DESBLOQUEIE O <br />
-              <span className="text-purple-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">SCALEAKI+</span>
+              <span className="text-purple-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">PLANO COMPLETO</span>
             </h1>
             <p className="text-lg text-white/40 font-bold max-w-2xl">
               Marketplaces completos, AdSpy de YouTube e TikTok, pré-aprovador de criativo e análise de funil.
