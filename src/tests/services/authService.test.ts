@@ -126,49 +126,41 @@ describe('AuthService', () => {
       (jwt.sign as jest.Mock).mockReturnValue('jwt_token_123');
       (mockPrisma.user.create as jest.Mock).mockResolvedValue(mockUser);
 
-      const result = await register(validRegisterData);
+      const result = await register(validRegisterData, true);
 
       expect(bcrypt.hash).toHaveBeenCalledWith('TestPass123!', 12);
+      // signup sempre nasce 'free'; acesso pago vem via webhook Cakto (data.plan e ignorado)
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
-        data: {
+        data: expect.objectContaining({
           name: 'Test User',
           email: 'test@example.com',
           password: 'hashed_password',
           role: 'user',
           plan: 'free',
-          isActive: true
-        }
+          isActive: true,
+        }),
       });
       expect(jwt.sign).toHaveBeenCalledWith(
         { userId: 'user-123', role: 'user' },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
+        authConfig.JWT_SECRET,
+        { expiresIn: authConfig.JWT_EXPIRES_IN }
       );
       expect(result).toEqual(mockAuthPayload);
     });
 
-    it('deve registrar usuário premium', async () => {
-      const premiumData = { ...validRegisterData, plan: 'premium' as const };
+    it('ignora plan informado no signup e cria sempre como free', async () => {
+      const withPlan = { ...validRegisterData, plan: 'mensal' as const };
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
       (jwt.sign as jest.Mock).mockReturnValue('jwt_token_123');
-      (mockPrisma.user.create as jest.Mock).mockResolvedValue({
-        ...mockUser,
-        plan: 'premium'
-      });
+      (mockPrisma.user.create as jest.Mock).mockResolvedValue(mockUser);
 
-      const result = await register(premiumData);
+      const result = await register(withPlan, true);
 
+      // mesmo pedindo 'mensal', o usuario nasce 'free' (regra de negocio: pago so via webhook)
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
-        data: {
-          name: 'Test User',
-          email: 'test@example.com',
-          password: 'hashed_password',
-          role: 'user',
-          plan: 'premium',
-          isActive: true
-        }
+        data: expect.objectContaining({ plan: 'free' }),
       });
-      expect(result.user.plan).toBe('premium');
+      expect(result.user.plan).toBe('free');
     });
 
     it('deve lançar erro se email já existir', async () => {
@@ -223,8 +215,8 @@ describe('AuthService', () => {
       expect(bcrypt.compare).toHaveBeenCalledWith('TestPass123!', 'hashed_password');
       expect(jwt.sign).toHaveBeenCalledWith(
         { userId: 'user-123', role: 'user' },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
+        authConfig.JWT_SECRET,
+        { expiresIn: authConfig.JWT_EXPIRES_IN }
       );
       expect(result).toEqual(mockAuthPayload);
     });
@@ -242,12 +234,14 @@ describe('AuthService', () => {
       await expect(login(validLoginData)).rejects.toThrow('Credenciais inválidas.');
     });
 
-    it('deve lançar erro se usuário estiver inativo', async () => {
+    it('permite login de usuário inativo (trava de isActive vive no middleware, não no login)', async () => {
       const inactiveUser = { ...mockUser, isActive: false };
       (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(inactiveUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true); // Senha correta, mas usuário inativo
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (jwt.sign as jest.Mock).mockReturnValue('jwt_token_123');
 
-      await expect(login(validLoginData)).rejects.toThrow('Conta inativa.');
+      // login nao bloqueia isActive; quem barra conta inativa e o authenticateJWT (403)
+      await expect(login(validLoginData)).resolves.toHaveProperty('token');
     });
   });
 
