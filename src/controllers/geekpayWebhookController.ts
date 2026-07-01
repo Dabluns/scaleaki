@@ -272,12 +272,26 @@ async function findUserByParsed(parsed: ParsedEvent): Promise<{ id: string } | n
 }
 
 async function activateSubscription(parsed: ParsedEvent) {
+  logger.info('[GeekPay] DEBUG activateSubscription start', { plan: parsed.plan, email: parsed.customerEmail, externalId: parsed.externalId });
+
   if (!parsed.plan) {
     logger.warn('[GeekPay] plan nao resolvido do product_slug', { productSlug: parsed.productSlug, externalId: parsed.externalId });
     return;
   }
 
-  const user = await findUserByParsed(parsed);
+  let user: { id: string } | null = null;
+  try {
+    user = await findUserByParsed(parsed);
+    logger.info('[GeekPay] DEBUG findUserByParsed ok', { found: !!user });
+  } catch (lookupErr: any) {
+    logger.error('[GeekPay] DEBUG findUserByParsed THREW', {
+      error: lookupErr.message,
+      code: lookupErr.code,
+      meta: lookupErr.meta ? JSON.stringify(lookupErr.meta).slice(0, 300) : null,
+    });
+    throw lookupErr;
+  }
+
   if (!user) {
     logger.warn('[GeekPay] user nao encontrado pra ativar', {
       email: parsed.customerEmail,
