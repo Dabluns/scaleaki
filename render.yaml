@@ -1,0 +1,57 @@
+# Render Blueprint — Scaleaki API
+# Deploy: https://render.com → New Blueprint → conectar repo Dabluns/scaleaki
+# Plano free (sem cartao) hiberna apos 15min sem request (cold start ~30-60s).
+# Plano nao-free: trocar plan para starter ($7/mes, sem hibernar).
+
+services:
+  - type: web
+    name: scaleaki-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # ── Non-secret (declarado direto) ──────────────────────────
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      # PORT e HOST o Render sobrescreve (PORT aleatorio).
+      # FRONTEND_URL/BACKEND_URL/APP_URL dependem do dominio gerado,
+      # serao setados via dashboard apos primeiro deploy.
+      # NAO commitar secrets no yaml — setar via Render Dashboard:
+      #   https://dashboard.render.com → scaleaki-api → Environment
+
+      # ── Secrets (setar via Dashboard) ───────────────────────────
+      # DATABASE_URL          postgresql://...
+      # DIRECT_URL            postgresql://...
+      # JWT_SECRET            64+ chars
+      # ADMIN_JWT             256+ chars
+      # NEXT_PUBLIC_SUPABASE_URL
+      # NEXT_PUBLIC_SUPABASE_ANON_KEY
+      # SUPABASE_SERVICE_ROLE_KEY
+      # CAKTO_WEBHOOK_SECRET
+      # CAKTO_CLIENT_ID
+      # CAKTO_CLIENT_SECRET
+      # SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / SMTP_FROM
+      # GOOGLE_CREDENTIALS_JSON (string grande — valor unico)
+      # DRIVE_FOLDER_ID
+      # GEMINI_API_KEY
+      # GROQ_API_KEY
+      # APIFY_TOKEN
+      # URLSCAN_API_KEY
+      # FB_ACCESS_TOKEN
+      # REDIS_HOST / REDIS_PORT / REDIS_DB / REDIS_PASSWORD (se usar)
+      # RATE_LIMIT_MAX / RATE_LIMIT_WINDOW_MINUTES
+      # ADMIN_RATE_LIMIT_MAX / ADMIN_RATE_LIMIT_WINDOW_MINUTES
+      # RATE_LIMIT_SKIP_PREFIXES
+      # ENABLE_REDIS
+      # BILLING_GRACE_DAYS / BILLING_MONITOR_INTERVAL_MS / DISABLE_BILLING_MONITOR
+      # JWT_EXPIRES_IN
+      # SMTP_SECURE / SMTP_REJECT_UNAUTHORIZED
+      # FB_API_VERSION
+      # GROQ_MODEL
+      # CAKTO_CHECKOUT_URL
