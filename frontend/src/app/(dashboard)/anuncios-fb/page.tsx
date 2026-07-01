@@ -183,7 +183,7 @@ function AnunciosFbContent() {
           {/* Status indicator */}
           <div className="flex items-center gap-3 mb-4">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
+            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-white/70">
               Mineração de Anúncios Ativa
             </span>
           </div>
@@ -228,7 +228,7 @@ function AnunciosFbContent() {
                 ? <Loader2 size={16} className="text-blue-400 animate-spin" />
                 : isLiveMode
                   ? <Radio size={16} className="text-blue-400 animate-pulse" />
-                  : <Search size={16} className="text-white/30" />
+                  : <Search size={16} className="text-white/60" />
               }
             </div>
 
@@ -237,7 +237,7 @@ function AnunciosFbContent() {
               value={liveQuery}
               onChange={(e) => handleLiveQueryChange(e.target.value)}
               placeholder="PESQUISAR NA BIBLIOTECA DO FACEBOOK... (ex: suplemento, dropshipping, curso...)"
-              className="flex-1 bg-transparent text-sm font-bold text-white placeholder:text-white/45 placeholder:text-[12px] placeholder:tracking-widest focus:outline-none uppercase tracking-wider"
+              className="flex-1 bg-transparent text-sm font-bold text-white placeholder:text-white/75 placeholder:text-[14px] placeholder:tracking-widest focus:outline-none uppercase tracking-wider"
             />
 
             {/* Badge de modo */}
@@ -270,7 +270,7 @@ function AnunciosFbContent() {
 
           {/* Dica */}
           {!isLiveMode && (
-            <p className="mt-2 ml-4 text-[11px] font-bold text-white/45 uppercase tracking-widest">
+            <p className="mt-2 ml-4 text-[13px] font-bold text-white/75 uppercase tracking-widest">
               Digite 2+ caracteres para pesquisar no acervo e minerar novos anúncios
             </p>
           )}
@@ -319,7 +319,7 @@ function AnunciosFbContent() {
                     </span></>
               }
               <div className="ml-auto">
-                <span className="text-[9px] text-white/30 font-bold">{liveTotal} resultados</span>
+                <span className="text-[10px] text-white/60 font-bold">{liveTotal} resultados</span>
               </div>
             </div>
           </motion.div>
