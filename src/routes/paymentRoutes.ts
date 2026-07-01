@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as paymentController from '../controllers/paymentController';
 import * as caktoWebhookController from '../controllers/caktoWebhookController';
+import * as geekpayWebhookController from '../controllers/geekpayWebhookController';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 import { validateOwnership } from '../middlewares/ownershipMiddleware';
 import { sanitizeInput, validateUUID } from '../middlewares/inputSanitizationMiddleware';
@@ -9,8 +10,9 @@ import { userRateLimiter } from '../middlewares/redisRateLimit';
 
 const router = Router();
 
-// Rota pública para webhook da Cakto (não requer autenticação, mas valida assinatura)
+// Rotas públicas para webhooks (não requerem autenticação, mas validam assinatura)
 router.post('/webhook/cakto', caktoWebhookController.handleWebhook);
+router.post('/webhook/geekpay', geekpayWebhookController.handleGeekPayWebhook);
 
 // Todas as outras rotas requerem autenticação
 router.use(authenticateJWT);
