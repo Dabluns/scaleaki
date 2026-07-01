@@ -151,7 +151,7 @@ describe('Fluxos de autenticação e pagamentos', () => {
     const response = await request(app)
       .post('/payments/subscription')
       .send({
-        plan: 'basic',
+        plan: 'mensal',
         paymentMethod: 'credit_card',
       })
       .expect(400);

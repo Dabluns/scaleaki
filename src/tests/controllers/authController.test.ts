@@ -72,7 +72,7 @@ describe('AuthController', () => {
         .send(validRegisterData)
         .expect(201);
 
-      expect(mockAuthService.register).toHaveBeenCalledWith(validRegisterData);
+      expect(mockAuthService.register).toHaveBeenCalledWith(validRegisterData, true);
       expect(res.body.success).toBe(true);
       expect(res.body.data.token).toBe(mockAuthPayload.token);
       expect(res.body.data.user.id).toBe(mockAuthPayload.user.id);
@@ -182,7 +182,8 @@ describe('AuthController', () => {
         .send(validLoginData)
         .expect(200);
 
-      expect(mockAuthService.login).toHaveBeenCalledWith(validLoginData);
+      // controller passa clientIp como 2o argumento (getClientIp pode retornar undefined em teste)
+      expect(mockAuthService.login).toHaveBeenCalledWith(validLoginData, expect.anything());
       expect(res.body.success).toBe(true);
       expect(res.body.data.token).toBe(mockAuthPayload.token);
       expect(res.body.data.user.id).toBe(mockAuthPayload.user.id);
