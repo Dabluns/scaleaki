@@ -34,6 +34,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Diretorio de logs pro Winston (vazio, winston cria arquivos sob demanda)
+RUN mkdir -p /app/logs
+
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
